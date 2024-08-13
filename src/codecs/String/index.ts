@@ -100,6 +100,6 @@ export class StringCodec extends AbstractCodec<string> {
 	}
 }
 
-export const createStringCodec = (...parameters: ConstructorParameters<typeof StringCodec>) => {
+export function createStringCodec(...parameters: ConstructorParameters<typeof StringCodec>) {
 	return new StringCodec(...parameters);
-};
+}

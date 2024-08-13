@@ -37,6 +37,6 @@ export class ConstantCodec<const Value> extends AbstractCodec<Value> {
 	}
 }
 
-export const createConstantCodec = <const Value>(...parameters: ConstructorParameters<typeof ConstantCodec<Value>>) => {
+export function createConstantCodec<const Value>(...parameters: ConstructorParameters<typeof ConstantCodec<Value>>) {
 	return new ConstantCodec<Value>(...parameters);
-};
+}

@@ -70,6 +70,6 @@ export class ArrayCodec<Item extends any> extends AbstractCodec<Array<Item>> {
 	}
 }
 
-export const createArrayCodec = <Item>(...parameters: ConstructorParameters<typeof ArrayCodec<Item>>) => {
+export function createArrayCodec<Item>(...parameters: ConstructorParameters<typeof ArrayCodec<Item>>) {
 	return new ArrayCodec<Item>(...parameters);
-};
+}

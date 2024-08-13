@@ -53,6 +53,6 @@ export class TransformCodec<Source extends any, Target extends any> extends Abst
 	}
 }
 
-export const createTransformCodec = <Source extends any, Target extends any>(...parameters: ConstructorParameters<typeof TransformCodec<Source, Target>>) => {
+export function createTransformCodec<Source extends any, Target extends any>(...parameters: ConstructorParameters<typeof TransformCodec<Source, Target>>) {
 	return new TransformCodec<Source, Target>(...parameters);
-};
+}

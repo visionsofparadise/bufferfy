@@ -96,6 +96,6 @@ export class RecordCodec<Key extends string | number, Value extends any> extends
 	}
 }
 
-export const createRecordCodec = <Key extends string | number, Value>(...parameters: ConstructorParameters<typeof RecordCodec<Key, Value>>) => {
+export function createRecordCodec<Key extends string | number, Value>(...parameters: ConstructorParameters<typeof RecordCodec<Key, Value>>) {
 	return new RecordCodec<Key, Value>(...parameters);
-};
+}

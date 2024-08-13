@@ -13,6 +13,7 @@ import { createOptionalCodec } from "./codecs/Optional";
 import { createPointerCodec } from "./codecs/Pointer";
 import { createRecordCodec } from "./codecs/Record";
 import { createStringCodec } from "./codecs/String";
+import { createSwitchCodec } from "./codecs/Switch";
 import { createTransformCodec } from "./codecs/Transform";
 import { createTupleCodec } from "./codecs/Tuple";
 import { createUIntCodec } from "./codecs/UInt";
@@ -239,6 +240,21 @@ export const Record = createRecordCodec;
 export const String = createStringCodec;
 
 /**
+ * Creates a set of codecs where the codec used is selected based on conditions from the value or buffer provided. A default codec can be set for unmatched values/buffers. An example of where this can be useful is for an object with many different versions.
+ *
+ * Serializes to ```[VALUE]```
+ *
+ * @param	{Array<AbstractCodec>} codecMap - An map of keys and codecs where keys are case values for the switch.
+ * @param	{SwitchCodecOptions} [options]
+ * @param	{string} [id] - Sets an id that can be pointed to.
+ * @param	{(value) => PropertyKey} [getValueCase] - A function that takes a value and returns a key of the codecMap, selecting the appropriate codec.
+ * @param	{(buffer) => PropertyKey} [getBufferCase] - A function that takes a buffer and returns a key of the codecMap, selecting the appropriate codec.
+ * @param	{PropertyKey} [default] - The key of the codecMap that selects the codec used for unmatched values/buffers.
+ * @return	{SwitchCodec} SwitchCodec
+ */
+export const Switch = createSwitchCodec;
+
+/**
  * Creates a codec wrapper that transforms a value when serializing and deserializing.
  *
  * Serializes to ```[VALUE]```
@@ -296,7 +312,6 @@ export const Undefined = createUndefinedCodec;
  * Creates a codec for one of many types of value. Each codec type has a match method that returns true if the input value type matches the codec's type. The union codec iterates through codecs until a codec matches and then uses that codec. Some examples of when the union codec can be useful are:
  *
  * - Optional or nullable values.
- * - Versioned types, matching against a property that has a constant version value.
  * - Overloaded values.
  *
  * Serializes to ```[CODEC_INDEX][VALUE]```

@@ -12,6 +12,6 @@ export class OptionalCodec<Codec extends AbstractCodec> extends UnionCodec<[Code
 	}
 }
 
-export const createOptionalCodec = <Codec extends AbstractCodec>(...parameters: ConstructorParameters<typeof OptionalCodec<Codec>>) => {
+export function createOptionalCodec<Codec extends AbstractCodec>(...parameters: ConstructorParameters<typeof OptionalCodec<Codec>>) {
 	return new OptionalCodec<Codec>(...parameters);
-};
+}

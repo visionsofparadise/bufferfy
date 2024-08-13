@@ -41,6 +41,6 @@ export class PointerCodec<Value extends unknown> extends AbstractCodec<Value> {
 	}
 }
 
-export const createPointerCodec = <Value extends unknown>(...parameters: ConstructorParameters<typeof PointerCodec<Value>>) => {
+export function createPointerCodec<Value extends unknown>(...parameters: ConstructorParameters<typeof PointerCodec<Value>>) {
 	return new PointerCodec<Value>(...parameters);
-};
+}

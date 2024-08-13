@@ -63,6 +63,6 @@ export class FloatCodec extends AbstractCodec<number> {
 	}
 }
 
-export const createFloatCodec = (...parameters: ConstructorParameters<typeof FloatCodec>) => {
+export function createFloatCodec(...parameters: ConstructorParameters<typeof FloatCodec>) {
 	return new FloatCodec(...parameters);
-};
+}
