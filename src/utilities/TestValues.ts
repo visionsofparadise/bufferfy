@@ -1,5 +1,4 @@
 import { randomBytes } from "crypto";
-import type { CodecType } from "../codecs/Abstract";
 import { Codec } from "../index";
 
 export const SpreadCodec = Codec.Object({
@@ -18,7 +17,7 @@ export const SpreadCodec = Codec.Object({
 	undefined: Codec.Undefined(),
 });
 
-type SpreadValue = CodecType<typeof SpreadCodec>;
+type SpreadValue = Codec.Type<typeof SpreadCodec>;
 
 export const spreadValue: SpreadValue = {
 	any: {
@@ -78,7 +77,7 @@ export const CommonCodec = Codec.Object({
 	deletedAt: Codec.Optional(Codec.UInt(48)),
 });
 
-type CommonValue = CodecType<typeof CommonCodec>;
+type CommonValue = Codec.Type<typeof CommonCodec>;
 
 export const commonValue: CommonValue = {
 	id: randomBytes(32).toString("hex"),

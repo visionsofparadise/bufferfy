@@ -3,14 +3,14 @@ import { PointableOptions } from "../../utilities/Pointable";
 import { Stream } from "../../utilities/Stream";
 import { AbstractCodec } from "../Abstract";
 
-export interface TransformCodecOptions<Source extends any, Target extends any> extends PointableOptions {
-	encode: (value: Source) => Target;
-	decode: (value: Target, buffer: Buffer) => Source;
+export interface TransformCodecOptions<Source, Target> extends PointableOptions {
+	encode: (source: Source) => Target;
+	decode: (target: Target, buffer: Buffer) => Source;
 }
 
-export class TransformCodec<Source extends any, Target extends any> extends AbstractCodec<Source> {
-	private readonly _encode: (value: Source) => Target;
-	private readonly _decode: (value: Target, buffer: Buffer) => Source;
+export class TransformCodec<Source, Target> extends AbstractCodec<Source> {
+	private readonly _encode: (source: Source) => Target;
+	private readonly _decode: (target: Target, buffer: Buffer) => Source;
 
 	constructor(private readonly targetCodec: AbstractCodec<Target>, options: TransformCodecOptions<Source, Target>) {
 		super();

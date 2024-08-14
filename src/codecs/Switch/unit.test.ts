@@ -11,11 +11,11 @@ const context = new Context();
 const codec = new SwitchCodec(
 	{
 		0: new ObjectCodec({
-			version: new UIntCodec<0>(8),
+			version: new UIntCodec(8),
 			string: new StringCodec({ length: 4 }),
 		}),
 		1: new ObjectCodec({
-			version: new UIntCodec<1>(8),
+			version: new UIntCodec(8),
 			number: new UIntCodec(8),
 		}),
 	},

@@ -246,7 +246,7 @@ Serializes to ```[INT]```
 
 | Constant | Type |
 | ---------- | ---------- |
-| `Int` | `<Value extends number = number>(bits?: IntegerBits or undefined, endianness?: Endianness or undefined, options?: IntCodecOptions or undefined) => IntCodec<...>` |
+| `Int` | `(bits?: IntegerBits or undefined, endianness?: Endianness or undefined, options?: IntCodecOptions or undefined) => IntCodec` |
 
 Parameters:
 
@@ -429,7 +429,7 @@ Serializes to ```[UINT]```
 
 | Constant | Type |
 | ---------- | ---------- |
-| `UInt` | `<Value extends number = number>(bits?: IntegerBits or undefined, endianness?: Endianness or undefined, options?: UIntCodecOptions or undefined) => UIntCodec<...>` |
+| `UInt` | `(bits?: IntegerBits or undefined, endianness?: Endianness or undefined, options?: UIntCodecOptions or undefined) => UIntCodec` |
 
 Parameters:
 
