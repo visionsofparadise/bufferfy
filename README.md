@@ -486,9 +486,9 @@ Values used for benchmarks can be found [here](https://github.com/visionsofparad
 #### Spread of Types
 
 ```
-bufferfy.size                   17
-msgpack.size                    127
-JSON.size                       181
+bufferfy.size                   51
+msgpack.size                    149
+JSON.size                       221
 ```
 
 #### Common Types
