@@ -7,12 +7,12 @@ import { BooleanCodec } from "../Boolean";
 const context = new Context();
 
 const codec = new TransformCodec(new BooleanCodec(), {
-	transform: (boolean) => (boolean ? 1 : 0),
-	untransform: (value) => {
+	encode: (value) => {
 		if (value !== 1 && value !== 0) throw new Error("Invalid value");
 
 		return value === 1;
 	},
+	decode: (boolean) => (boolean ? 1 : 0),
 });
 
 const value: CodecType<typeof codec> = 1;

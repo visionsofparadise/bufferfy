@@ -387,7 +387,7 @@ Parameters:
 
 ### Transform
 
-Creates a codec wrapper that transforms a value when serializing and deserializing.
+Creates a codec wrapper that transforms from source type to target type
 
 Serializes to ```[VALUE]```
 
@@ -395,14 +395,14 @@ Uses the wrapped codecs serialization.
 
 | Constant | Type |
 | ---------- | ---------- |
-| `Transform` | `<Source extends unknown, Target extends unknown>(codec: AbstractCodec<Target>, options: TransformCodecOptions<Source, Target>) => TransformCodec<Source, Target>` |
+| `Transform` | `<Source extends unknown, Target extends unknown>(targetCodec: AbstractCodec<Target>, options: TransformCodecOptions<Source, Target>) => TransformCodec<Source, Target>` |
 
 Parameters:
 
-* `codec`: - The wrapped codec.
+* `targetCodec`: - The wrapped codec.
 * `id`: - Sets an id that can be pointed to.
-* `options.transform`: - Function that transforms the value into the wrapped codecs expected value.
-* `options.untransform`: - Function that transforms the wrapped codecs value into the expected value.
+* `options.encode`: - Function that transforms from source to target.
+* `options.decode`: - Function that transforms from target to source.
 
 
 ### Tuple

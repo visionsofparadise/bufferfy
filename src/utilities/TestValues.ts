@@ -13,7 +13,7 @@ export const SpreadCodec = Codec.Object({
 	enumerated: Codec.Enum(["test1", "test2"], { indexCodec: Codec.UInt(8) }),
 	null: Codec.Null({ id: "null" }),
 	record: Codec.Record(Codec.String({ length: 4 }), Codec.String({ length: 4 }), { lengthCodec: Codec.UInt(8) }),
-	transform: Codec.Transform(Codec.String({ length: 2 }), { transform: (value) => parseInt(value), untransform: (value: number) => value.toString(10) }),
+	transform: Codec.Transform(Codec.String({ length: 2 }), { encode: (value: number) => value.toString(10), decode: (value) => parseInt(value) }),
 	tuple: Codec.Tuple([Codec.UInt(8), Codec.Pointer<null>("null")]),
 	undefined: Codec.Undefined(),
 });

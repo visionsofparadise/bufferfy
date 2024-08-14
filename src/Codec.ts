@@ -255,17 +255,17 @@ export const String = createStringCodec;
 export const Switch = createSwitchCodec;
 
 /**
- * Creates a codec wrapper that transforms a value when serializing and deserializing.
+ * Creates a codec wrapper that transforms from source type to target type
  *
  * Serializes to ```[VALUE]```
  *
  * Uses the wrapped codecs serialization.
  *
- * @param	{AbstractCodec} codec - The wrapped codec.
+ * @param	{AbstractCodec} targetCodec - The wrapped codec.
  * @param	{TransformCodecOptions} options
  * @param	{string} [id] - Sets an id that can be pointed to.
- * @param	{Function} options.transform - Function that transforms the value into the wrapped codecs expected value.
- * @param	{Function} options.untransform - Function that transforms the wrapped codecs value into the expected value.
+ * @param	{(source) => target} options.encode - Function that transforms from source to target.
+ * @param	{(target, buffer) => source} options.decode - Function that transforms from target to source.
  * @return	{TransformCodec} TransformCodec
  */
 export const Transform = createTransformCodec;

@@ -3,26 +3,26 @@ import { PointableOptions } from "../../utilities/Pointable";
 import { Stream } from "../../utilities/Stream";
 import { AbstractCodec } from "../Abstract";
 
-export interface TransformCodecOptions<S, T> extends PointableOptions {
-	transform: (value: T) => S;
-	untransform: (value: S) => T;
+export interface TransformCodecOptions<Source extends any, Target extends any> extends PointableOptions {
+	encode: (value: Source) => Target;
+	decode: (value: Target, buffer: Buffer) => Source;
 }
 
 export class TransformCodec<Source extends any, Target extends any> extends AbstractCodec<Source> {
-	private readonly _transform: (value: Target) => Source;
-	private readonly _untransform: (value: Source) => Target;
+	private readonly _encode: (value: Source) => Target;
+	private readonly _decode: (value: Target, buffer: Buffer) => Source;
 
-	constructor(private readonly codec: AbstractCodec<Target>, options: TransformCodecOptions<Source, Target>) {
+	constructor(private readonly targetCodec: AbstractCodec<Target>, options: TransformCodecOptions<Source, Target>) {
 		super();
 
 		this._id = options.id;
-		this._transform = options.transform;
-		this._untransform = options.untransform;
+		this._encode = options.encode;
+		this._decode = options.decode;
 	}
 
 	match(value: any, context: Context): value is Source {
 		try {
-			const isMatch = this.codec.match(this._untransform(value), context);
+			const isMatch = this.targetCodec.match(this._encode(value), context);
 
 			if (isMatch) this.setContext(value, context);
 
@@ -35,17 +35,23 @@ export class TransformCodec<Source extends any, Target extends any> extends Abst
 	encodingLength(value: Source, context: Context): number {
 		this.setContext(value, context);
 
-		return this.codec.encodingLength(this._untransform(value), context);
+		return this.targetCodec.encodingLength(this._encode(value), context);
 	}
 
 	write(value: Source, stream: Stream, context: Context): void {
 		this.setContext(value, context);
 
-		return this.codec.write(this._untransform(value), stream, context);
+		return this.targetCodec.write(this._encode(value), stream, context);
 	}
 
 	read(stream: Stream, context: Context): Source {
-		const value = this._transform(this.codec.read(stream, context));
+		const initialPosition = stream.position;
+
+		const targetValue = this.targetCodec.read(stream, context);
+
+		const buffer = stream.buffer.subarray(initialPosition, stream.position);
+
+		const value = this._decode(targetValue, buffer);
 
 		this.setContext(value, context);
 
