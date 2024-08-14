@@ -70,26 +70,27 @@ Returns the value type of the provided codec.
 
 ## Types
 
-- [Any](any)
-- [Array](array)
-- [BitField](bitfield)
-- [Boolean](boolean)
-- [Buffer](buffer)
-- [Constant](constant)
-- [Enum](enum)
-- [Float](float)
-- [Int](int)
-- [Null](null)
-- [Object](object)
-- [Optional](optional)
-- [Pointer](pointer)
-- [Record](record)
-- [String](string)
-- [Transform](transform)
-- [Tuple](tuple)
-- [UInt](uint)
-- [Undefined](undefined)
-- [Union](union)
+- [Any](#any)
+- [Array](#array)
+- [BitField](#bitfield)
+- [Boolean](#boolean)
+- [Buffer](#buffer)
+- [Constant](#constant)
+- [Enum](#enum)
+- [Float](#float)
+- [Int](#int)
+- [Null](#null)
+- [Object](#object)
+- [Optional](#optional)
+- [Pointer](#pointer)
+- [Record](#record)
+- [String](#string)
+- [Switch](#switch)
+- [Transform](#transform)
+- [Tuple](#tuple)
+- [UInt](#uint)
+- [Undefined](#undefined)
+- [Union](#union)
 
 ### Any
 
@@ -245,7 +246,7 @@ Serializes to ```[INT]```
 
 | Constant | Type |
 | ---------- | ---------- |
-| `Int` | `(bits?: IntegerBits or undefined, endianness?: Endianness or undefined, options?: IntCodecOptions or undefined) => IntCodec` |
+| `Int` | `<Value extends number = number>(bits?: IntegerBits or undefined, endianness?: Endianness or undefined, options?: IntCodecOptions or undefined) => IntCodec<...>` |
 
 Parameters:
 
@@ -365,6 +366,25 @@ Parameters:
 * `options.lengthCodec`: - Codec to specify how the length is encoded.
 
 
+### Switch
+
+Creates a set of codecs where the codec used is selected based on conditions from the value or buffer provided. A default codec can be set for unmatched values/buffers. An example of where this can be useful is for an object with many different versions.
+
+Serializes to ```[VALUE]```
+
+| Constant | Type |
+| ---------- | ---------- |
+| `Switch` | `<CodecMap extends Record<PropertyKey, AbstractCodec<any>>>(codecMap: CodecMap, options: SwitchCodecOptions<CodecMap>) => SwitchCodec<CodecMap>` |
+
+Parameters:
+
+* `codecMap`: - An map of keys and codecs where keys are case values for the switch.
+* `id`: - Sets an id that can be pointed to.
+* `getValueCase`: - A function that takes a value and returns a key of the codecMap, selecting the appropriate codec.
+* `getBufferCase`: - A function that takes a buffer and returns a key of the codecMap, selecting the appropriate codec.
+* `default`: - The key of the codecMap that selects the codec used for unmatched values/buffers.
+
+
 ### Transform
 
 Creates a codec wrapper that transforms a value when serializing and deserializing.
@@ -409,7 +429,7 @@ Serializes to ```[UINT]```
 
 | Constant | Type |
 | ---------- | ---------- |
-| `UInt` | `(bits?: IntegerBits or undefined, endianness?: Endianness or undefined, options?: UIntCodecOptions or undefined) => UIntCodec` |
+| `UInt` | `<Value extends number = number>(bits?: IntegerBits or undefined, endianness?: Endianness or undefined, options?: UIntCodecOptions or undefined) => UIntCodec<...>` |
 
 Parameters:
 
@@ -440,7 +460,6 @@ Parameters:
 Creates a codec for one of many types of value. Each codec type has a match method that returns true if the input value type matches the codec's type. The union codec iterates through codecs until a codec matches and then uses that codec. Some examples of when the union codec can be useful are:
 
 - Optional or nullable values.
-- Versioned types, matching against a property that has a constant version value.
 - Overloaded values.
 
 Serializes to ```[CODEC_INDEX][VALUE]```
