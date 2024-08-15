@@ -23,12 +23,10 @@ import { Codec } from 'bufferfy';
 
 export const ExampleCodec = Codec.Object({
 	id: Codec.String({ encoding: "hex", length: 64 }),
-	relatedIds: Codec.Array(Codec.String({ encoding: "hex", length: 64 }), {
-		lengthCodec: Codec.UInt(8),
-	}),
-	createdAt: Codec.UInt(48),
-	updatedAt: Codec.UInt(48),
-	deletedAt: Codec.Optional(Codec.UInt(48)),
+	relatedIds: Codec.Array(Codec.String({ encoding: "hex", length: 64 })),
+	createdAt: Codec.VarUInt(),
+	updatedAt: Codec.VarUInt(),
+	deletedAt: Codec.Optional(Codec.VarUInt()),
 });
 
 type ExampleData = CodecType<typeof ExampleCodec>;
@@ -68,7 +66,7 @@ Returns the value type of the provided codec.
 
 <!-- TSDOC_START -->
 
-## :wrench: Constants
+## Types
 
 - [Any](#any)
 - [Array](#array)
