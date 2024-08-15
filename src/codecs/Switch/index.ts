@@ -47,7 +47,7 @@ export class SwitchCodec<CodecMap extends Record<PropertyKey, AbstractCodec<any>
 		}
 	}
 
-	encodingLength(value: CodecType<CodecMap[keyof CodecMap]>, context: Context): number {
+	encodingLength(value: CodecType<CodecMap[keyof CodecMap]>, context: Context = new Context()): number {
 		this.setContext(value, context);
 
 		const codec = this._codecMap[this._getValueCase(value)] || this.getDefaultCodec();

@@ -38,7 +38,7 @@ export class FloatCodec extends AbstractCodec<number> {
 		return isMatch;
 	}
 
-	encodingLength(value: number, context: Context): number {
+	encodingLength(value: number, context: Context = new Context()): number {
 		this.setContext(value, context);
 
 		return this.byteLength;

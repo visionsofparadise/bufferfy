@@ -33,7 +33,7 @@ export class ArrayCodec<Item extends any> extends AbstractCodec<Array<Item>> {
 		return isMatch;
 	}
 
-	encodingLength(value: Array<Item>, context: Context): number {
+	encodingLength(value: Array<Item>, context: Context = new Context()): number {
 		this.setContext(value, context);
 
 		let length = 0;

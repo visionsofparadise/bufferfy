@@ -39,7 +39,7 @@ export class TupleCodec<Tuple extends [...any[]]> extends AbstractCodec<Tuple> {
 		return true;
 	}
 
-	encodingLength(value: Tuple, context: Context): number {
+	encodingLength(value: Tuple, context: Context = new Context()): number {
 		this.setContext(value, context);
 
 		let size = 0;

@@ -35,7 +35,7 @@ export class BufferCodec extends AbstractCodec<Buffer> {
 		return isMatch;
 	}
 
-	encodingLength(value: Buffer, context: Context): number {
+	encodingLength(value: Buffer, context: Context = new Context()): number {
 		this.setContext(value, context);
 
 		return this._length || this._lengthPointer?.getValue(context) || this._lengthCodec.encodingLength(value.byteLength, context) + value.byteLength;

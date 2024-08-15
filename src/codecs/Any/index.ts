@@ -30,7 +30,7 @@ export class AnyCodec<Value extends any = any> extends AbstractCodec<Value> {
 		return true;
 	}
 
-	encodingLength(value: Value, context: Context): number {
+	encodingLength(value: Value, context: Context = new Context()): number {
 		this.setContext(value, context);
 
 		let length = this._encode(value).byteLength;

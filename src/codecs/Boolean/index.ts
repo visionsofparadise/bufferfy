@@ -20,7 +20,7 @@ export class BooleanCodec extends AbstractCodec<boolean> {
 		return isMatch;
 	}
 
-	encodingLength(value: boolean, context: Context): number {
+	encodingLength(value: boolean, context: Context = new Context()): number {
 		this.setContext(value, context);
 
 		return 1;

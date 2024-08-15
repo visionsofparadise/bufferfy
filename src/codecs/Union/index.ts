@@ -38,7 +38,7 @@ export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends 
 		return false;
 	}
 
-	encodingLength(value: CodecType<Codecs[number]>, context: Context): number {
+	encodingLength(value: CodecType<Codecs[number]>, context: Context = new Context()): number {
 		this.setContext(value, context);
 
 		let index = this._codecs.length;

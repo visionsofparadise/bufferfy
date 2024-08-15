@@ -32,7 +32,7 @@ export class TransformCodec<Source, Target> extends AbstractCodec<Source> {
 		}
 	}
 
-	encodingLength(value: Source, context: Context): number {
+	encodingLength(value: Source, context: Context = new Context()): number {
 		this.setContext(value, context);
 
 		return this.targetCodec.encodingLength(this._encode(value), context);

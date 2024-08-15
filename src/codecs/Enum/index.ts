@@ -31,7 +31,7 @@ export class EnumCodec<const Value> extends AbstractCodec<Value> {
 		return true;
 	}
 
-	encodingLength(value: Value, context: Context): number {
+	encodingLength(value: Value, context: Context = new Context()): number {
 		this.setContext(value, context);
 
 		return this._indexCodec.encodingLength(0, context);

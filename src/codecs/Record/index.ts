@@ -43,7 +43,7 @@ export class RecordCodec<Key extends string | number, Value extends any> extends
 		return true;
 	}
 
-	encodingLength(value: Record<Key, Value>, context: Context): number {
+	encodingLength(value: Record<Key, Value>, context: Context = new Context()): number {
 		this.setContext(value, context);
 
 		const keys = Object.keys(value);

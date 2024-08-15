@@ -26,7 +26,7 @@ export class VarUIntCodec extends AbstractCodec<number> {
 		return isMatch;
 	}
 
-	encodingLength(value: number, context: Context): number {
+	encodingLength(value: number, context: Context = new Context()): number {
 		this.setContext(value, context);
 
 		if (value < 253) return 1;

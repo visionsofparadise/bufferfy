@@ -28,7 +28,7 @@ export class PointerCodec<Value extends unknown> extends AbstractCodec<Value> {
 		return this.getCodec(context).match(value, context);
 	}
 
-	encodingLength(value: Value, context: Context): number {
+	encodingLength(value: Value, context: Context = new Context()): number {
 		return this.getCodec(context).encodingLength(value, context);
 	}
 

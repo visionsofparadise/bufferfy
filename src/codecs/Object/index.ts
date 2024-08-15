@@ -52,7 +52,7 @@ export class ObjectCodec<Properties extends Record<string | number, AbstractCode
 		return true;
 	}
 
-	encodingLength(value: OutputObject<Properties>, context: Context): number {
+	encodingLength(value: OutputObject<Properties>, context: Context = new Context()): number {
 		this.setContext(value, context);
 
 		let size = 0;

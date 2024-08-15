@@ -67,7 +67,7 @@ export class BitFieldCodec<Key extends PropertyKey> extends AbstractCodec<Record
 		return true;
 	}
 
-	encodingLength(value: Record<Key, boolean>, context: Context): number {
+	encodingLength(value: Record<Key, boolean>, context: Context = new Context()): number {
 		this.setContext(value, context);
 
 		return this._byteLength;

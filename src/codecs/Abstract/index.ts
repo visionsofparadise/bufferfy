@@ -10,7 +10,7 @@ export abstract class AbstractCodec<Value = any> {
 	constructor() {}
 
 	abstract match(value: any, context: Context): value is Value;
-	abstract encodingLength(value: Value, context: Context): number;
+	abstract encodingLength(value: Value, context?: Context): number;
 	abstract write(value: Value, stream: Stream, context: Context): void;
 	abstract read(stream: Stream, context: Context): Value;
 

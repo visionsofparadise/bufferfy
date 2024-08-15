@@ -60,7 +60,7 @@ export class StringCodec extends AbstractCodec<string> {
 		return isMatch;
 	}
 
-	encodingLength(value: string, context: Context): number {
+	encodingLength(value: string, context: Context = new Context()): number {
 		this.setContext(value, context);
 
 		const length = Buffer.byteLength(value, this._encoding);

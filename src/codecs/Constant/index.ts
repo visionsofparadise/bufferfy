@@ -20,7 +20,7 @@ export class ConstantCodec<const Value> extends AbstractCodec<Value> {
 		return isMatch;
 	}
 
-	encodingLength(value: Value, context: Context): number {
+	encodingLength(value: Value, context: Context = new Context()): number {
 		this.setContext(value, context);
 
 		return 0;
