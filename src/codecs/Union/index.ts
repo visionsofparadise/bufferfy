@@ -75,6 +75,6 @@ export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends 
 	}
 }
 
-export function createUnionCodec<const Codecs extends Array<AbstractCodec<any>>>(...parameters: ConstructorParameters<typeof UnionCodec<Codecs>>) {
+export function createUnionCodec<const Codecs extends Array<AbstractCodec<any>>>(...parameters: ConstructorParameters<typeof UnionCodec<Codecs>>): UnionCodec<Codecs> {
 	return new UnionCodec<Codecs>(...parameters);
 }

@@ -6,6 +6,6 @@ export class UndefinedCodec extends ConstantCodec<undefined> {
 	}
 }
 
-export function createUndefinedCodec(...parameters: ConstructorParameters<typeof UndefinedCodec>) {
+export function createUndefinedCodec(...parameters: ConstructorParameters<typeof UndefinedCodec>): UndefinedCodec {
 	return new UndefinedCodec(...parameters);
 }

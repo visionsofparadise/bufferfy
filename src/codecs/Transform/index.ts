@@ -9,20 +9,22 @@ export interface TransformCodecOptions<Source, Target> extends PointableOptions 
 }
 
 export class TransformCodec<Source, Target> extends AbstractCodec<Source> {
+	private readonly _targetCodec: AbstractCodec<Target>;
 	private readonly _encode: (source: Source) => Target;
 	private readonly _decode: (target: Target, buffer: Buffer) => Source;
 
-	constructor(private readonly targetCodec: AbstractCodec<Target>, options: TransformCodecOptions<Source, Target>) {
+	constructor(targetCodec: AbstractCodec<Target>, options: TransformCodecOptions<Source, Target>) {
 		super();
 
 		this._id = options.id;
+		this._targetCodec = targetCodec;
 		this._encode = options.encode;
 		this._decode = options.decode;
 	}
 
 	match(value: any, context: Context): value is Source {
 		try {
-			const isMatch = this.targetCodec.match(this._encode(value), context);
+			const isMatch = this._targetCodec.match(this._encode(value), context);
 
 			if (isMatch) this.setContext(value, context);
 
@@ -35,19 +37,19 @@ export class TransformCodec<Source, Target> extends AbstractCodec<Source> {
 	encodingLength(value: Source, context: Context = new Context()): number {
 		this.setContext(value, context);
 
-		return this.targetCodec.encodingLength(this._encode(value), context);
+		return this._targetCodec.encodingLength(this._encode(value), context);
 	}
 
 	write(value: Source, stream: Stream, context: Context): void {
 		this.setContext(value, context);
 
-		return this.targetCodec.write(this._encode(value), stream, context);
+		return this._targetCodec.write(this._encode(value), stream, context);
 	}
 
 	read(stream: Stream, context: Context): Source {
 		const initialPosition = stream.position;
 
-		const targetValue = this.targetCodec.read(stream, context);
+		const targetValue = this._targetCodec.read(stream, context);
 
 		const buffer = stream.buffer.subarray(initialPosition, stream.position);
 
@@ -59,6 +61,6 @@ export class TransformCodec<Source, Target> extends AbstractCodec<Source> {
 	}
 }
 
-export function createTransformCodec<Source extends any, Target extends any>(...parameters: ConstructorParameters<typeof TransformCodec<Source, Target>>) {
+export function createTransformCodec<Source extends any, Target extends any>(...parameters: ConstructorParameters<typeof TransformCodec<Source, Target>>): TransformCodec<Source, Target> {
 	return new TransformCodec<Source, Target>(...parameters);
 }

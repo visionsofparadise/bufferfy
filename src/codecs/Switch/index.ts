@@ -80,6 +80,6 @@ export class SwitchCodec<CodecMap extends Record<PropertyKey, AbstractCodec<any>
 	}
 }
 
-export function createSwitchCodec<CodecMap extends Record<PropertyKey, AbstractCodec<any>>>(...parameters: ConstructorParameters<typeof SwitchCodec<CodecMap>>) {
+export function createSwitchCodec<CodecMap extends Record<PropertyKey, AbstractCodec<any>>>(...parameters: ConstructorParameters<typeof SwitchCodec<CodecMap>>): SwitchCodec<CodecMap> {
 	return new SwitchCodec<CodecMap>(...parameters);
 }

@@ -106,6 +106,6 @@ export class ObjectCodec<Properties extends Record<string | number, AbstractCode
 	}
 }
 
-export function createObjectCodec<Properties extends Record<string | number, AbstractCodec<any>>>(...parameters: ConstructorParameters<typeof ObjectCodec<Properties>>) {
+export function createObjectCodec<Properties extends Record<string | number, AbstractCodec<any>>>(...parameters: ConstructorParameters<typeof ObjectCodec<Properties>>): ObjectCodec<Properties> {
 	return new ObjectCodec<Properties>(...parameters);
 }

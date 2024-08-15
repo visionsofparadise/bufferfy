@@ -47,6 +47,6 @@ export class BooleanCodec extends AbstractCodec<boolean> {
 	}
 }
 
-export function createBooleanCodec(...parameters: ConstructorParameters<typeof BooleanCodec>) {
+export function createBooleanCodec(...parameters: ConstructorParameters<typeof BooleanCodec>): BooleanCodec {
 	return new BooleanCodec(...parameters);
 }

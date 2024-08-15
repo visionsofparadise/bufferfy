@@ -118,6 +118,6 @@ export class BitFieldCodec<Key extends PropertyKey> extends AbstractCodec<Record
 	}
 }
 
-export function createBitFieldCodec<Key extends PropertyKey>(...parameters: ConstructorParameters<typeof BitFieldCodec<Key>>) {
+export function createBitFieldCodec<Key extends PropertyKey>(...parameters: ConstructorParameters<typeof BitFieldCodec<Key>>): BitFieldCodec<Key> {
 	return new BitFieldCodec<Key>(...parameters);
 }

@@ -111,6 +111,6 @@ export class VarUIntCodec extends AbstractCodec<number> {
 	}
 }
 
-export function createVarUIntCodec(...parameters: ConstructorParameters<typeof VarUIntCodec>) {
+export function createVarUIntCodec(...parameters: ConstructorParameters<typeof VarUIntCodec>): VarUIntCodec {
 	return new VarUIntCodec(...parameters);
 }

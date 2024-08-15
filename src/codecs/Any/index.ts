@@ -59,6 +59,6 @@ export class AnyCodec<Value extends any = any> extends AbstractCodec<Value> {
 	}
 }
 
-export function createAnyCodec<Value extends any = any>(...parameters: ConstructorParameters<typeof AnyCodec<Value>>) {
+export function createAnyCodec<Value extends any = any>(...parameters: ConstructorParameters<typeof AnyCodec<Value>>): AnyCodec<Value> {
 	return new AnyCodec<Value>(...parameters);
 }

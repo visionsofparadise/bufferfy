@@ -82,6 +82,6 @@ export class IntCodec extends AbstractCodec<number> {
 	read: (stream: Stream, context: Context) => number;
 }
 
-export function createIntCodec(...parameters: ConstructorParameters<typeof IntCodec>) {
+export function createIntCodec(...parameters: ConstructorParameters<typeof IntCodec>): IntCodec {
 	return new IntCodec(...parameters);
 }

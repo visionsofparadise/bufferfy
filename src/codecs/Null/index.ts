@@ -6,6 +6,6 @@ export class NullCodec extends ConstantCodec<null> {
 	}
 }
 
-export function createNullCodec(...parameters: ConstructorParameters<typeof NullCodec>) {
+export function createNullCodec(...parameters: ConstructorParameters<typeof NullCodec>): NullCodec {
 	return new NullCodec(...parameters);
 }

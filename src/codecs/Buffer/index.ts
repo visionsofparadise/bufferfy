@@ -60,6 +60,6 @@ export class BufferCodec extends AbstractCodec<Buffer> {
 	}
 }
 
-export function createBufferCodec(...parameters: ConstructorParameters<typeof BufferCodec>) {
+export function createBufferCodec(...parameters: ConstructorParameters<typeof BufferCodec>): BufferCodec {
 	return new BufferCodec(...parameters);
 }

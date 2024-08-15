@@ -127,6 +127,6 @@ export class UIntCodec extends AbstractCodec<number> {
 	read: (stream: Stream, context: Context) => number;
 }
 
-export function createUIntCodec(...parameters: ConstructorParameters<typeof UIntCodec>) {
+export function createUIntCodec(...parameters: ConstructorParameters<typeof UIntCodec>): UIntCodec {
 	return new UIntCodec(...parameters);
 }

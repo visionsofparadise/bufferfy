@@ -70,6 +70,6 @@ export class TupleCodec<Tuple extends [...any[]]> extends AbstractCodec<Tuple> {
 	}
 }
 
-export function createTupleCodec<Tuple extends [...any[]]>(...parameters: ConstructorParameters<typeof TupleCodec<Tuple>>) {
+export function createTupleCodec<Tuple extends [...any[]]>(...parameters: ConstructorParameters<typeof TupleCodec<Tuple>>): TupleCodec<Tuple> {
 	return new TupleCodec<Tuple>(...parameters);
 }

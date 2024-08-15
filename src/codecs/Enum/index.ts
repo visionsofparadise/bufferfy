@@ -58,6 +58,6 @@ export class EnumCodec<const Value> extends AbstractCodec<Value> {
 	}
 }
 
-export function createEnumCodec<const Value>(...parameters: ConstructorParameters<typeof EnumCodec<Value>>) {
+export function createEnumCodec<const Value>(...parameters: ConstructorParameters<typeof EnumCodec<Value>>): EnumCodec<Value> {
 	return new EnumCodec<Value>(...parameters);
 }
