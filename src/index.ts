@@ -18,6 +18,7 @@ export { TupleCodec } from "./codecs/Tuple";
 export { UIntCodec } from "./codecs/UInt";
 export { UndefinedCodec } from "./codecs/Undefined";
 export { UnionCodec } from "./codecs/Union";
+export { VarUIntCodec } from "./codecs/VarUInt";
 
 import { Any, Array, BitField, Boolean, Buffer, Constant, Enum, Float, Int, Null, Object, Optional, Pointer, Record, String, Transform, Tuple, UInt, Undefined, Union, VarUInt } from "./Codec";
 import { AbstractCodec, CodecType } from "./codecs/Abstract";
