@@ -6,20 +6,21 @@ import { Stream } from "../../utilities/Stream";
 import { AbstractCodec } from "../Abstract";
 import { PointerCodec } from "../Pointer";
 import { UIntCodec } from "../UInt";
+import { VarUIntCodec } from "../VarUInt";
 
 export interface BufferCodecOptions extends LengthOptions, PointableOptions {}
 
 export class BufferCodec extends AbstractCodec<Buffer> {
 	private readonly _length?: number;
 	private readonly _lengthPointer?: PointerCodec<number>;
-	private readonly _lengthCodec: UIntCodec;
+	private readonly _lengthCodec: UIntCodec | VarUIntCodec;
 
 	constructor(options?: BufferCodecOptions) {
 		super();
 
 		this._length = options?.length;
 		this._lengthPointer = options?.lengthPointer;
-		this._lengthCodec = options?.lengthCodec || new UIntCodec();
+		this._lengthCodec = options?.lengthCodec || new VarUIntCodec();
 	}
 
 	match(value: any, context: Context): value is Buffer {

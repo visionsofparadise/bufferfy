@@ -6,13 +6,14 @@ import { Stream } from "../../utilities/Stream";
 import { AbstractCodec } from "../Abstract";
 import { PointerCodec } from "../Pointer";
 import { UIntCodec } from "../UInt";
+import { VarUIntCodec } from "../VarUInt";
 
 export interface RecordCodecOptions extends LengthOptions, PointableOptions {}
 
 export class RecordCodec<Key extends string | number, Value extends any> extends AbstractCodec<Record<Key, Simplify<Value>>> {
 	private readonly _length?: number;
 	private readonly _lengthPointer?: PointerCodec<number>;
-	private readonly _lengthCodec: UIntCodec;
+	private readonly _lengthCodec: UIntCodec | VarUIntCodec;
 
 	constructor(public readonly keyCodec: AbstractCodec<Key>, public readonly valueCodec: AbstractCodec<Value>, options?: RecordCodecOptions) {
 		super();
@@ -20,7 +21,7 @@ export class RecordCodec<Key extends string | number, Value extends any> extends
 		this._id = options?.id;
 		this._length = options?.length;
 		this._lengthPointer = options?.lengthPointer;
-		this._lengthCodec = options?.lengthCodec || new UIntCodec();
+		this._lengthCodec = options?.lengthCodec || new VarUIntCodec();
 	}
 
 	match(value: any, context: Context): value is Record<Key, Value> {

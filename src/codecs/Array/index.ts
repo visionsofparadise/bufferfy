@@ -5,6 +5,7 @@ import { Stream } from "../../utilities/Stream";
 import { AbstractCodec } from "../Abstract";
 import { PointerCodec } from "../Pointer";
 import { UIntCodec } from "../UInt";
+import { VarUIntCodec } from "../VarUInt";
 
 export interface ArrayCodecOptions extends LengthOptions, PointableOptions {}
 
@@ -12,7 +13,7 @@ export class ArrayCodec<Item extends any> extends AbstractCodec<Array<Item>> {
 	private readonly _itemCodec: AbstractCodec<Item>;
 	private readonly _length?: number;
 	private readonly _lengthPointer?: PointerCodec<number>;
-	private readonly _lengthCodec: UIntCodec;
+	private readonly _lengthCodec: UIntCodec | VarUIntCodec;
 
 	constructor(itemCodec: AbstractCodec<Item>, options?: ArrayCodecOptions) {
 		super();
@@ -21,7 +22,7 @@ export class ArrayCodec<Item extends any> extends AbstractCodec<Array<Item>> {
 		this._id = options?.id;
 		this._length = options?.length;
 		this._lengthPointer = options?.lengthPointer;
-		this._lengthCodec = options?.lengthCodec || new UIntCodec();
+		this._lengthCodec = options?.lengthCodec || new VarUIntCodec();
 	}
 
 	match(value: any, context: Context): value is Array<Item> {

@@ -21,16 +21,16 @@ it("matches any", () => {
 it("returns size of any", () => {
 	const size = codec.encodingLength(value, context);
 
-	expect(size).toBe(34);
+	expect(size).toBe(29);
 });
 
 describe("encodes then decodes any", () => {
-	const writeStream = new Stream(Buffer.alloc(34), 0);
+	const writeStream = new Stream(Buffer.alloc(29), 0);
 
 	it("encodes any", () => {
 		codec.write(value, writeStream, context);
 
-		expect(writeStream.position).toBe(34);
+		expect(writeStream.position).toBe(29);
 	});
 
 	const readStream = new Stream(writeStream.buffer, 0);

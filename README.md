@@ -68,7 +68,7 @@ Returns the value type of the provided codec.
 
 <!-- TSDOC_START -->
 
-## Types
+## :wrench: Constants
 
 - [Any](#any)
 - [Array](#array)
@@ -91,6 +91,7 @@ Returns the value type of the provided codec.
 - [UInt](#uint)
 - [Undefined](#undefined)
 - [Union](#union)
+- [VarUInt](#varuint)
 
 ### Any
 
@@ -475,6 +476,27 @@ Parameters:
 * `options.indexCodec`: - Codec for the index value.
 
 
+### VarUInt
+
+Creates a codec for a variable length unsigned integer. Follows Bitcoin's VarInt specification but is limited to 6 byte safe integers.
+
+Serializes to ```[UINT & LENGTH][...UINT_REST?]```
+
+- 0 <= value <= 252: 1 byte
+- 253 <= value <= 65535: 3 bytes
+- 65536 <= value <= 4294967295: 5 bytes
+- 4294967296 <= 281474976710655 <= 252: 7 bytes
+
+| Constant | Type |
+| ---------- | ---------- |
+| `VarUInt` | `(endianness?: Endianness or undefined, options?: VarUIntCodecOptions or undefined) => VarUIntCodec` |
+
+Parameters:
+
+* `endianness`: - Endianness
+* `id`: - Sets an id that can be pointed to.
+
+
 
 
 <!-- TSDOC_END -->
@@ -486,14 +508,14 @@ Values used for benchmarks can be found [here](https://github.com/visionsofparad
 #### Spread of Types
 
 ```
-bufferfy.size                   51
+bufferfy.size                   46
 msgpack.size                    149
 JSON.size                       221
 ```
 
 #### Common Types
 ```
-bufferfy.size                   1056
+bufferfy.size                   1062
 msgpack.size                    1706
 JSON.size                       1775
 ```

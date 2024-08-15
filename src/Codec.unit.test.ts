@@ -12,7 +12,7 @@ describe("encodes and decodes spread of types", () => {
 		buffer = SpreadCodec.encode(spreadValue);
 
 		expect(buffer.byteLength).toBe(length);
-		expect(buffer.byteLength).toBe(51);
+		expect(buffer.byteLength).toBe(46);
 	});
 
 	it("decodes all types", () => {
@@ -33,7 +33,7 @@ describe("encodes and decodes common types", () => {
 		buffer = CommonCodec.encode(commonValue);
 
 		expect(buffer.byteLength).toBe(length);
-		expect(buffer.byteLength).toBe(1056);
+		expect(buffer.byteLength).toBe(1058);
 	});
 
 	it("decodes all types", () => {

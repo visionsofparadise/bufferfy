@@ -5,6 +5,7 @@ import { Stream } from "../../utilities/Stream";
 import { AbstractCodec } from "../Abstract";
 import { PointerCodec } from "../Pointer";
 import { UIntCodec } from "../UInt";
+import { VarUIntCodec } from "../VarUInt";
 
 const FIXED_STRING_ENCODINGS = ["binary", "hex", "base64", "base64url"] as const;
 
@@ -33,7 +34,7 @@ export class StringCodec extends AbstractCodec<string> {
 	private readonly _encoding: StringEncoding;
 	private readonly _length?: number;
 	private readonly _lengthPointer?: PointerCodec<number>;
-	private readonly _lengthCodec: UIntCodec;
+	private readonly _lengthCodec: UIntCodec | VarUIntCodec;
 	private readonly _isVariableLengthEncoding: boolean;
 
 	constructor(options?: StringCodecOptions) {
@@ -43,7 +44,7 @@ export class StringCodec extends AbstractCodec<string> {
 		this._encoding = options?.encoding || "utf8";
 		this._length = options?.length;
 		this._lengthPointer = options?.lengthPointer;
-		this._lengthCodec = options?.lengthCodec || new UIntCodec();
+		this._lengthCodec = options?.lengthCodec || new VarUIntCodec();
 		this._isVariableLengthEncoding = VARIABLE_STRING_ENCODINGS_SET.has(this._encoding);
 	}
 

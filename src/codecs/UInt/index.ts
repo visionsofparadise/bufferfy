@@ -110,7 +110,7 @@ export class UIntCodec extends AbstractCodec<number> {
 	}
 
 	match(value: any, context: Context): value is number {
-		const isMatch = typeof value === "number" && Number.isInteger(value) && value >= 0 && value < Number.MAX_SAFE_INTEGER;
+		const isMatch = typeof value === "number" && Number.isInteger(value) && value >= 0 && value < Math.pow(2, this.bits);
 
 		if (isMatch) this.setContext(value as number, context);
 

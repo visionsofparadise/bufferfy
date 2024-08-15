@@ -19,7 +19,7 @@ export { UIntCodec } from "./codecs/UInt";
 export { UndefinedCodec } from "./codecs/Undefined";
 export { UnionCodec } from "./codecs/Union";
 
-import { Any, Array, BitField, Boolean, Buffer, Constant, Enum, Float, Int, Null, Object, Optional, Pointer, Record, String, Transform, Tuple, UInt, Undefined, Union } from "./Codec";
+import { Any, Array, BitField, Boolean, Buffer, Constant, Enum, Float, Int, Null, Object, Optional, Pointer, Record, String, Transform, Tuple, UInt, Undefined, Union, VarUInt } from "./Codec";
 import { AbstractCodec, CodecType } from "./codecs/Abstract";
 
 export namespace Codec {
@@ -47,4 +47,5 @@ export const Codec = {
 	UInt,
 	Undefined,
 	Union,
+	VarUInt,
 };

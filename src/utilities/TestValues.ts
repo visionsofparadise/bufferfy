@@ -44,9 +44,7 @@ export const spreadValue: SpreadValue = {
 
 export const CommonCodec = Codec.Object({
 	id: Codec.String({ encoding: "hex", length: 64 }),
-	ids: Codec.Array(Codec.String({ encoding: "hex", length: 64 }), {
-		lengthCodec: Codec.UInt(8),
-	}),
+	ids: Codec.Array(Codec.String({ encoding: "hex", length: 64 })),
 	records: Codec.Record(
 		Codec.String({ lengthCodec: Codec.UInt(8) }),
 		Codec.Union(
@@ -54,7 +52,7 @@ export const CommonCodec = Codec.Object({
 				Codec.Object({
 					id: Codec.String({ encoding: "hex", length: 64 }),
 					title: Codec.String({ lengthCodec: Codec.UInt(16) }),
-					description: Codec.Optional(Codec.String({ lengthCodec: Codec.UInt(32) })),
+					description: Codec.Optional(Codec.String()),
 					children: Codec.Array(Codec.String({ encoding: "hex", length: 64 }), {
 						lengthCodec: Codec.UInt(8),
 					}),
@@ -65,16 +63,13 @@ export const CommonCodec = Codec.Object({
 				Codec.Null(),
 			],
 			{ indexCodec: Codec.UInt(8) }
-		),
-		{
-			lengthCodec: Codec.UInt(32),
-		}
+		)
 	),
 	isLocked: Codec.Boolean(),
 	status: Codec.Enum(["pending", "created", "error"], { indexCodec: Codec.UInt(8) }),
-	createdAt: Codec.UInt(48),
-	updatedAt: Codec.UInt(48),
-	deletedAt: Codec.Optional(Codec.UInt(48)),
+	createdAt: Codec.VarUInt(),
+	updatedAt: Codec.VarUInt(),
+	deletedAt: Codec.Optional(Codec.VarUInt()),
 });
 
 type CommonValue = Codec.Type<typeof CommonCodec>;

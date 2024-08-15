@@ -4,6 +4,7 @@ import { PointableOptions } from "../../utilities/Pointable";
 import { Stream } from "../../utilities/Stream";
 import { AbstractCodec } from "../Abstract";
 import { UIntCodec } from "../UInt";
+import { VarUIntCodec } from "../VarUInt";
 
 export interface AnyCodecOptions<Value extends any> extends Pick<LengthOptions, "lengthCodec">, PointableOptions {
 	encode?: (value: Value) => Buffer;
@@ -13,14 +14,14 @@ export interface AnyCodecOptions<Value extends any> extends Pick<LengthOptions, 
 export class AnyCodec<Value extends any = any> extends AbstractCodec<Value> {
 	private readonly _encode: (value: Value) => Buffer;
 	private readonly _decode: (buffer: Buffer) => Value;
-	private readonly _lengthCodec: UIntCodec;
+	private readonly _lengthCodec: UIntCodec | VarUIntCodec;
 
 	constructor(options?: AnyCodecOptions<Value>) {
 		super();
 
 		this._encode = options?.encode || ((value: Value) => Buffer.from(JSON.stringify(value)));
 		this._decode = options?.decode || ((buffer: Buffer) => JSON.parse(buffer.toString()));
-		this._lengthCodec = options?.lengthCodec || new UIntCodec();
+		this._lengthCodec = options?.lengthCodec || new VarUIntCodec();
 	}
 
 	match(value: any, context: Context): value is Value {
