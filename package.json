@@ -1,6 +1,6 @@
 {
   "name": "bufferfy",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Fast and efficient buffer serialization.",
   "keywords": [
     "protobuf",
@@ -27,8 +27,8 @@
     "url": "https://github.com/visionsofparadise/bufferfy/issues"
   },
   "homepage": "https://github.com/visionsofparadise/bufferfy",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "files": [
     "dist/**"
