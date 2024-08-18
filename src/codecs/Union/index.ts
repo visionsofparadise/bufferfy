@@ -4,6 +4,7 @@ import { PointableOptions } from "../../utilities/Pointable";
 import { Stream } from "../../utilities/Stream";
 import { AbstractCodec, CodecType } from "../Abstract";
 import { UIntCodec } from "../UInt";
+import { VarUIntCodec } from "../VarUInt";
 
 export interface UnionCodecOptions extends PointableOptions {
 	indexCodec?: UIntCodec;
@@ -12,7 +13,7 @@ export interface UnionCodecOptions extends PointableOptions {
 export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends AbstractCodec<CodecType<Codecs[number]>> {
 	private readonly _codecs: Codecs;
 	private readonly _reverseCodecs: Codecs;
-	private readonly _indexCodec: UIntCodec;
+	private readonly _indexCodec: UIntCodec | VarUIntCodec;
 
 	constructor(codecs: Codecs, options?: UnionCodecOptions) {
 		super();
@@ -22,7 +23,7 @@ export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends 
 		this._reverseCodecs.reverse();
 
 		this._id = options?.id;
-		this._indexCodec = options?.indexCodec || new UIntCodec();
+		this._indexCodec = options?.indexCodec || new VarUIntCodec();
 	}
 
 	match(value: any, context: Context): value is CodecType<Codecs[number]> {
@@ -44,7 +45,7 @@ export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends 
 		let index = this._codecs.length;
 
 		while (index--) {
-			if (this._reverseCodecs[index].match(value, context)) return this._indexCodec.encodingLength(0, context) + this._reverseCodecs[index].encodingLength(value, context);
+			if (this._reverseCodecs[index].match(value, context)) return this._indexCodec.encodingLength(index, context) + this._reverseCodecs[index].encodingLength(value, context);
 		}
 
 		throw new BufferfyError("Value does not match any codec");

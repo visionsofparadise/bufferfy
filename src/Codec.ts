@@ -30,7 +30,7 @@ import { createVarUIntCodec } from "./codecs/VarUInt";
  * @param	{string} [id] - Sets an id that can be pointed to.
  * @param	{(value) => Buffer} [options.encode] - Sets a custom encoder.
  * @param	{(buffer) => Value} [options.decode] - Sets a custom decoder.
- * @param	{UIntCodec} [options.lengthCodec="VarUInt()"] - Codec to specify how the length is encoded.
+ * @param	{UIntCodec | VarUIntCodec} [options.lengthCodec="VarUInt()"] - Codec to specify how the length is encoded.
  * @return	{AnyCodec} AnyCodec
  *
  * ---
@@ -50,7 +50,7 @@ export const Any = createAnyCodec;
  * @param	{string} [id] - Sets an id that can be pointed to.
  * @param	{number} [options.length] - Sets a fixed length.
  * @param	{PointerCodec<number>} [options.lengthPointer] - Pointer to specify where the length value can be found.
- * @param	{UIntCodec} [options.lengthCodec="VarUInt()"] - Codec to specify how the length is encoded.
+ * @param	{UIntCodec | VarUIntCodec} [options.lengthCodec="VarUInt()"] - Codec to specify how the length is encoded.
  * @return	{ArrayCodec} ArrayCodec
  *
  * ---
@@ -94,7 +94,7 @@ export const Boolean = createBooleanCodec;
  * @param	{string} [id] - Sets an id that can be pointed to.
  * @param	{number} [options.length] - Sets a fixed length.
  * @param	{PointerCodec<number>} [options.lengthPointer] - Pointer to specify where the length value can be found.
- * @param	{UIntCodec} [options.lengthCodec="VarUInt()"] - Codec to specify how the length is encoded.
+ * @param	{UIntCodec | VarUIntCodec} [options.lengthCodec="VarUInt()"] - Codec to specify how the length is encoded.
  * @return	{BufferCodec} BufferCodec
  */
 export const Buffer = createBufferCodec;
@@ -123,7 +123,7 @@ export const Constant = createConstantCodec;
  * @param	{Array<any>} values - Array of enumerated values.
  * @param	{EnumCodecOptions} [options]
  * @param	{string} [id] - Sets an id that can be pointed to.
- * @param	{UIntCodec} [options.indexCodec="VarUInt()"] - Codec for the index value.
+ * @param	{UIntCodec | VarUIntCodec} [options.indexCodec="VarUInt()"] - Codec for the index value.
  * @return	{EnumCodec} EnumCodec
  */
 export const Enum = createEnumCodec;
@@ -218,7 +218,7 @@ export const Pointer = createPointerCodec;
  * @param	{string} [id] - Sets an id that can be pointed to.
  * @param	{number} [options.length] - Sets a fixed length.
  * @param	{PointerCodec<number>} [options.lengthPointer] - Pointer to specify where the length value can be found.
- * @param	{UIntCodec} [options.lengthCodec="VarUInt()"] - Codec to specify how the length is encoded.
+ * @param	{UIntCodec | VarUIntCodec} [options.lengthCodec="VarUInt()"] - Codec to specify how the length is encoded.
  * @return	{RecordCodec} RecordCodec
  */
 export const Record = createRecordCodec;
@@ -235,7 +235,7 @@ export const Record = createRecordCodec;
  * @param	{BufferEncoding} [options.encoding="utf8"] - The strings encoding.
  * @param	{number} [options.length] - Sets a fixed length.
  * @param	{PointerCodec<number>} [options.lengthPointer] - Pointer to specify where the length value can be found.
- * @param	{UIntCodec} [options.lengthCodec="VarUInt()"] - Codec to specify how the length is encoded.
+ * @param	{UIntCodec | VarUIntCodec} [options.lengthCodec="VarUInt()"] - Codec to specify how the length is encoded.
  * @return	{StringCodec} StringCodec
  */
 export const String = createStringCodec;
@@ -320,7 +320,7 @@ export const Undefined = createUndefinedCodec;
  * @param	{Array<AbstractCodec>} codecs - An array of codecs for possible value types.
  * @param	{UnionCodecOptions} [options]
  * @param	{string} [id] - Sets an id that can be pointed to.
- * @param 	{UIntCodec} [options.indexCodec="VarUInt()"] - Codec for the index value.
+ * @param 	{UIntCodec | VarUIntCodec} [options.indexCodec="VarUInt()"] - Codec for the index value.
  * @return	{UnionCodec} UnionCodec
  */
 export const Union = createUnionCodec;

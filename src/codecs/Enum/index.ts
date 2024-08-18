@@ -4,19 +4,20 @@ import { PointableOptions } from "../../utilities/Pointable";
 import { Stream } from "../../utilities/Stream";
 import { AbstractCodec } from "../Abstract";
 import { UIntCodec } from "../UInt";
+import { VarUIntCodec } from "../VarUInt";
 
 export interface EnumCodecOptions extends PointableOptions {
 	indexCodec?: UIntCodec;
 }
 
 export class EnumCodec<const Value> extends AbstractCodec<Value> {
-	private readonly _indexCodec: UIntCodec;
+	private readonly _indexCodec: UIntCodec | VarUIntCodec;
 
 	constructor(public readonly values: Array<Value>, options?: EnumCodecOptions) {
 		super();
 
 		this._id = options?.id;
-		this._indexCodec = options?.indexCodec || new UIntCodec();
+		this._indexCodec = options?.indexCodec || new VarUIntCodec();
 	}
 
 	match(value: any, context: Context): value is Value {
@@ -34,7 +35,9 @@ export class EnumCodec<const Value> extends AbstractCodec<Value> {
 	encodingLength(value: Value, context: Context = new Context()): number {
 		this.setContext(value, context);
 
-		return this._indexCodec.encodingLength(0, context);
+		const index = this.values.findIndex((enumValue) => value === enumValue);
+
+		return this._indexCodec.encodingLength(index, context);
 	}
 
 	write(value: Value, stream: Stream, context: Context): void {
