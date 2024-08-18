@@ -22,7 +22,7 @@ export class BufferCodec extends AbstractCodec<Buffer> {
 		this._lengthCodec = options?.lengthCodec || new VarUIntCodec();
 	}
 
-	match(value: any, context: Context): value is Buffer {
+	match(value: any, context: Context = new Context()): value is Buffer {
 		const isMatch = value instanceof Buffer;
 
 		if (isMatch) {
@@ -40,7 +40,7 @@ export class BufferCodec extends AbstractCodec<Buffer> {
 		return this._length || this._lengthPointer?.getValue(context) || this._lengthCodec.encodingLength(value.byteLength, context) + value.byteLength;
 	}
 
-	write(value: Buffer, stream: Stream, context: Context): void {
+	write(value: Buffer, stream: Stream, context: Context = new Context()): void {
 		this.setContext(value, context);
 
 		if (!this._length && !this._lengthPointer) this._lengthCodec.write(value.byteLength, stream, context);
@@ -48,7 +48,7 @@ export class BufferCodec extends AbstractCodec<Buffer> {
 		stream.position += value.copy(stream.buffer, stream.position);
 	}
 
-	read(stream: Stream, context: Context): Buffer {
+	read(stream: Stream, context: Context = new Context()): Buffer {
 		const length = this._length || this._lengthPointer?.getValue(context) || this._lengthCodec.read(stream, context);
 
 		const value = stream.buffer.subarray(stream.position, (stream.position += length));

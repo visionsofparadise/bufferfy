@@ -24,7 +24,7 @@ export class IntCodec extends AbstractCodec<number> {
 
 			const setterKey = `setInt${this.bits}` as const;
 
-			this.write = (value: number, stream: Stream, context: Context): void => {
+			this.write = (value: number, stream: Stream, context: Context = new Context()): void => {
 				this.setContext(value, context);
 
 				stream.view[setterKey](stream.position, value, isLittleEndian);
@@ -34,7 +34,7 @@ export class IntCodec extends AbstractCodec<number> {
 
 			const getterKey = `getInt${this.bits}` as const;
 
-			this.read = (stream: Stream, context: Context): number => {
+			this.read = (stream: Stream, context: Context = new Context()): number => {
 				const value = stream.view[getterKey](stream.position, isLittleEndian) as number;
 
 				stream.position += this.byteLength;
@@ -47,13 +47,13 @@ export class IntCodec extends AbstractCodec<number> {
 			return;
 		}
 
-		this.write = (value: number, stream: Stream, context: Context): void => {
+		this.write = (value: number, stream: Stream, context: Context = new Context()): void => {
 			this.setContext(value, context);
 
 			stream.position = stream.buffer[`writeInt${this.endianness}`](value, stream.position, this.byteLength);
 		};
 
-		this.read = (stream: Stream, context: Context): number => {
+		this.read = (stream: Stream, context: Context = new Context()): number => {
 			const value = stream.buffer[`readInt${this.endianness}`](stream.position, this.byteLength) as number;
 
 			stream.position += this.byteLength;
@@ -64,7 +64,7 @@ export class IntCodec extends AbstractCodec<number> {
 		};
 	}
 
-	match(value: any, context: Context): value is number {
+	match(value: any, context: Context = new Context()): value is number {
 		const isMatch = typeof value === "number" && Number.isSafeInteger(value);
 
 		if (isMatch) this.setContext(value as number, context);

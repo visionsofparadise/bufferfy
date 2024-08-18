@@ -30,7 +30,7 @@ export class FloatCodec extends AbstractCodec<number> {
 		this._isLittleEndian = endianness === "LE";
 	}
 
-	match(value: any, context: Context): value is number {
+	match(value: any, context: Context = new Context()): value is number {
 		const isMatch = typeof value === "number";
 
 		if (isMatch) this.setContext(value, context);
@@ -44,7 +44,7 @@ export class FloatCodec extends AbstractCodec<number> {
 		return this.byteLength;
 	}
 
-	write(value: number, stream: Stream, context: Context): void {
+	write(value: number, stream: Stream, context: Context = new Context()): void {
 		this.setContext(value, context);
 
 		stream.view[`setFloat${this.bits}`](stream.position, value, this._isLittleEndian);
@@ -52,7 +52,7 @@ export class FloatCodec extends AbstractCodec<number> {
 		stream.position += this.byteLength;
 	}
 
-	read(stream: Stream, context: Context): number {
+	read(stream: Stream, context: Context = new Context()): number {
 		const value = stream.view[`getFloat${this.bits}`](stream.position, this._isLittleEndian);
 
 		stream.position += this.byteLength;

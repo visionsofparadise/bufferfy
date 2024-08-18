@@ -24,7 +24,7 @@ export class PointerCodec<Value extends unknown> extends AbstractCodec<Value> {
 		return context.values[this._targetId];
 	}
 
-	match(value: any, context: Context): value is Value {
+	match(value: any, context: Context = new Context()): value is Value {
 		return this.getCodec(context).match(value, context);
 	}
 
@@ -32,11 +32,11 @@ export class PointerCodec<Value extends unknown> extends AbstractCodec<Value> {
 		return this.getCodec(context).encodingLength(value, context);
 	}
 
-	write(value: Value, stream: Stream, context: Context): void {
+	write(value: Value, stream: Stream, context: Context = new Context()): void {
 		return this.getCodec(context).write(value, stream, context);
 	}
 
-	read(stream: Stream, context: Context): Value {
+	read(stream: Stream, context: Context = new Context()): Value {
 		return this.getCodec(context).read(stream, context);
 	}
 }

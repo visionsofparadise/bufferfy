@@ -51,7 +51,7 @@ export class BitFieldCodec<Key extends PropertyKey> extends AbstractCodec<Record
 		this._reverseByteKeys.reverse();
 	}
 
-	match(value: any, context: Context): value is Record<Key, boolean> {
+	match(value: any, context: Context = new Context()): value is Record<Key, boolean> {
 		if (!value || typeof value !== "object") return false;
 
 		let index = this._keys.length;
@@ -73,7 +73,7 @@ export class BitFieldCodec<Key extends PropertyKey> extends AbstractCodec<Record
 		return this._byteLength;
 	}
 
-	write(value: Record<Key, boolean>, stream: Stream, context: Context): void {
+	write(value: Record<Key, boolean>, stream: Stream, context: Context = new Context()): void {
 		this.setContext(value, context);
 
 		let byteKeysIndex = this._reverseByteKeys.length;
@@ -95,7 +95,7 @@ export class BitFieldCodec<Key extends PropertyKey> extends AbstractCodec<Record
 		}
 	}
 
-	read(stream: Stream, context: Context): Record<Key, boolean> {
+	read(stream: Stream, context: Context = new Context()): Record<Key, boolean> {
 		const value: Partial<Record<Key, boolean>> = {};
 
 		let byteKeysIndex = this._reverseByteKeys.length;

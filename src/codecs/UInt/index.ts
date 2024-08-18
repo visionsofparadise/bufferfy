@@ -32,13 +32,13 @@ export class UIntCodec extends AbstractCodec<number> {
 		if (!this.byteLength) throw new BufferfyError("Invalid integer bits");
 
 		if (this.bits === 8) {
-			this.write = (value: number, stream: Stream, context: Context): void => {
+			this.write = (value: number, stream: Stream, context: Context = new Context()): void => {
 				this.setContext(value, context);
 
 				stream.buffer[stream.position++] = value;
 			};
 
-			this.read = (stream: Stream, context: Context): number => {
+			this.read = (stream: Stream, context: Context = new Context()): number => {
 				const value = stream.buffer[stream.position++] as number;
 
 				this.setContext(value, context);
@@ -50,14 +50,14 @@ export class UIntCodec extends AbstractCodec<number> {
 		}
 
 		if (this.bits === 16) {
-			this.write = (value: number, stream: Stream, context: Context): void => {
+			this.write = (value: number, stream: Stream, context: Context = new Context()): void => {
 				this.setContext(value, context);
 
 				stream.buffer[stream.position++] = value >>> 8;
 				stream.buffer[stream.position++] = value & 0xff;
 			};
 
-			this.read = (stream: Stream, context: Context): number => {
+			this.read = (stream: Stream, context: Context = new Context()): number => {
 				const value = ((stream.buffer[stream.position++] << 8) + stream.buffer[stream.position++]) as number;
 
 				this.setContext(value, context);
@@ -71,7 +71,7 @@ export class UIntCodec extends AbstractCodec<number> {
 		if (this.bits === 32) {
 			const isLittleEndian = this.endianness === "LE";
 
-			this.write = (value: number, stream: Stream, context: Context): void => {
+			this.write = (value: number, stream: Stream, context: Context = new Context()): void => {
 				this.setContext(value, context);
 
 				stream.view.setUint32(stream.position, value, isLittleEndian);
@@ -79,7 +79,7 @@ export class UIntCodec extends AbstractCodec<number> {
 				stream.position += this.byteLength;
 			};
 
-			this.read = (stream: Stream, context: Context): number => {
+			this.read = (stream: Stream, context: Context = new Context()): number => {
 				const value = stream.view.getUint32(stream.position, isLittleEndian) as number;
 
 				stream.position += this.byteLength;
@@ -92,13 +92,13 @@ export class UIntCodec extends AbstractCodec<number> {
 			return;
 		}
 
-		this.write = (value: number, stream: Stream, context: Context): void => {
+		this.write = (value: number, stream: Stream, context: Context = new Context()): void => {
 			this.setContext(value, context);
 
 			stream.position = stream.buffer[`writeUInt${this.endianness}`](value, stream.position, this.byteLength);
 		};
 
-		this.read = (stream: Stream, context: Context): number => {
+		this.read = (stream: Stream, context: Context = new Context()): number => {
 			const value = stream.buffer[`readUInt${this.endianness}`](stream.position, this.byteLength) as number;
 
 			stream.position += this.byteLength;
@@ -109,7 +109,7 @@ export class UIntCodec extends AbstractCodec<number> {
 		};
 	}
 
-	match(value: any, context: Context): value is number {
+	match(value: any, context: Context = new Context()): value is number {
 		const isMatch = typeof value === "number" && Number.isInteger(value) && value >= 0 && value < Math.pow(2, this.bits);
 
 		if (isMatch) this.setContext(value as number, context);

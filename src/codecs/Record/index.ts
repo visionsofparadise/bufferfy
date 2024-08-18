@@ -24,7 +24,7 @@ export class RecordCodec<Key extends string | number, Value extends any> extends
 		this._lengthCodec = options?.lengthCodec || new VarUIntCodec();
 	}
 
-	match(value: any, context: Context): value is Record<Key, Value> {
+	match(value: any, context: Context = new Context()): value is Record<Key, Value> {
 		if (!value || typeof value !== "object") return false;
 
 		const keys = Object.keys(value);
@@ -62,7 +62,7 @@ export class RecordCodec<Key extends string | number, Value extends any> extends
 		return this._lengthCodec.encodingLength(length, context) + length;
 	}
 
-	write(value: Record<Key, Value>, stream: Stream, context: Context): void {
+	write(value: Record<Key, Value>, stream: Stream, context: Context = new Context()): void {
 		this.setContext(value, context);
 
 		const keys = Object.keys(value);
@@ -79,7 +79,7 @@ export class RecordCodec<Key extends string | number, Value extends any> extends
 		}
 	}
 
-	read(stream: Stream, context: Context): Record<Key, Value> {
+	read(stream: Stream, context: Context = new Context()): Record<Key, Value> {
 		const value: Partial<Record<Key, Value>> = {};
 
 		let index = this._length || this._lengthPointer?.getValue(context) || this._lengthCodec.read(stream, context);

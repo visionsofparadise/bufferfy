@@ -36,7 +36,7 @@ export class ObjectCodec<Properties extends Record<string | number, AbstractCode
 		this._reverseEntries.reverse();
 	}
 
-	match(value: any, context: Context): value is OutputObject<Properties> {
+	match(value: any, context: Context = new Context()): value is OutputObject<Properties> {
 		if (!value || typeof value !== "object") return false;
 
 		let index = this._reverseEntries.length;
@@ -67,7 +67,7 @@ export class ObjectCodec<Properties extends Record<string | number, AbstractCode
 		return size;
 	}
 
-	write(value: OutputObject<Properties>, stream: Stream, context: Context): void {
+	write(value: OutputObject<Properties>, stream: Stream, context: Context = new Context()): void {
 		this.setContext(value, context);
 
 		let index = this._reverseEntries.length;
@@ -79,7 +79,7 @@ export class ObjectCodec<Properties extends Record<string | number, AbstractCode
 		}
 	}
 
-	read(stream: Stream, context: Context): OutputObject<Properties> {
+	read(stream: Stream, context: Context = new Context()): OutputObject<Properties> {
 		const value: Partial<OutputObject<Properties>> = {};
 
 		let index = this._reverseEntries.length;

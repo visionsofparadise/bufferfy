@@ -12,7 +12,7 @@ export class ConstantCodec<const Value> extends AbstractCodec<Value> {
 		this._id = options?.id;
 	}
 
-	match(value: any, context: Context): value is Value {
+	match(value: any, context: Context = new Context()): value is Value {
 		const isMatch = value === this.value;
 
 		if (isMatch) this.setContext(value, context);
@@ -26,11 +26,11 @@ export class ConstantCodec<const Value> extends AbstractCodec<Value> {
 		return 0;
 	}
 
-	write(value: Value, __: Stream, context: Context): void {
+	write(value: Value, __: Stream, context: Context = new Context()): void {
 		this.setContext(value, context);
 	}
 
-	read(_: Stream, context: Context): Value {
+	read(_: Stream, context: Context = new Context()): Value {
 		this.setContext(this.value, context);
 
 		return this.value;

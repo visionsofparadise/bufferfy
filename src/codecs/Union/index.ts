@@ -26,7 +26,7 @@ export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends 
 		this._indexCodec = options?.indexCodec || new VarUIntCodec();
 	}
 
-	match(value: any, context: Context): value is CodecType<Codecs[number]> {
+	match(value: any, context: Context = new Context()): value is CodecType<Codecs[number]> {
 		let index = this._codecs.length;
 
 		while (index--)
@@ -51,7 +51,7 @@ export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends 
 		throw new BufferfyError("Value does not match any codec");
 	}
 
-	write(value: CodecType<Codecs[number]>, stream: Stream, context: Context): void {
+	write(value: CodecType<Codecs[number]>, stream: Stream, context: Context = new Context()): void {
 		this.setContext(value, context);
 
 		let index = this._codecs.length;
@@ -65,7 +65,7 @@ export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends 
 		this._reverseCodecs[index].write(value, stream, context);
 	}
 
-	read(stream: Stream, context: Context): CodecType<Codecs[number]> {
+	read(stream: Stream, context: Context = new Context()): CodecType<Codecs[number]> {
 		const index = this._indexCodec.read(stream, context);
 
 		const value = this._reverseCodecs[index].read(stream, context);

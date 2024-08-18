@@ -20,7 +20,7 @@ export class EnumCodec<const Value> extends AbstractCodec<Value> {
 		this._indexCodec = options?.indexCodec || new VarUIntCodec();
 	}
 
-	match(value: any, context: Context): value is Value {
+	match(value: any, context: Context = new Context()): value is Value {
 		let index = this.values.length;
 
 		while (index-- && this.values[index] !== value) {}
@@ -40,7 +40,7 @@ export class EnumCodec<const Value> extends AbstractCodec<Value> {
 		return this._indexCodec.encodingLength(index, context);
 	}
 
-	write(value: Value, stream: Stream, context: Context): void {
+	write(value: Value, stream: Stream, context: Context = new Context()): void {
 		this.setContext(value, context);
 
 		let index = this.values.length;
@@ -52,7 +52,7 @@ export class EnumCodec<const Value> extends AbstractCodec<Value> {
 		this._indexCodec.write(index, stream, context);
 	}
 
-	read(stream: Stream, context: Context): Value {
+	read(stream: Stream, context: Context = new Context()): Value {
 		const value = this.values[this._indexCodec.read(stream, context)];
 
 		this.setContext(value, context);

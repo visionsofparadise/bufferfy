@@ -27,7 +27,7 @@ export class TupleCodec<Tuple extends [...any[]]> extends AbstractCodec<Tuple> {
 		this._reverseCodecs.reverse();
 	}
 
-	match(value: any, context: Context): value is Tuple {
+	match(value: any, context: Context = new Context()): value is Tuple {
 		if (!Array.isArray(value)) return false;
 
 		let index = this._reverseCodecs.length;
@@ -50,7 +50,7 @@ export class TupleCodec<Tuple extends [...any[]]> extends AbstractCodec<Tuple> {
 		return size;
 	}
 
-	write(value: Tuple, stream: Stream, context: Context): void {
+	write(value: Tuple, stream: Stream, context: Context = new Context()): void {
 		this.setContext(value, context);
 
 		let index = this._reverseCodecs.length;
@@ -58,7 +58,7 @@ export class TupleCodec<Tuple extends [...any[]]> extends AbstractCodec<Tuple> {
 		while (index--) this._reverseCodecs[index].write(value[this._reverseCodecs.length - (index + 1)], stream, context);
 	}
 
-	read(stream: Stream, context: Context): Tuple {
+	read(stream: Stream, context: Context = new Context()): Tuple {
 		let value: Array<any> = [];
 		let index = this._reverseCodecs.length;
 

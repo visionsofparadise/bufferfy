@@ -12,7 +12,7 @@ export class BooleanCodec extends AbstractCodec<boolean> {
 		this._id = options?.id;
 	}
 
-	match(value: any, context: Context): value is boolean {
+	match(value: any, context: Context = new Context()): value is boolean {
 		const isMatch = typeof value === "boolean";
 
 		if (isMatch) this.setContext(value, context);
@@ -26,13 +26,13 @@ export class BooleanCodec extends AbstractCodec<boolean> {
 		return 1;
 	}
 
-	write(value: boolean, stream: Stream, context: Context): void {
+	write(value: boolean, stream: Stream, context: Context = new Context()): void {
 		this.setContext(value, context);
 
 		stream.buffer[stream.position++] = value ? 0x01 : 0x00;
 	}
 
-	read(stream: Stream, context: Context): boolean {
+	read(stream: Stream, context: Context = new Context()): boolean {
 		switch (stream.buffer[stream.position++]) {
 			case 0x01:
 				this.setContext(true, context);

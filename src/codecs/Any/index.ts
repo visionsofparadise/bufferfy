@@ -24,7 +24,7 @@ export class AnyCodec<Value extends any = any> extends AbstractCodec<Value> {
 		this._lengthCodec = options?.lengthCodec || new VarUIntCodec();
 	}
 
-	match(value: any, context: Context): value is Value {
+	match(value: any, context: Context = new Context()): value is Value {
 		this.setContext(value, context);
 
 		return true;
@@ -38,7 +38,7 @@ export class AnyCodec<Value extends any = any> extends AbstractCodec<Value> {
 		return this._lengthCodec.encodingLength(length, context) + length;
 	}
 
-	write(value: Value, stream: Stream, context: Context): void {
+	write(value: Value, stream: Stream, context: Context = new Context()): void {
 		this.setContext(value, context);
 
 		const buffer = this._encode(value);
@@ -48,7 +48,7 @@ export class AnyCodec<Value extends any = any> extends AbstractCodec<Value> {
 		stream.position += buffer.copy(stream.buffer, stream.position);
 	}
 
-	read(stream: Stream, context: Context): Value {
+	read(stream: Stream, context: Context = new Context()): Value {
 		const length = this._lengthCodec.read(stream, context);
 
 		const value = this._decode(stream.buffer.subarray(stream.position, (stream.position += length)));

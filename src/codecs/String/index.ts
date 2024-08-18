@@ -48,7 +48,7 @@ export class StringCodec extends AbstractCodec<string> {
 		this._isVariableLengthEncoding = VARIABLE_STRING_ENCODINGS_SET.has(this._encoding);
 	}
 
-	match(value: any, context: Context): value is string {
+	match(value: any, context: Context = new Context()): value is string {
 		const isMatch = typeof value === "string";
 
 		if (isMatch) {
@@ -70,7 +70,7 @@ export class StringCodec extends AbstractCodec<string> {
 		return this._lengthCodec.encodingLength(value.length, context) + length;
 	}
 
-	write(value: string, stream: Stream, context: Context): void {
+	write(value: string, stream: Stream, context: Context = new Context()): void {
 		this.setContext(value, context);
 
 		if (!this._length && !this._lengthPointer) this._lengthCodec.write(value.length, stream, context);
@@ -78,7 +78,7 @@ export class StringCodec extends AbstractCodec<string> {
 		stream.position += stream.buffer.write(value, stream.position, this._encoding);
 	}
 
-	read(stream: Stream, context: Context): string {
+	read(stream: Stream, context: Context = new Context()): string {
 		const length = this._length || this._lengthPointer?.getValue(context) || this._lengthCodec.read(stream, context);
 
 		if (this._isVariableLengthEncoding) {

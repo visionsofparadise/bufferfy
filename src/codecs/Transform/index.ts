@@ -22,7 +22,7 @@ export class TransformCodec<Source, Target> extends AbstractCodec<Source> {
 		this._decode = options.decode;
 	}
 
-	match(value: any, context: Context): value is Source {
+	match(value: any, context: Context = new Context()): value is Source {
 		try {
 			const isMatch = this._targetCodec.match(this._encode(value), context);
 
@@ -40,13 +40,13 @@ export class TransformCodec<Source, Target> extends AbstractCodec<Source> {
 		return this._targetCodec.encodingLength(this._encode(value), context);
 	}
 
-	write(value: Source, stream: Stream, context: Context): void {
+	write(value: Source, stream: Stream, context: Context = new Context()): void {
 		this.setContext(value, context);
 
 		return this._targetCodec.write(this._encode(value), stream, context);
 	}
 
-	read(stream: Stream, context: Context): Source {
+	read(stream: Stream, context: Context = new Context()): Source {
 		const initialPosition = stream.position;
 
 		const targetValue = this._targetCodec.read(stream, context);

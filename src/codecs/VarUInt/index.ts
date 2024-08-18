@@ -18,7 +18,7 @@ export class VarUIntCodec extends AbstractCodec<number> {
 		this._isLittleEndian = endianness === "LE";
 	}
 
-	match(value: any, context: Context): value is number {
+	match(value: any, context: Context = new Context()): value is number {
 		const isMatch = typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 281474976710656;
 
 		if (isMatch) this.setContext(value, context);
@@ -37,7 +37,7 @@ export class VarUIntCodec extends AbstractCodec<number> {
 		throw new BufferfyError("Integer value to large for VarUInt.");
 	}
 
-	write(value: number, stream: Stream, context: Context): void {
+	write(value: number, stream: Stream, context: Context = new Context()): void {
 		this.setContext(value, context);
 
 		if (value < 253) {
@@ -72,7 +72,7 @@ export class VarUIntCodec extends AbstractCodec<number> {
 		return;
 	}
 
-	read(stream: Stream, context: Context): number {
+	read(stream: Stream, context: Context = new Context()): number {
 		const byte0 = stream.buffer[stream.position++];
 
 		if (byte0 < 0xfd) {

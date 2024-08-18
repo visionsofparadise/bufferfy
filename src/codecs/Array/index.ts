@@ -25,7 +25,7 @@ export class ArrayCodec<Item extends any> extends AbstractCodec<Array<Item>> {
 		this._lengthCodec = options?.lengthCodec || new VarUIntCodec();
 	}
 
-	match(value: any, context: Context): value is Array<Item> {
+	match(value: any, context: Context = new Context()): value is Array<Item> {
 		const isMatch = Array.isArray(value) && value.every((value) => this._itemCodec.match(value, context));
 
 		if (isMatch) this.setContext(value, context);
@@ -46,7 +46,7 @@ export class ArrayCodec<Item extends any> extends AbstractCodec<Array<Item>> {
 		return this._lengthCodec.encodingLength(length, context) + length;
 	}
 
-	write(value: Array<Item>, stream: Stream, context: Context): void {
+	write(value: Array<Item>, stream: Stream, context: Context = new Context()): void {
 		this.setContext(value, context);
 
 		if (!this._length && !this._lengthPointer) this._lengthCodec.write(value.length, stream, context);
@@ -56,7 +56,7 @@ export class ArrayCodec<Item extends any> extends AbstractCodec<Array<Item>> {
 		while (index--) this._itemCodec.write(value[value.length - (index + 1)], stream, context);
 	}
 
-	read(stream: Stream, context: Context): Array<Item> {
+	read(stream: Stream, context: Context = new Context()): Array<Item> {
 		const value: Array<Item> = [];
 
 		const length = this._length || this._lengthPointer?.getValue(context) || this._lengthCodec.read(stream, context);

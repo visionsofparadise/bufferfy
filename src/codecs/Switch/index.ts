@@ -32,7 +32,7 @@ export class SwitchCodec<CodecMap extends Record<PropertyKey, AbstractCodec<any>
 		return this._codecMap[this._default];
 	}
 
-	match(value: any, context: Context): value is CodecType<CodecMap[keyof CodecMap]> {
+	match(value: any, context: Context = new Context()): value is CodecType<CodecMap[keyof CodecMap]> {
 		try {
 			const codec = this._codecMap[this._getValueCase(value)] || this.getDefaultCodec();
 
@@ -57,7 +57,7 @@ export class SwitchCodec<CodecMap extends Record<PropertyKey, AbstractCodec<any>
 		return codec.encodingLength(value, context);
 	}
 
-	write(value: CodecType<CodecMap[keyof CodecMap]>, stream: Stream, context: Context): void {
+	write(value: CodecType<CodecMap[keyof CodecMap]>, stream: Stream, context: Context = new Context()): void {
 		this.setContext(value, context);
 
 		const codec = this._codecMap[this._getValueCase(value)] || this.getDefaultCodec();
@@ -67,7 +67,7 @@ export class SwitchCodec<CodecMap extends Record<PropertyKey, AbstractCodec<any>
 		codec.write(value, stream, context);
 	}
 
-	read(stream: Stream, context: Context): CodecType<CodecMap[keyof CodecMap]> {
+	read(stream: Stream, context: Context = new Context()): CodecType<CodecMap[keyof CodecMap]> {
 		const codec = this._codecMap[this._getBufferCase(stream.buffer.subarray(stream.position))] || this.getDefaultCodec();
 
 		if (!codec) throw new BufferfyError("Buffer does not match any codec");
