@@ -1,4 +1,3 @@
-import { PolyfilledBuffer } from "../../utilities/Buffer";
 import { Context } from "../../utilities/Context";
 import { LengthOptions } from "../../utilities/Length";
 import { PointableOptions } from "../../utilities/Pointable";
@@ -24,7 +23,7 @@ export class BufferCodec extends AbstractCodec<Buffer> {
 	}
 
 	match(value: any, context: Context): value is Buffer {
-		const isMatch = value instanceof Buffer || value instanceof PolyfilledBuffer;
+		const isMatch = value instanceof Buffer;
 
 		if (isMatch) {
 			if (this._length && value.byteLength !== this._length) return false;

@@ -66,7 +66,7 @@ Returns the value type of the provided codec.
 
 <!-- TSDOC_START -->
 
-## Types
+## Codecs
 
 - [Any](#any)
 - [Array](#array)
@@ -103,7 +103,7 @@ Serializes to ```[LENGTH][VALUE]```
 
 Parameters:
 
-* `id`: - Sets an id that can be pointed to.
+* `options.id`: - Sets an id that can be pointed to.
 * `options.encode`: - Sets a custom encoder.
 * `options.decode`: - Sets a custom decoder.
 * `options.lengthCodec`: - Codec to specify how the length is encoded.
@@ -124,7 +124,7 @@ Length is present only for variable length arrays.
 Parameters:
 
 * `itemCodec`: - The codec for each item in the array.
-* `id`: - Sets an id that can be pointed to.
+* `options.id`: - Sets an id that can be pointed to.
 * `options.length`: - Sets a fixed length.
 * `options.lengthPointer`: - Pointer to specify where the length value can be found.
 * `options.lengthCodec`: - Codec to specify how the length is encoded.
@@ -145,7 +145,7 @@ Packs up to 8 boolean values associated with the given keys, into each byte.
 Parameters:
 
 * `keys`: - Keys for each boolean flag.
-* `id`: - Sets an id that can be pointed to.
+* `options.id`: - Sets an id that can be pointed to.
 
 
 ### Boolean
@@ -160,7 +160,7 @@ Serializes to ```[0 or 1]```
 
 Parameters:
 
-* `id`: - Sets an id that can be pointed to.
+* `options.id`: - Sets an id that can be pointed to.
 
 
 ### Buffer
@@ -177,7 +177,7 @@ Length is present only for variable length buffers.
 
 Parameters:
 
-* `id`: - Sets an id that can be pointed to.
+* `options.id`: - Sets an id that can be pointed to.
 * `options.length`: - Sets a fixed length.
 * `options.lengthPointer`: - Pointer to specify where the length value can be found.
 * `options.lengthCodec`: - Codec to specify how the length is encoded.
@@ -198,7 +198,7 @@ No bytes are serialized.
 Parameters:
 
 * `value`: - Value of the constant.
-* `id`: - Sets an id that can be pointed to.
+* `options.id`: - Sets an id that can be pointed to.
 
 
 ### Enum
@@ -216,7 +216,7 @@ Serializes the index that references the value in the array of enumerated values
 Parameters:
 
 * `values`: - Array of enumerated values.
-* `id`: - Sets an id that can be pointed to.
+* `options.id`: - Sets an id that can be pointed to.
 * `options.indexCodec`: - Codec for the index value.
 
 
@@ -234,7 +234,7 @@ Parameters:
 
 * `bits`: - Bit type of float.
 * `endianness`: - Endianness
-* `id`: - Sets an id that can be pointed to.
+* `options.id`: - Sets an id that can be pointed to.
 
 
 ### Int
@@ -251,7 +251,7 @@ Parameters:
 
 * `bits`: - Bit type of integer.
 * `endianness`: - Endianness
-* `id`: - Sets an id that can be pointed to.
+* `options.id`: - Sets an id that can be pointed to.
 
 
 ### Null
@@ -268,7 +268,7 @@ No bytes are serialized.
 
 Parameters:
 
-* `id`: - Sets an id that can be pointed to.
+* `options.id`: - Sets an id that can be pointed to.
 
 
 ### Object
@@ -286,7 +286,7 @@ Serializes each property value with the codec associated with that key.
 Parameters:
 
 * `properties`: - Properties of the object.
-* `id`: - Sets an id that can be pointed to.
+* `options.id`: - Sets an id that can be pointed to.
 
 
 ### Optional
@@ -304,7 +304,7 @@ A boolean byte for if the value is defined or not. The value if it is defined.
 Parameters:
 
 * `codec`: - Codec for the value if it is defined.
-* `id`: - Sets an id that can be pointed to.
+* `options.id`: - Sets an id that can be pointed to.
 
 
 ### Pointer
@@ -338,7 +338,7 @@ Parameters:
 
 * `keyCodec`: - Codec for keys.
 * `valueCodec`: - Codec for values.
-* `id`: - Sets an id that can be pointed to.
+* `options.id`: - Sets an id that can be pointed to.
 * `options.length`: - Sets a fixed length.
 * `options.lengthPointer`: - Pointer to specify where the length value can be found.
 * `options.lengthCodec`: - Codec to specify how the length is encoded.
@@ -358,7 +358,7 @@ Length is present only for variable length strings.
 
 Parameters:
 
-* `id`: - Sets an id that can be pointed to.
+* `options.id`: - Sets an id that can be pointed to.
 * `options.encoding`: - The strings encoding.
 * `options.length`: - Sets a fixed length.
 * `options.lengthPointer`: - Pointer to specify where the length value can be found.
@@ -378,10 +378,10 @@ Serializes to ```[VALUE]```
 Parameters:
 
 * `codecMap`: - An map of keys and codecs where keys are case values for the switch.
-* `id`: - Sets an id that can be pointed to.
-* `getValueCase`: - A function that takes a value and returns a key of the codecMap, selecting the appropriate codec.
-* `getBufferCase`: - A function that takes a buffer and returns a key of the codecMap, selecting the appropriate codec.
-* `default`: - The key of the codecMap that selects the codec used for unmatched values/buffers.
+* `options.id`: - Sets an id that can be pointed to.
+* `options.getValueCase`: - A function that takes a value and returns a key of the codecMap, selecting the appropriate codec.
+* `options.getBufferCase`: - A function that takes a buffer and returns a key of the codecMap, selecting the appropriate codec.
+* `options.default`: - The key of the codecMap that selects the codec used for unmatched values/buffers.
 
 
 ### Transform
@@ -399,7 +399,7 @@ Uses the wrapped codecs serialization.
 Parameters:
 
 * `targetCodec`: - The wrapped codec.
-* `id`: - Sets an id that can be pointed to.
+* `options.id`: - Sets an id that can be pointed to.
 * `options.encode`: - Function that transforms from source to target.
 * `options.decode`: - Function that transforms from target to source.
 
@@ -417,7 +417,7 @@ Serializes to ```[...ITEMS]```
 Parameters:
 
 * `codecs`: - A series of codecs for each value of the tuple.
-* `id`: - Sets an id that can be pointed to.
+* `options.id`: - Sets an id that can be pointed to.
 
 
 ### UInt
@@ -434,7 +434,7 @@ Parameters:
 
 * `bits`: - Bit type of integer.
 * `endianness`: - Endianness
-* `id`: - Sets an id that can be pointed to.
+* `options.id`: - Sets an id that can be pointed to.
 
 
 ### Undefined
@@ -451,7 +451,7 @@ Uses the undefined value in the codec, no bytes are serialized.
 
 Parameters:
 
-* `id`: - Sets an id that can be pointed to.
+* `options.id`: - Sets an id that can be pointed to.
 
 
 ### Union
@@ -470,7 +470,7 @@ Serializes to ```[CODEC_INDEX][VALUE]```
 Parameters:
 
 * `codecs`: - An array of codecs for possible value types.
-* `id`: - Sets an id that can be pointed to.
+* `options.id`: - Sets an id that can be pointed to.
 * `options.indexCodec`: - Codec for the index value.
 
 
@@ -492,7 +492,7 @@ Serializes to ```[UINT & LENGTH][...UINT_REST?]```
 Parameters:
 
 * `endianness`: - Endianness
-* `id`: - Sets an id that can be pointed to.
+* `options.id`: - Sets an id that can be pointed to.
 
 
 

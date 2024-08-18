@@ -41,9 +41,6 @@
     "document": "tsdoc --src=src/Codec.ts",
     "build": "tsup src/index.ts --format esm,cjs --dts --treeshake"
   },
-  "dependencies": {
-    "buffer": "^6.0.3"
-  },
   "devDependencies": {
     "@eslint/eslintrc": "^3.0.2",
     "@eslint/js": "^9.0.0",
