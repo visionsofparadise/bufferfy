@@ -19,7 +19,7 @@ export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends 
 		super();
 
 		this._codecs = codecs;
-		this._reverseCodecs = codecs;
+		this._reverseCodecs = [...codecs];
 		this._reverseCodecs.reverse();
 
 		this._id = options?.id;
@@ -45,7 +45,8 @@ export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends 
 		let index = this._codecs.length;
 
 		while (index--) {
-			if (this._reverseCodecs[index].match(value, context)) return this._indexCodec.encodingLength(index, context) + this._reverseCodecs[index].encodingLength(value, context);
+			if (this._reverseCodecs[index].match(value, context))
+				return this._indexCodec.encodingLength(this._codecs.length - 1 - index, context) + this._reverseCodecs[index].encodingLength(value, context);
 		}
 
 		throw new BufferfyError("Value does not match any codec");
@@ -60,7 +61,7 @@ export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends 
 
 		if (index < 0) throw new BufferfyError("Value does not match any codec");
 
-		this._indexCodec.write(index, stream, context);
+		this._indexCodec.write(this._codecs.length - 1 - index, stream, context);
 
 		this._reverseCodecs[index].write(value, stream, context);
 	}
@@ -68,7 +69,7 @@ export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends 
 	read(stream: Stream, context: Context = new Context()): CodecType<Codecs[number]> {
 		const index = this._indexCodec.read(stream, context);
 
-		const value = this._reverseCodecs[index].read(stream, context);
+		const value = this._codecs[index].read(stream, context);
 
 		this.setContext(value, context);
 
