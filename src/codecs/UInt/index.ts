@@ -5,18 +5,18 @@ import { PointableOptions } from "../../utilities/Pointable";
 import { Stream } from "../../utilities/Stream";
 import { AbstractCodec } from "../Abstract";
 
-export type IntegerBits = 8 | 16 | 24 | 32 | 40 | 48;
-
 export type Endianness = "BE" | "LE";
 
 export const BIT_BYTE_MAP = {
-	8: 1 as const,
-	16: 2 as const,
-	24: 3 as const,
-	32: 4 as const,
-	40: 5 as const,
-	48: 6 as const,
-};
+	8: 1,
+	16: 2,
+	24: 3,
+	32: 4,
+	40: 5,
+	48: 6,
+} as const;
+
+export type IntegerBits = keyof typeof BIT_BYTE_MAP;
 
 export interface UIntCodecOptions extends PointableOptions {}
 

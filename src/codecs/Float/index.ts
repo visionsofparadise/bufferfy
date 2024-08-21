@@ -6,12 +6,12 @@ import { Stream } from "../../utilities/Stream";
 import { AbstractCodec } from "../Abstract";
 import { Endianness } from "../UInt";
 
-export type FloatBits = 32 | 64;
-
 export const FLOAT_BIT_BYTE_MAP = {
-	32: 4 as const,
-	64: 8 as const,
-};
+	32: 4,
+	64: 8,
+} as const;
+
+export type FloatBits = keyof typeof FLOAT_BIT_BYTE_MAP;
 
 export interface FloatCodecOptions extends PointableOptions {}
 

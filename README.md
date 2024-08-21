@@ -228,7 +228,7 @@ Serializes to ```[FLOAT]```
 
 | Constant | Type |
 | ---------- | ---------- |
-| `Float` | `(bits?: FloatBits or undefined, endianness?: Endianness or undefined, options?: FloatCodecOptions or undefined) => FloatCodec` |
+| `Float` | `(bits?: 32 or 64 or undefined, endianness?: Endianness or undefined, options?: FloatCodecOptions or undefined) => FloatCodec` |
 
 Parameters:
 
@@ -245,7 +245,7 @@ Serializes to ```[INT]```
 
 | Constant | Type |
 | ---------- | ---------- |
-| `Int` | `(bits?: IntegerBits or undefined, endianness?: Endianness or undefined, options?: IntCodecOptions or undefined) => IntCodec` |
+| `Int` | `(bits?: 8 or 32 or 16 or 24 or 40 or 48 or undefined, endianness?: Endianness or undefined, options?: IntCodecOptions or undefined) => IntCodec` |
 
 Parameters:
 
@@ -428,7 +428,7 @@ Serializes to ```[UINT]```
 
 | Constant | Type |
 | ---------- | ---------- |
-| `UInt` | `(bits?: IntegerBits or undefined, endianness?: Endianness or undefined, options?: UIntCodecOptions or undefined) => UIntCodec` |
+| `UInt` | `(bits?: 8 or 32 or 16 or 24 or 40 or 48 or undefined, endianness?: Endianness or undefined, options?: UIntCodecOptions or undefined) => UIntCodec` |
 
 Parameters:
 

@@ -55,21 +55,21 @@ export abstract class AbstractCodec<Value = any> {
 	 * @param	{Value} value - Value of this codec's type.
 	 * @param	{Buffer} [buffer] - An existing buffer to write to, otherwise a new buffer is created.
 	 * @param	{number} [offset] - Write to the provided buffer starting at this byte index.
-	 * @return	{Buffer} Buffer encoding of value
+	 * @return	{Buffer} Buffer encoding of value. If a buffer was provided, this will return a subarray of the buffer that was written.
 	 *
 	 */
-	encode(value: Value, buffer?: Buffer, offset?: number): Buffer {
+	encode(value: Value, buffer?: Buffer, offset: number = 0): Buffer {
 		const context = new Context();
 
 		const size = this.encodingLength(value, context);
 
-		const streamBuffer = buffer?.subarray(offset) || Buffer.allocUnsafe(size);
+		const streamBuffer = buffer?.subarray(offset, offset + size) || Buffer.allocUnsafe(size);
 
 		const stream = new Stream(streamBuffer);
 
 		this.write(value, stream, context);
 
-		return buffer || stream.buffer;
+		return stream.buffer;
 	}
 
 	/**
