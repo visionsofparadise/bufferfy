@@ -2,7 +2,7 @@ import Benchmark, { Suite } from "benchmark";
 import { randomBytes } from "crypto";
 import { pack, unpack } from "msgpackr";
 import { setImmediate } from "timers/promises";
-import type { AbstractCodec } from "../Codecs/Abstract";
+import type { AbstractCodec } from "../xCodecs/Abstract";
 const console = require("console");
 
 global.console = console;

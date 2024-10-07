@@ -1,25 +1,24 @@
-export { AbstractCodec } from "./Codecs/Abstract";
-export { AnyCodec } from "./Codecs/Any";
-export { type ArrayCodec } from "./Codecs/Array";
-export { ArrayFixedCodec } from "./Codecs/Array/Fixed";
-export { ArrayVariableCodec } from "./Codecs/Array/Variable";
-export { BitFieldCodec } from "./Codecs/BitField";
-export { BooleanCodec } from "./Codecs/Boolean";
-export { type BufferCodec } from "./Codecs/Buffer";
-export { BufferFixedCodec } from "./Codecs/Buffer/Fixed";
-export { BufferVariableCodec } from "./Codecs/Buffer/Variable";
-export { Float32BECodec, Float32LECodec, Float64BECodec, Float64LECodec, type FloatCodec } from "./Codecs/Float";
-export { Int16BECodec, Int16LECodec, Int24BECodec, Int24LECodec, Int32BECodec, Int32LECodec, Int40BECodec, Int40LECodec, Int48BECodec, Int48LECodec, Int8Codec, type IntCodec } from "./Codecs/Int";
-export { ObjectCodec } from "./Codecs/Object";
-export { ObjectVariableCodec } from "./Codecs/Object/Variable";
-export { type RecordCodec } from "./Codecs/Record";
-export { RecordFixedCodec } from "./Codecs/Record/Fixed";
-export { RecordVariableCodec } from "./Codecs/Record/Variable";
-export { type StringCodec } from "./Codecs/String";
-export { StringFixedCodec } from "./Codecs/String/Fixed";
-export { StringVariableCodec } from "./Codecs/String/Variable";
-export { TransformCodec } from "./Codecs/Transform";
-export { TupleCodec } from "./Codecs/Tuple";
+export { AbstractCodec } from "./xCodecs/Abstract";
+export { AnyCodec } from "./xCodecs/Any";
+export { type ArrayCodec } from "./xCodecs/Array";
+export { ArrayFixedCodec } from "./xCodecs/Array/Fixed";
+export { ArrayVariableCodec } from "./xCodecs/Array/Variable";
+export { BitFieldCodec } from "./xCodecs/BitField";
+export { BooleanCodec } from "./xCodecs/Boolean";
+export { type BufferCodec } from "./xCodecs/Buffer";
+export { BufferFixedCodec } from "./xCodecs/Buffer/Fixed";
+export { BufferVariableCodec } from "./xCodecs/Buffer/Variable";
+export { Float32BECodec, Float32LECodec, Float64BECodec, Float64LECodec, type FloatCodec } from "./xCodecs/Float";
+export { Int16BECodec, Int16LECodec, Int24BECodec, Int24LECodec, Int32BECodec, Int32LECodec, Int40BECodec, Int40LECodec, Int48BECodec, Int48LECodec, Int8Codec, type IntCodec } from "./xCodecs/Int";
+export { ObjectCodec } from "./xCodecs/Object";
+export { type RecordCodec } from "./xCodecs/Record";
+export { RecordFixedCodec } from "./xCodecs/Record/Fixed";
+export { RecordVariableCodec } from "./xCodecs/Record/Variable";
+export { type StringCodec } from "./xCodecs/String";
+export { StringFixedCodec } from "./xCodecs/String/Fixed";
+export { StringVariableCodec } from "./xCodecs/String/Variable";
+export { TransformCodec } from "./xCodecs/Transform";
+export { TupleCodec } from "./xCodecs/Tuple";
 export {
 	UInt16BECodec,
 	UInt16LECodec,
@@ -33,11 +32,11 @@ export {
 	UInt48LECodec,
 	UInt8Codec,
 	type UIntCodec,
-} from "./Codecs/UInt";
-export { UnionCodec } from "./Codecs/Union";
-export { type VarIntCodec } from "./Codecs/VarInt";
-export { VarInt15Codec } from "./Codecs/VarInt/VarInt15";
-export { VarInt30Codec } from "./Codecs/VarInt/VarInt30";
-export { VarInt60Codec } from "./Codecs/VarInt/VarInt60";
+} from "./xCodecs/UInt";
+export { UnionCodec } from "./xCodecs/Union";
+export { type VarIntCodec } from "./xCodecs/VarInt";
+export { VarInt15Codec } from "./xCodecs/VarInt/VarInt15";
+export { VarInt30Codec } from "./xCodecs/VarInt/VarInt30";
+export { VarInt60Codec } from "./xCodecs/VarInt/VarInt60";
 
 export { Codec } from "./Codec";
