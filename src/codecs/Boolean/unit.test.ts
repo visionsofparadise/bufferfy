@@ -1,46 +1,70 @@
 import { BooleanCodec } from ".";
-import { Context } from "../../utilities/Context";
-import { Stream } from "../../utilities/Stream";
-import { CodecType } from "../Abstract";
+import { BufferReadStream, BufferWriteStream } from "../../utilities/BufferStream.ignore";
 
-const context = new Context();
+describe("correctly performs boolean codec methods", () => {
+	const codec = new BooleanCodec();
+	const value = true;
+	const byteLength = 1;
 
-const codec = new BooleanCodec();
+	it("valid for boolean", () => {
+		const isValid = codec.isValid(value);
 
-const boolean: CodecType<typeof codec> = true;
-
-it("matches boolean", () => {
-	const isMatch = codec.match(boolean, context);
-
-	expect(isMatch).toBe(true);
-});
-
-it("does not match not boolean", () => {
-	const isMatch = codec.match(null, context);
-
-	expect(isMatch).toBe(false);
-});
-
-it("returns size of boolean", () => {
-	const size = codec.encodingLength(boolean, context);
-
-	expect(size).toBe(1);
-});
-
-describe("encodes then decodes boolean", () => {
-	const writeStream = new Stream(Buffer.alloc(1), 0);
-
-	it("encodes boolean", () => {
-		codec.write(boolean, writeStream, context);
-
-		expect(writeStream.position).toBe(1);
+		expect(isValid).toBe(true);
 	});
 
-	const readStream = new Stream(writeStream.buffer, 0);
+	it("invalid for not boolean", () => {
+		const isValid = codec.isValid(null);
 
-	it("decodes boolean", () => {
-		const value = codec.read(readStream, context);
+		expect(isValid).toBe(false);
+	});
 
-		expect(value).toBe(boolean);
+	it("returns byteLength of boolean", () => {
+		const resultByteLength = codec.byteLength(value);
+
+		expect(resultByteLength).toBe(byteLength);
+	});
+
+	it("encodes boolean to buffer", async () => {
+		const buffer = codec.encode(value);
+
+		expect(buffer.byteLength).toBe(byteLength);
+	});
+
+	it("decodes boolean from buffer", async () => {
+		const result = codec.decode(Buffer.from([1]));
+
+		expect(result).toStrictEqual(value);
+	});
+
+	it(`streams boolean to buffer`, async () => {
+		const stream = new BufferWriteStream();
+
+		const encoder = codec.Encoder();
+
+		await new Promise((resolve) => {
+			stream.on("finish", resolve);
+
+			encoder.pipe(stream);
+			encoder.write(value);
+			encoder.end();
+		});
+
+		expect(stream.offset).toBe(byteLength);
+	});
+
+	it(`streams boolean from buffer`, async () => {
+		const buffer = codec.encode(value);
+
+		const stream = new BufferReadStream(buffer);
+
+		const decoder = codec.Decoder();
+
+		await new Promise((resolve) => {
+			decoder.on("finish", resolve);
+
+			stream.pipe(decoder);
+		});
+
+		expect(decoder.read(1)).toStrictEqual(value);
 	});
 });

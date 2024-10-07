@@ -1,13 +1,35 @@
-import { Codec } from "../..";
-import { benchmark } from "../../utilities/benchmark";
-import { CodecType } from "../Abstract";
+import { BooleanCodec } from ".";
+import { decodeBenchmark, encodeBenchmark, sizeBenchmark } from "../../utilities/benchmark.ignore";
 
-const codec = Codec.Boolean();
+const value = true;
+const codec = new BooleanCodec();
 
-const boolean: CodecType<typeof codec> = true;
+it(
+	"encode benchmarks for boolean codec",
+	async () => {
+		await encodeBenchmark("boolean", value, codec);
 
-it("benchmarks for boolean", () => {
-	benchmark("boolean", boolean, codec);
+		expect(true).toBeTruthy();
+	},
+	5 * 60 * 1000
+);
 
-	expect(true).toStrictEqual(true);
-});
+it(
+	"decode benchmarks for boolean codec",
+	async () => {
+		await decodeBenchmark("boolean", value, codec);
+
+		expect(true).toBeTruthy();
+	},
+	5 * 60 * 1000
+);
+
+it(
+	"size benchmarks for boolean codec",
+	async () => {
+		await sizeBenchmark(value, codec);
+
+		expect(true).toBeTruthy();
+	},
+	5 * 60 * 1000
+);

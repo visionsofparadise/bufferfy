@@ -1,42 +1,58 @@
+import { isDeepStrictEqual } from "util";
 import { Context } from "../../utilities/Context";
-import { PointableOptions } from "../../utilities/Pointable";
-import { Stream } from "../../utilities/Stream";
 import { AbstractCodec } from "../Abstract";
+import { DecodeTransform } from "../Abstract/DecodeTransform";
 
-export interface ConstantCodecOptions extends PointableOptions {}
+/**
+ * Creates a codec for a constant.
+ *
+ * Serializes to ```N/A```
+ *
+ * No bytes are serialized.
+ *
+ * @param	{any} value - Value of the constant.
+ * @return	{ConstantCodec} ConstantCodec
+ *
+ * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Constant/index.ts|Source}
+ */
+export const createConstantCodec = <Value>(value: Value) => {
+	if (typeof value === "object" && value !== null) return new DeepConstantCodec(value);
 
-export class ConstantCodec<const Value> extends AbstractCodec<Value> {
-	constructor(public readonly value: Value, options?: ConstantCodecOptions) {
+	return new ConstantCodec(value);
+};
+
+export class ConstantCodec<Value> extends AbstractCodec<Value> {
+	constructor(public readonly value: Value) {
 		super();
-
-		this._id = options?.id;
 	}
 
-	match(value: any, context: Context = new Context()): value is Value {
-		const isMatch = value === this.value;
-
-		if (isMatch) this.setContext(value, context);
-
-		return isMatch;
+	isValid(value: unknown): value is Value {
+		return value === this.value;
 	}
 
-	encodingLength(value: Value, context: Context = new Context()): number {
-		this.setContext(value, context);
-
+	byteLength(_value: Value): number {
 		return 0;
 	}
 
-	write(value: Value, __: Stream, context: Context = new Context()): void {
-		this.setContext(value, context);
+	_encode(_value: Value, _buffer: Buffer, _c: Context): void {
+		return;
 	}
 
-	read(_: Stream, context: Context = new Context()): Value {
-		this.setContext(this.value, context);
+	_decode(_buffer: Buffer, _c: Context): Value {
+		return this.value;
+	}
 
+	async _decodeChunks(_transform: DecodeTransform): Promise<Value> {
 		return this.value;
 	}
 }
 
-export function createConstantCodec<const Value>(...parameters: ConstructorParameters<typeof ConstantCodec<Value>>): ConstantCodec<Value> {
-	return new ConstantCodec<Value>(...parameters);
+export class DeepConstantCodec<Value> extends ConstantCodec<Value> {
+	constructor(public readonly value: Value) {
+		super(value);
+	}
+
+	isValid(value: unknown): value is Value {
+		return isDeepStrictEqual(value, this.value);
+	}
 }

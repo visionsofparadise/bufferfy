@@ -1,6 +1,6 @@
 {
   "name": "bufferfy",
-  "version": "1.0.17",
+  "version": "2.0.0",
   "description": "Fast and efficient buffer serialization.",
   "keywords": [
     "protobuf",
@@ -14,8 +14,13 @@
     "message-pack",
     "struct",
     "encode",
+    "encoder",
     "encoding",
-    "decode"
+    "decode",
+    "decoder",
+    "bytes",
+    "restructure",
+    "stream"
   ],
   "author": "Matt Cavender",
   "license": "ISC",
@@ -38,7 +43,6 @@
     "check": "tsc --noEmit",
     "unit": "jest unit",
     "benchmark": "jest Codec.benchmark --runInBand",
-    "document": "tsdoc --src=src/Codec.ts",
     "build": "tsup src/index.ts --format esm,cjs --dts --treeshake"
   },
   "devDependencies": {
@@ -59,7 +63,6 @@
     "msgpackr": "^1.11.0",
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
-    "tsdoc-markdown": "^0.6.0",
     "tsup": "^7.2.0",
     "typescript": "^5.4.4",
     "typescript-eslint": "^7.5.0"

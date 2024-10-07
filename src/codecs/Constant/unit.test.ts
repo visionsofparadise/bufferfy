@@ -1,40 +1,54 @@
 import { ConstantCodec } from ".";
-import { Context } from "../../utilities/Context";
+import { BufferReadStream } from "../../utilities/BufferStream.ignore";
 
-const context = new Context();
+describe("correctly performs null codec methods", () => {
+	const value = null;
+	const codec = new ConstantCodec(value);
+	const byteLength = 0;
 
-const constant = "test";
+	it("valid for null", () => {
+		const isValid = codec.isValid(value);
 
-const codec = new ConstantCodec(constant);
-
-it("matches constant", () => {
-	const isMatch = codec.match(constant, context);
-
-	expect(isMatch).toBe(true);
-});
-
-it("does not match not constant", () => {
-	const isMatch = codec.match(null, context);
-
-	expect(isMatch).toBe(false);
-});
-
-it("returns size of constant", () => {
-	const size = codec.encodingLength(constant, context);
-
-	expect(size).toBe(0);
-});
-
-describe("encodes then decodes constant", () => {
-	it("encodes constant", () => {
-		codec.write(constant, {} as any, context);
-
-		expect(true).toBe(true);
+		expect(isValid).toBe(true);
 	});
 
-	it("decodes constant", () => {
-		const value = codec.read({} as any, context);
+	it("invalid for not null", () => {
+		const isValid = codec.isValid(true);
 
-		expect(value).toBe(constant);
+		expect(isValid).toBe(false);
+	});
+
+	it("returns byteLength of null", () => {
+		const resultByteLength = codec.byteLength(value);
+
+		expect(resultByteLength).toBe(byteLength);
+	});
+
+	it("encodes null to buffer", async () => {
+		const buffer = codec.encode(value);
+
+		expect(buffer.byteLength).toBe(byteLength);
+	});
+
+	it("decodes null from buffer", async () => {
+		const result = codec.decode(Buffer.from([]));
+
+		expect(result).toStrictEqual(value);
+	});
+
+	it(`streams null from buffer`, async () => {
+		const buffer = codec.encode(value);
+
+		const stream = new BufferReadStream(buffer);
+
+		const decoder = codec.Decoder();
+
+		await new Promise((resolve) => {
+			decoder.on("finish", resolve);
+
+			stream.pipe(decoder);
+		});
+
+		expect(decoder.read(1)).toStrictEqual(value);
 	});
 });

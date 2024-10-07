@@ -1,56 +1,83 @@
 import { BitFieldCodec } from ".";
-import { Context } from "../../utilities/Context";
-import { Stream } from "../../utilities/Stream";
+import { BufferReadStream, BufferWriteStream } from "../../utilities/BufferStream.ignore";
 import { CodecType } from "../Abstract";
 
-const context = new Context();
+describe("correctly performs bitfield codec methods", () => {
+	const codec = new BitFieldCodec(["test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9"]);
+	const value: CodecType<typeof codec> = {
+		test1: true,
+		test2: false,
+		test3: true,
+		test4: true,
+		test5: false,
+		test6: true,
+		test7: true,
+		test8: false,
+		test9: true,
+	};
+	const byteLength = 2;
 
-const codec = new BitFieldCodec(["test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9"]);
+	it("valid for bitfield", () => {
+		const isValid = codec.isValid(value);
 
-const flags: CodecType<typeof codec> = {
-	test1: true,
-	test2: false,
-	test3: true,
-	test4: true,
-	test5: false,
-	test6: true,
-	test7: true,
-	test8: false,
-	test9: true,
-};
-
-it("matches bit field", () => {
-	const isMatch = codec.match(flags, context);
-
-	expect(isMatch).toBe(true);
-});
-
-it("does not match not bit field", () => {
-	const isMatch = codec.match(null, context);
-
-	expect(isMatch).toBe(false);
-});
-
-it("returns size of bit field", () => {
-	const size = codec.encodingLength(flags, context);
-
-	expect(size).toBe(2);
-});
-
-describe("encodes then decodes bit field", () => {
-	const writeStream = new Stream(Buffer.alloc(2), 0);
-
-	it("encodes bit field", () => {
-		codec.write(flags, writeStream, context);
-
-		expect(writeStream.position).toBe(2);
+		expect(isValid).toBe(true);
 	});
 
-	const readStream = new Stream(writeStream.buffer, 0);
+	it("invalid for not bitfield", () => {
+		const isValid = codec.isValid(null);
 
-	it("decodes bit field", () => {
-		const value = codec.read(readStream, context);
+		expect(isValid).toBe(false);
+	});
 
-		expect(value).toStrictEqual(flags);
+	it("returns byteLength of bitfield", () => {
+		const resultByteLength = codec.byteLength(value);
+
+		expect(resultByteLength).toBe(byteLength);
+	});
+
+	it("encodes bitfield to buffer", async () => {
+		const buffer = codec.encode(value);
+
+		expect(buffer.byteLength).toBe(byteLength);
+	});
+
+	it("decodes bitfield from buffer", async () => {
+		const buffer = codec.encode(value);
+
+		const result = codec.decode(buffer);
+
+		expect(result).toStrictEqual(value);
+	});
+
+	it(`streams bitfield to buffer`, async () => {
+		const stream = new BufferWriteStream();
+
+		const encoder = codec.Encoder();
+
+		await new Promise((resolve) => {
+			stream.on("finish", resolve);
+
+			encoder.pipe(stream);
+			encoder.write(value);
+			encoder.end();
+		});
+
+		expect(stream.offset).toBe(byteLength);
+	});
+
+	it(`streams bitfield from buffer`, async () => {
+		const buffer = codec.encode(value);
+
+		const stream = new BufferReadStream(buffer);
+
+		const decoder = codec.Decoder();
+
+		await new Promise((resolve) => {
+			decoder.on("finish", resolve);
+
+			stream.pipe(decoder);
+		});
+
+		expect(decoder.read(1)).toStrictEqual(value);
 	});
 });

@@ -1,48 +1,77 @@
+import { randomBytes } from "crypto";
 import { TupleCodec } from ".";
-import { Context } from "../../utilities/Context";
-import { Stream } from "../../utilities/Stream";
+import { BufferReadStream, BufferWriteStream } from "../../utilities/BufferStream.ignore";
 import { CodecType } from "../Abstract";
-import { StringCodec } from "../String";
-import { UIntCodec } from "../UInt";
+import { BooleanCodec } from "../Boolean";
+import { StringFixedCodec } from "../String/Fixed";
+import { VarInt60Codec } from "../VarInt/VarInt60";
 
-const context = new Context();
+describe("correctly performs tuple codec methods", () => {
+	const codec = new TupleCodec([new StringFixedCodec(16, "hex"), new VarInt60Codec(), new BooleanCodec()]);
+	const value: CodecType<typeof codec> = [randomBytes(16).toString("hex"), 256, true];
+	const byteLength = 19;
 
-const codec = new TupleCodec([new StringCodec({ length: 5 }), new UIntCodec(8), new StringCodec({ length: 5 })]);
+	it("valid for tuple", () => {
+		const isValid = codec.isValid(value);
 
-const tuple: CodecType<typeof codec> = ["test1", 27, "test3"];
-
-it("matches tuple", () => {
-	const isMatch = codec.match(tuple, context);
-
-	expect(isMatch).toBe(true);
-});
-
-it("does not match not tuple", () => {
-	const isMatch = codec.match(10, context);
-
-	expect(isMatch).toBe(false);
-});
-
-it("returns size of tuple", () => {
-	const size = codec.encodingLength(tuple, context);
-
-	expect(size).toBe(11);
-});
-
-describe("encodes then decodes tuple", () => {
-	const writeStream = new Stream(Buffer.alloc(11), 0);
-
-	it("encodes tuple", () => {
-		codec.write(tuple, writeStream, context);
-
-		expect(writeStream.position).toBe(11);
+		expect(isValid).toBe(true);
 	});
 
-	const readStream = new Stream(writeStream.buffer, 0);
+	it("invalid for not tuple", () => {
+		const isValid = codec.isValid("test");
 
-	it("decodes tuple", () => {
-		const value = codec.read(readStream, context);
+		expect(isValid).toBe(false);
+	});
 
-		expect(value).toStrictEqual(tuple);
+	it("returns byteLength of tuple", () => {
+		const resultByteLength = codec.byteLength(value);
+
+		expect(resultByteLength).toBe(byteLength);
+	});
+
+	it("encodes tuple to buffer", async () => {
+		const buffer = codec.encode(value);
+
+		expect(buffer.byteLength).toBe(byteLength);
+	});
+
+	it("decodes tuple from buffer", async () => {
+		const buffer = codec.encode(value);
+
+		const result = codec.decode(buffer);
+
+		expect(result).toStrictEqual(value);
+	});
+
+	it(`streams tuple to buffer`, async () => {
+		const stream = new BufferWriteStream();
+
+		const encoder = codec.Encoder();
+
+		await new Promise((resolve) => {
+			stream.on("finish", resolve);
+
+			encoder.pipe(stream);
+			encoder.write(value);
+			encoder.end();
+		});
+
+		expect(stream.offset).toBe(byteLength);
+	});
+
+	it(`streams tuple from buffer`, async () => {
+		const buffer = codec.encode(value);
+
+		const stream = new BufferReadStream(buffer);
+
+		const decoder = codec.Decoder();
+
+		await new Promise((resolve) => {
+			decoder.on("finish", resolve);
+
+			stream.pipe(decoder);
+		});
+
+		expect(decoder.read(1)).toStrictEqual(value);
 	});
 });

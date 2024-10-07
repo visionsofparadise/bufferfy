@@ -1,43 +1,70 @@
 import { AnyCodec } from ".";
-import { Context } from "../../utilities/Context";
-import { Stream } from "../../utilities/Stream";
+import { BufferReadStream, BufferWriteStream } from "../../utilities/BufferStream.ignore";
 import { CodecType } from "../Abstract";
 
-const context = new Context();
+describe("correctly performs any codec methods", () => {
+	const codec = new AnyCodec();
+	const value: CodecType<typeof codec> = {
+		test1: true,
+		test2: false,
+	};
+	const byteLength = 29;
 
-const codec = new AnyCodec();
+	it("valid for any", () => {
+		const isValid = codec.isValid(value);
 
-const value: CodecType<typeof codec> = {
-	test1: true,
-	test2: false,
-};
-
-it("matches any", () => {
-	const isMatch = codec.match(value, context);
-
-	expect(isMatch).toBe(true);
-});
-
-it("returns size of any", () => {
-	const size = codec.encodingLength(value, context);
-
-	expect(size).toBe(29);
-});
-
-describe("encodes then decodes any", () => {
-	const writeStream = new Stream(Buffer.alloc(29), 0);
-
-	it("encodes any", () => {
-		codec.write(value, writeStream, context);
-
-		expect(writeStream.position).toBe(29);
+		expect(isValid).toBe(true);
 	});
 
-	const readStream = new Stream(writeStream.buffer, 0);
+	it("returns byteLength of any", () => {
+		const resultByteLength = codec.byteLength(value);
 
-	it("decodes any", () => {
-		const value = codec.read(readStream, context);
+		expect(resultByteLength).toBe(byteLength);
+	});
 
-		expect(value).toStrictEqual(value);
+	it("encodes any to buffer", async () => {
+		const buffer = codec.encode(value);
+
+		expect(buffer.byteLength).toBe(byteLength);
+	});
+
+	it("decodes any from buffer", async () => {
+		const buffer = codec.encode(value);
+
+		const result = codec.decode(buffer);
+
+		expect(result).toStrictEqual(value);
+	});
+
+	it(`streams any to buffer`, async () => {
+		const stream = new BufferWriteStream();
+
+		const encoder = codec.Encoder();
+
+		await new Promise((resolve) => {
+			stream.on("finish", resolve);
+
+			encoder.pipe(stream);
+			encoder.write(value);
+			encoder.end();
+		});
+
+		expect(stream.offset).toBe(byteLength);
+	});
+
+	it(`streams any from buffer`, async () => {
+		const buffer = codec.encode(value);
+
+		const stream = new BufferReadStream(buffer);
+
+		const decoder = codec.Decoder();
+
+		await new Promise((resolve) => {
+			decoder.on("finish", resolve);
+
+			stream.pipe(decoder);
+		});
+
+		expect(decoder.read(1)).toStrictEqual(value);
 	});
 });

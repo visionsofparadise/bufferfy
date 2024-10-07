@@ -1,75 +1,74 @@
 import { Context } from "../../utilities/Context";
-import { PointableOptions } from "../../utilities/Pointable";
-import { Stream } from "../../utilities/Stream";
 import { AbstractCodec } from "../Abstract";
+import { DecodeTransform } from "../Abstract/DecodeTransform";
+import { EncodeTransform } from "../Abstract/EncodeTransform";
 
-export interface TupleCodecOptions extends PointableOptions {}
-
-export class TupleCodec<Tuple extends [...any[]]> extends AbstractCodec<Tuple> {
-	private _reverseCodecs: [
+/**
+ * Creates a codec for a tuple of values.
+ *
+ * Serializes to ```[...ITEMS]```
+ *
+ * @param	{Array<AbstractCodec>}	codecs - A series of codecs for each value of the tuple.
+ * @return	{TupleCodec} TupleCodec
+ *
+ * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Tuple/index.ts|Source}
+ */
+export const createTupleCodec = <Tuple extends [...any[]]>(
+	codecs: [
 		...{
 			[Index in keyof Tuple]: AbstractCodec<Tuple[Index]>;
 		}
-	];
+	]
+) => new TupleCodec(codecs);
 
+export class TupleCodec<Tuple extends [...any[]]> extends AbstractCodec<Tuple> {
 	constructor(
-		codecs: [
+		public readonly codecs: [
 			...{
 				[Index in keyof Tuple]: AbstractCodec<Tuple[Index]>;
 			}
-		],
-		options?: TupleCodecOptions
+		]
 	) {
 		super();
-
-		this._id = options?.id;
-		this._reverseCodecs = codecs;
-		this._reverseCodecs.reverse();
 	}
 
-	match(value: any, context: Context = new Context()): value is Tuple {
-		if (!Array.isArray(value)) return false;
+	isValid(value: unknown): value is Tuple {
+		if (!Array.isArray(value) || value.length !== this.codecs.length) return false;
 
-		let index = this._reverseCodecs.length;
-
-		while (index--) if (!this._reverseCodecs[index].match(value[this._reverseCodecs.length - (index + 1)], context)) return false;
-
-		this.setContext(value as any, context);
+		for (let i = 0; i < this.codecs.length; i++) if (!this.codecs[i].isValid(value[i])) return false;
 
 		return true;
 	}
 
-	encodingLength(value: Tuple, context: Context = new Context()): number {
-		this.setContext(value, context);
+	byteLength(value: Tuple): number {
+		let byteLength = 0;
 
-		let size = 0;
-		let index = this._reverseCodecs.length;
+		for (let i = 0; i < this.codecs.length; i++) byteLength += this.codecs[i].byteLength(value[i]);
 
-		while (index--) size += this._reverseCodecs[index].encodingLength(value[this._reverseCodecs.length - (index + 1)], context);
-
-		return size;
+		return byteLength;
 	}
 
-	write(value: Tuple, stream: Stream, context: Context = new Context()): void {
-		this.setContext(value, context);
-
-		let index = this._reverseCodecs.length;
-
-		while (index--) this._reverseCodecs[index].write(value[this._reverseCodecs.length - (index + 1)], stream, context);
+	_encode(value: Tuple, buffer: Buffer, c: Context): void {
+		for (let i = 0; i < this.codecs.length; i++) this.codecs[i]._encode(value[i], buffer, c);
 	}
 
-	read(stream: Stream, context: Context = new Context()): Tuple {
-		let value: Array<any> = [];
-		let index = this._reverseCodecs.length;
+	async _encodeChunks(value: Tuple, transform: EncodeTransform): Promise<void> {
+		for (let i = 0; i < this.codecs.length; i++) await this.codecs[i]._encodeChunks(value[i], transform);
+	}
 
-		while (index--) value.push(this._reverseCodecs[index].read(stream, context));
+	_decode(buffer: Buffer, c: Context): Tuple {
+		const value: Array<AbstractCodec<Tuple[number]>> = new Array(this.codecs.length);
 
-		this.setContext(value as Tuple, context);
+		for (let i = 0; i < this.codecs.length; i++) value[i] = this.codecs[i]._decode(buffer, c);
 
 		return value as Tuple;
 	}
-}
 
-export function createTupleCodec<Tuple extends [...any[]]>(...parameters: ConstructorParameters<typeof TupleCodec<Tuple>>): TupleCodec<Tuple> {
-	return new TupleCodec<Tuple>(...parameters);
+	async _decodeChunks(transform: DecodeTransform): Promise<Tuple> {
+		const value: Array<AbstractCodec<Tuple[number]>> = new Array(this.codecs.length);
+
+		for (let i = 0; i < this.codecs.length; i++) value[i] = await this.codecs[i]._decodeChunks(transform);
+
+		return value as Tuple;
+	}
 }

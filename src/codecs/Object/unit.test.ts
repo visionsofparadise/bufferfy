@@ -1,59 +1,85 @@
+import { randomBytes } from "crypto";
 import { ObjectCodec } from ".";
-import { Context } from "../../utilities/Context";
-import { Stream } from "../../utilities/Stream";
+import { BufferReadStream, BufferWriteStream } from "../../utilities/BufferStream.ignore";
 import { CodecType } from "../Abstract";
-import { NullCodec } from "../Null";
-import { StringCodec } from "../String";
-import { UIntCodec } from "../UInt";
+import { BooleanCodec } from "../Boolean";
+import { StringFixedCodec } from "../String/Fixed";
+import { VarInt60Codec } from "../VarInt/VarInt60";
 
-const context = new Context();
+describe("correctly performs object codec methods", () => {
+	const codec = new ObjectCodec({
+		string: new StringFixedCodec(16, "hex"),
+		number: new VarInt60Codec(),
+		boolean: new BooleanCodec(),
+	});
+	const value: CodecType<typeof codec> = {
+		string: randomBytes(16).toString("hex"),
+		number: 256,
+		boolean: true,
+	};
+	const byteLength = 19;
 
-const codec = new ObjectCodec({
-	test1: new StringCodec({
-		length: 5,
-	}),
-	test2: new NullCodec(),
-	test3: new UIntCodec(8),
-});
+	it("valid for object", () => {
+		const isValid = codec.isValid(value);
 
-const object: CodecType<typeof codec> = {
-	test1: "test1",
-	test2: null,
-	test3: 54,
-};
-
-it("matches object", () => {
-	const isMatch = codec.match(object, context);
-
-	expect(isMatch).toBe(true);
-});
-
-it("does not match not object", () => {
-	const isMatch = codec.match(10, context);
-
-	expect(isMatch).toBe(false);
-});
-
-it("returns size of object", () => {
-	const size = codec.encodingLength(object, context);
-
-	expect(size).toBe(6);
-});
-
-describe("encodes then decodes object", () => {
-	const writeStream = new Stream(Buffer.alloc(6), 0);
-
-	it("encodes object", () => {
-		codec.write(object, writeStream, context);
-
-		expect(writeStream.position).toBe(6);
+		expect(isValid).toBe(true);
 	});
 
-	const readStream = new Stream(writeStream.buffer, 0);
+	it("invalid for not object", () => {
+		const isValid = codec.isValid("test");
 
-	it("decodes object", () => {
-		const value = codec.read(readStream, context);
+		expect(isValid).toBe(false);
+	});
 
-		expect(value).toStrictEqual(object);
+	it("returns byteLength of object", () => {
+		const resultByteLength = codec.byteLength(value);
+
+		expect(resultByteLength).toBe(byteLength);
+	});
+
+	it("encodes object to buffer", async () => {
+		const buffer = codec.encode(value);
+
+		expect(buffer.byteLength).toBe(byteLength);
+	});
+
+	it("decodes object from buffer", async () => {
+		const buffer = codec.encode(value);
+
+		const result = codec.decode(buffer);
+
+		expect(result).toStrictEqual(value);
+	});
+
+	it(`streams object to buffer`, async () => {
+		const stream = new BufferWriteStream();
+
+		const encoder = codec.Encoder();
+
+		await new Promise((resolve) => {
+			stream.on("finish", resolve);
+
+			encoder.pipe(stream);
+			encoder.write(value);
+			encoder.end();
+		});
+
+		expect(stream.offset).toBe(byteLength);
+	});
+
+	it(`streams object from buffer`, async () => {
+		const buffer = codec.encode(value);
+
+		const stream = new BufferReadStream(buffer);
+
+		const decoder = codec.Decoder();
+
+		await new Promise((resolve) => {
+			decoder.on("finish", resolve);
+
+			stream.pipe(decoder);
+		});
+
+		expect(decoder.read(1)).toStrictEqual(value);
 	});
 });

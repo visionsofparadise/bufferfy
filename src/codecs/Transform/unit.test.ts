@@ -1,54 +1,86 @@
 import { TransformCodec } from ".";
-import { Context } from "../../utilities/Context";
-import { Stream } from "../../utilities/Stream";
+import { BufferReadStream, BufferWriteStream } from "../../utilities/BufferStream.ignore";
 import { CodecType } from "../Abstract";
 import { BooleanCodec } from "../Boolean";
 
-const context = new Context();
+describe("correctly performs transform codec methods", () => {
+	const codec = new TransformCodec(new BooleanCodec(), {
+		decode: (boolean) => {
+			if (boolean === true) return 1;
+			if (boolean === false) return 0;
 
-const codec = new TransformCodec(new BooleanCodec(), {
-	decode: (boolean) => (boolean ? 1 : 0),
-	encode: (value) => {
-		if (value !== 1 && value !== 0) throw new Error("Invalid value");
+			throw new Error("Invalid value");
+		},
+		encode: (value) => {
+			if (value !== 1 && value !== 0) throw new Error("Invalid value");
 
-		return value === 1;
-	},
-});
+			return value === 1;
+		},
+	});
+	const value: CodecType<typeof codec> = 1;
+	const byteLength = 1;
 
-const value: CodecType<typeof codec> = 1;
+	it("valid for transform", () => {
+		const isValid = codec.isValid(value);
 
-it("matches transform value", () => {
-	const isMatch = codec.match(value, context);
-
-	expect(isMatch).toBe(true);
-});
-
-it("does not match not transform value", () => {
-	const isMatch = codec.match("test", context);
-
-	expect(isMatch).toBe(false);
-});
-
-it("returns size of transform value", () => {
-	const size = codec.encodingLength(value, context);
-
-	expect(size).toBe(1);
-});
-
-describe("encodes then decodes transform value", () => {
-	const writeStream = new Stream(Buffer.alloc(1), 0);
-
-	it("encodes transform value", () => {
-		codec.write(value, writeStream, context);
-
-		expect(writeStream.position).toBe(1);
+		expect(isValid).toBe(true);
 	});
 
-	const readStream = new Stream(writeStream.buffer, 0);
+	it("invalid for not transform", () => {
+		const isValid = codec.isValid("test");
 
-	it("decodes transform value", () => {
-		const value = codec.read(readStream, context);
+		expect(isValid).toBe(false);
+	});
 
-		expect(value).toBe(value);
+	it("returns byteLength of transform", () => {
+		const resultByteLength = codec.byteLength(value);
+
+		expect(resultByteLength).toBe(byteLength);
+	});
+
+	it("encodes transform to buffer", async () => {
+		const buffer = codec.encode(value);
+
+		expect(buffer.byteLength).toBe(byteLength);
+	});
+
+	it("decodes transform from buffer", async () => {
+		const buffer = codec.encode(value);
+
+		const result = codec.decode(buffer);
+
+		expect(result).toStrictEqual(value);
+	});
+
+	it(`streams transform to buffer`, async () => {
+		const stream = new BufferWriteStream();
+
+		const encoder = codec.Encoder();
+
+		await new Promise((resolve) => {
+			stream.on("finish", resolve);
+
+			encoder.pipe(stream);
+			encoder.write(value);
+			encoder.end();
+		});
+
+		expect(stream.offset).toBe(byteLength);
+	});
+
+	it(`streams transform from buffer`, async () => {
+		const buffer = codec.encode(value);
+
+		const stream = new BufferReadStream(buffer);
+
+		const decoder = codec.Decoder();
+
+		await new Promise((resolve) => {
+			decoder.on("finish", resolve);
+
+			stream.pipe(decoder);
+		});
+
+		expect(decoder.read(1)).toStrictEqual(value);
 	});
 });

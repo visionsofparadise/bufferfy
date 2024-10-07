@@ -1,66 +1,67 @@
 import { Context } from "../../utilities/Context";
-import { PointableOptions } from "../../utilities/Pointable";
-import { Stream } from "../../utilities/Stream";
 import { AbstractCodec } from "../Abstract";
+import { DecodeTransform } from "../Abstract/DecodeTransform";
 
-export interface TransformCodecOptions<Source, Target> extends PointableOptions {
+export interface TransformCodecOptions<Source, Target> {
 	encode: (source: Source) => Target;
-	decode: (target: Target, buffer: Buffer) => Source;
+	decode: (target: Target) => Source;
 }
 
-export class TransformCodec<Source, Target> extends AbstractCodec<Source> {
-	private readonly _targetCodec: AbstractCodec<Target>;
-	private readonly _encode: (source: Source) => Target;
-	private readonly _decode: (target: Target, buffer: Buffer) => Source;
+/**
+ * Creates a codec wrapper that transforms from source type to target type
+ *
+ * Serializes to ```[VALUE]```
+ *
+ * Uses the wrapped codecs serialization.
+ *
+ * @param	{AbstractCodec} targetCodec - The wrapped codec.
+ * @param	{TransformCodecOptions} options
+ * @param	{(source) => target} options.encode - Function that transforms from source to target.
+ * @param	{(target, buffer) => source} options.decode - Function that transforms from target to source.
+ * @return	{TransformCodec} TransformCodec
+ *
+ * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Transform/index.ts|Source}
+ */
+export const createTransformCodec = <Source, Target>(targetCodec: AbstractCodec<Target>, options: TransformCodecOptions<Source, Target>) => new TransformCodec(targetCodec, options);
 
-	constructor(targetCodec: AbstractCodec<Target>, options: TransformCodecOptions<Source, Target>) {
+export class TransformCodec<Source, Target> extends AbstractCodec<Source> {
+	private readonly _encodeSource: (source: Source) => Target;
+	private readonly _decodeTarget: (target: Target) => Source;
+
+	constructor(public readonly targetCodec: AbstractCodec<Target>, options: TransformCodecOptions<Source, Target>) {
 		super();
 
-		this._id = options.id;
-		this._targetCodec = targetCodec;
-		this._encode = options.encode;
-		this._decode = options.decode;
+		this._encodeSource = options.encode;
+		this._decodeTarget = options.decode;
 	}
 
-	match(value: any, context: Context = new Context()): value is Source {
+	isValid(value: unknown): value is Source {
 		try {
-			const isMatch = this._targetCodec.match(this._encode(value), context);
+			const isValid = this.targetCodec.isValid(this._encodeSource(value as any));
 
-			if (isMatch) this.setContext(value, context);
-
-			return isMatch;
+			return isValid;
 		} catch (error) {
 			return false;
 		}
 	}
 
-	encodingLength(value: Source, context: Context = new Context()): number {
-		this.setContext(value, context);
-
-		return this._targetCodec.encodingLength(this._encode(value), context);
+	byteLength(value: Source): number {
+		return this.targetCodec.byteLength(this._encodeSource(value));
 	}
 
-	write(value: Source, stream: Stream, context: Context = new Context()): void {
-		this.setContext(value, context);
-
-		return this._targetCodec.write(this._encode(value), stream, context);
+	_encode(value: Source, buffer: Buffer, c: Context): void {
+		return this.targetCodec._encode(this._encodeSource(value), buffer, c);
 	}
 
-	read(stream: Stream, context: Context = new Context()): Source {
-		const initialPosition = stream.position;
+	_decode(buffer: Buffer, c: Context): Source {
+		const targetValue = this.targetCodec._decode(buffer, c);
 
-		const targetValue = this._targetCodec.read(stream, context);
-
-		const buffer = stream.buffer.subarray(initialPosition, stream.position);
-
-		const value = this._decode(targetValue, buffer);
-
-		this.setContext(value, context);
-
-		return value;
+		return this._decodeTarget(targetValue);
 	}
-}
 
-export function createTransformCodec<Source extends any, Target extends any>(...parameters: ConstructorParameters<typeof TransformCodec<Source, Target>>): TransformCodec<Source, Target> {
-	return new TransformCodec<Source, Target>(...parameters);
+	async _decodeChunks(transform: DecodeTransform): Promise<Source> {
+		const targetValue = await this.targetCodec._decodeChunks(transform);
+
+		return this._decodeTarget(targetValue);
+	}
 }

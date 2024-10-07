@@ -1,13 +1,17 @@
 import { endianness as osEndianness } from "os";
 import { Context } from "../../utilities/Context";
-import { BufferfyError } from "../../utilities/Error";
-import { PointableOptions } from "../../utilities/Pointable";
-import { Stream } from "../../utilities/Stream";
 import { AbstractCodec } from "../Abstract";
+import { DecodeTransform } from "../Abstract/DecodeTransform";
 
-export type Endianness = "BE" | "LE";
+export const endiannessValues = ["BE", "LE"] as const;
 
-export const BIT_BYTE_MAP = {
+export type Endianness = (typeof endiannessValues)[number];
+
+export const uIntBitValues = [8, 16, 24, 32, 40, 48] as const;
+
+export type UIntBits = (typeof uIntBitValues)[number];
+
+export const UINT_BIT_BYTE_MAP = {
 	8: 1,
 	16: 2,
 	24: 3,
@@ -16,117 +20,322 @@ export const BIT_BYTE_MAP = {
 	48: 6,
 } as const;
 
-export type IntegerBits = keyof typeof BIT_BYTE_MAP;
+export type UIntCodec = UInt8Codec | UInt16BECodec | UInt16LECodec | UInt24BECodec | UInt24LECodec | UInt32BECodec | UInt32LECodec | UInt40BECodec | UInt40LECodec | UInt48BECodec | UInt48LECodec;
 
-export interface UIntCodecOptions extends PointableOptions {}
+/**
+ * Creates a codec for a unsigned integer.
+ *
+ * Serializes to ```[UINT]```
+ *
+ * @param	{8 | 16 | 24 | 32 | 40 | 48} [bits=48] - Bit type of integer.
+ * @param	{'LE' | 'BE'} [endianness=os.endianness()] - Endianness
+ * @return	{UIntCodec} UIntCodec
+ *
+ * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/UInt/index.ts|Source}
+ */
+export const createUIntCodec = (bits: UIntBits = 48, endianness: Endianness = osEndianness()) => {
+	if (bits === 8) return new UInt8Codec();
 
-export class UIntCodec extends AbstractCodec<number> {
-	public readonly byteLength: number;
+	switch (endianness) {
+		case "BE": {
+			switch (bits) {
+				case 16: {
+					return new UInt16BECodec();
+				}
+				case 24: {
+					return new UInt24BECodec();
+				}
+				case 32: {
+					return new UInt32BECodec();
+				}
+				case 40: {
+					return new UInt40BECodec();
+				}
+				case 48: {
+					return new UInt48BECodec();
+				}
+			}
+		}
+		case "LE": {
+			switch (bits) {
+				case 16: {
+					return new UInt16LECodec();
+				}
+				case 24: {
+					return new UInt24LECodec();
+				}
+				case 32: {
+					return new UInt32LECodec();
+				}
+				case 40: {
+					return new UInt40LECodec();
+				}
+				case 48: {
+					return new UInt48LECodec();
+				}
+			}
+		}
+	}
+};
 
-	constructor(public readonly bits: IntegerBits = 48, public readonly endianness: Endianness = osEndianness(), options?: UIntCodecOptions) {
+export class UInt8Codec extends AbstractCodec<number> {
+	_bufferMap: Record<number, Buffer> = {};
+
+	constructor() {
 		super();
 
-		this._id = options?.id;
-		this.byteLength = BIT_BYTE_MAP[bits];
-
-		if (!this.byteLength) throw new BufferfyError("Invalid integer bits");
-
-		if (this.bits === 8) {
-			this.write = (value: number, stream: Stream, context: Context = new Context()): void => {
-				this.setContext(value, context);
-
-				stream.buffer[stream.position++] = value;
-			};
-
-			this.read = (stream: Stream, context: Context = new Context()): number => {
-				const value = stream.buffer[stream.position++] as number;
-
-				this.setContext(value, context);
-
-				return value;
-			};
-
-			return;
-		}
-
-		if (this.bits === 16) {
-			this.write = (value: number, stream: Stream, context: Context = new Context()): void => {
-				this.setContext(value, context);
-
-				stream.buffer[stream.position++] = value >>> 8;
-				stream.buffer[stream.position++] = value & 0xff;
-			};
-
-			this.read = (stream: Stream, context: Context = new Context()): number => {
-				const value = ((stream.buffer[stream.position++] << 8) + stream.buffer[stream.position++]) as number;
-
-				this.setContext(value, context);
-
-				return value;
-			};
-
-			return;
-		}
-
-		if (this.bits === 32) {
-			const isLittleEndian = this.endianness === "LE";
-
-			this.write = (value: number, stream: Stream, context: Context = new Context()): void => {
-				this.setContext(value, context);
-
-				stream.view.setUint32(stream.position, value, isLittleEndian);
-
-				stream.position += this.byteLength;
-			};
-
-			this.read = (stream: Stream, context: Context = new Context()): number => {
-				const value = stream.view.getUint32(stream.position, isLittleEndian) as number;
-
-				stream.position += this.byteLength;
-
-				this.setContext(value, context);
-
-				return value;
-			};
-
-			return;
-		}
-
-		this.write = (value: number, stream: Stream, context: Context = new Context()): void => {
-			this.setContext(value, context);
-
-			stream.position = stream.buffer[`writeUInt${this.endianness}`](value, stream.position, this.byteLength);
-		};
-
-		this.read = (stream: Stream, context: Context = new Context()): number => {
-			const value = stream.buffer[`readUInt${this.endianness}`](stream.position, this.byteLength) as number;
-
-			stream.position += this.byteLength;
-
-			this.setContext(value, context);
-
-			return value;
-		};
+		for (let i = 0; i < 256; i++) this._bufferMap[i] = Buffer.from([i]);
 	}
 
-	match(value: any, context: Context = new Context()): value is number {
-		const isMatch = typeof value === "number" && Number.isInteger(value) && value >= 0 && value < Math.pow(2, this.bits);
-
-		if (isMatch) this.setContext(value as number, context);
-
-		return isMatch;
+	isValid(value: unknown): value is number {
+		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 256;
 	}
 
-	encodingLength(value: number, context: Context = new Context()): number {
-		this.setContext(value, context);
-
-		return this.byteLength;
+	byteLength(_: number): 1 {
+		return 1;
 	}
 
-	write: (value: number, stream: Stream, context: Context) => void;
-	read: (stream: Stream, context: Context) => number;
+	_encode(value: number, buffer: Buffer, c: Context): void {
+		buffer[c.offset++] = value;
+	}
+
+	_decode(buffer: Buffer, c: Context): number {
+		return buffer[c.offset++];
+	}
+
+	async _decodeChunks(transform: DecodeTransform): Promise<number> {
+		const buffer = await transform._consume(1);
+
+		return buffer[0];
+	}
 }
 
-export function createUIntCodec(...parameters: ConstructorParameters<typeof UIntCodec>): UIntCodec {
-	return new UIntCodec(...parameters);
+export class UInt16BECodec extends AbstractCodec<number> {
+	isValid(value: unknown): value is number {
+		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 65536;
+	}
+
+	byteLength(_: number): 2 {
+		return 2;
+	}
+
+	_encode(value: number, buffer: Buffer, c: Context): void {
+		buffer[c.offset++] = value >>> 8;
+		buffer[c.offset++] = value & 0xff;
+	}
+
+	_decode(buffer: Buffer, c: Context): number {
+		return buffer[c.offset++] * 2 ** 8 + buffer[c.offset++];
+	}
+
+	async _decodeChunks(transform: DecodeTransform): Promise<number> {
+		const buffer = await transform._consume(2);
+
+		return buffer[0] * 2 ** 8 + buffer[1];
+	}
+}
+
+export class UInt16LECodec extends UInt16BECodec {
+	_encode(value: number, buffer: Buffer, c: Context): void {
+		buffer[c.offset++] = value & 0xff;
+		buffer[c.offset++] = value >>> 8;
+	}
+
+	_decode(buffer: Buffer, c: Context): number {
+		return buffer[c.offset++] + buffer[c.offset++] * 2 ** 8;
+	}
+
+	async _decodeChunks(transform: DecodeTransform): Promise<number> {
+		const buffer = await transform._consume(2);
+
+		return buffer[0] + buffer[1] * 2 ** 8;
+	}
+}
+
+export class UInt24BECodec extends AbstractCodec<number> {
+	isValid(value: unknown): value is number {
+		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 16777216;
+	}
+
+	byteLength(_: number): 3 {
+		return 3;
+	}
+
+	_encode(value: number, buffer: Buffer, c: Context): void {
+		buffer[c.offset++] = value >>> 16;
+		buffer[c.offset++] = (value >>> 8) & 0xff;
+		buffer[c.offset++] = value & 0xff;
+	}
+
+	_decode(buffer: Buffer, c: Context): number {
+		return buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++];
+	}
+
+	async _decodeChunks(transform: DecodeTransform): Promise<number> {
+		const buffer = await transform._consume(3);
+
+		return buffer[0] * 2 ** 16 + buffer[1] * 2 ** 8 + buffer[2];
+	}
+}
+
+export class UInt24LECodec extends UInt24BECodec {
+	_encode(value: number, buffer: Buffer, c: Context): void {
+		buffer[c.offset++] = value & 0xff;
+		buffer[c.offset++] = (value >>> 8) & 0xff;
+		buffer[c.offset++] = value >>> 16;
+	}
+
+	_decode(buffer: Buffer, c: Context): number {
+		return buffer[c.offset++] + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++] * 2 ** 16;
+	}
+
+	async _decodeChunks(transform: DecodeTransform): Promise<number> {
+		const buffer = await transform._consume(3);
+
+		return buffer[0] + buffer[1] * 2 ** 8 + buffer[2] * 2 ** 16;
+	}
+}
+
+export class UInt32BECodec extends AbstractCodec<number> {
+	isValid(value: unknown): value is number {
+		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 4294967296;
+	}
+
+	byteLength(_: number): 4 {
+		return 4;
+	}
+
+	_encode(value: number, buffer: Buffer, c: Context): void {
+		buffer[c.offset++] = value >>> 24;
+		buffer[c.offset++] = (value >>> 16) & 0xff;
+		buffer[c.offset++] = (value >>> 8) & 0xff;
+		buffer[c.offset++] = value & 0xff;
+	}
+
+	_decode(buffer: Buffer, c: Context): number {
+		return buffer[c.offset++] * 2 ** 24 + buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++];
+	}
+
+	async _decodeChunks(transform: DecodeTransform): Promise<number> {
+		const buffer = await transform._consume(4);
+
+		return buffer[0] * 2 ** 24 + buffer[1] * 2 ** 16 + buffer[2] * 2 ** 8 + buffer[3];
+	}
+}
+
+export class UInt32LECodec extends UInt32BECodec {
+	_encode(value: number, buffer: Buffer, c: Context): void {
+		buffer[c.offset++] = value >>> 24;
+		buffer[c.offset++] = (value >>> 16) & 0xff;
+		buffer[c.offset++] = (value >>> 8) & 0xff;
+		buffer[c.offset++] = value & 0xff;
+	}
+
+	_decode(buffer: Buffer, c: Context): number {
+		return buffer[c.offset++] * 2 ** 24 + buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++];
+	}
+
+	async _decodeChunks(transform: DecodeTransform): Promise<number> {
+		const buffer = await transform._consume(4);
+
+		return buffer[0] * 2 ** 24 + buffer[1] * 2 ** 16 + buffer[2] * 2 ** 8 + buffer[3];
+	}
+}
+
+export class UInt40BECodec extends AbstractCodec<number> {
+	isValid(value: unknown): value is number {
+		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 1099511627776;
+	}
+
+	byteLength(_: number): 5 {
+		return 5;
+	}
+
+	_encode(value: number, buffer: Buffer, c: Context): void {
+		buffer[c.offset++] = value / 2 ** 32;
+		buffer[c.offset++] = (value >>> 24) & 0xff;
+		buffer[c.offset++] = (value >>> 16) & 0xff;
+		buffer[c.offset++] = (value >>> 8) & 0xff;
+		buffer[c.offset++] = value & 0xff;
+	}
+
+	_decode(buffer: Buffer, c: Context): number {
+		return buffer[c.offset++] * 2 ** 32 + buffer[c.offset++] * 2 ** 24 + buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++];
+	}
+
+	async _decodeChunks(transform: DecodeTransform): Promise<number> {
+		const buffer = await transform._consume(5);
+
+		return buffer[0] * 2 ** 32 + buffer[1] * 2 ** 24 + buffer[2] * 2 ** 16 + buffer[3] * 2 ** 8 + buffer[4];
+	}
+}
+
+export class UInt40LECodec extends UInt40BECodec {
+	_encode(value: number, buffer: Buffer, c: Context): void {
+		buffer[c.offset++] = value & 0xff;
+		buffer[c.offset++] = (value >>> 8) & 0xff;
+		buffer[c.offset++] = (value >>> 16) & 0xff;
+		buffer[c.offset++] = (value >>> 24) & 0xff;
+		buffer[c.offset++] = value / 2 ** 32;
+	}
+
+	_decode(buffer: Buffer, c: Context): number {
+		return buffer[c.offset++] + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 24 + buffer[c.offset++] * 2 ** 32;
+	}
+
+	async _decodeChunks(transform: DecodeTransform): Promise<number> {
+		const buffer = await transform._consume(5);
+
+		return buffer[0] + buffer[1] * 2 ** 8 + buffer[2] * 2 ** 16 + buffer[3] * 2 ** 24 + buffer[4] * 2 ** 32;
+	}
+}
+
+export class UInt48BECodec extends AbstractCodec<number> {
+	isValid(value: unknown): value is number {
+		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 281474976710656;
+	}
+
+	byteLength(_: number): 6 {
+		return 6;
+	}
+
+	_encode(value: number, buffer: Buffer, c: Context): void {
+		buffer[c.offset++] = value / 2 ** 40;
+		buffer[c.offset++] = (value / 2 ** 32) & 0xff;
+		buffer[c.offset++] = (value >>> 24) & 0xff;
+		buffer[c.offset++] = (value >>> 16) & 0xff;
+		buffer[c.offset++] = (value >>> 8) & 0xff;
+		buffer[c.offset++] = value & 0xff;
+	}
+
+	_decode(buffer: Buffer, c: Context): number {
+		return buffer[c.offset++] * 2 ** 40 + buffer[c.offset++] * 2 ** 32 + buffer[c.offset++] * 2 ** 24 + buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++];
+	}
+
+	async _decodeChunks(transform: DecodeTransform): Promise<number> {
+		const buffer = await transform._consume(6);
+
+		return buffer[0] * 2 ** 40 + buffer[1] * 2 ** 32 + buffer[2] * 2 ** 24 + buffer[3] * 2 ** 16 + buffer[4] * 2 ** 8 + buffer[5];
+	}
+}
+
+export class UInt48LECodec extends UInt48BECodec {
+	_encode(value: number, buffer: Buffer, c: Context): void {
+		buffer[c.offset++] = value & 0xff;
+		buffer[c.offset++] = (value >>> 8) & 0xff;
+		buffer[c.offset++] = (value >>> 16) & 0xff;
+		buffer[c.offset++] = (value >>> 24) & 0xff;
+		buffer[c.offset++] = (value / 2 ** 32) & 0xff;
+		buffer[c.offset++] = value / 2 ** 40;
+	}
+
+	_decode(buffer: Buffer, c: Context): number {
+		return buffer[c.offset++] + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 24 + buffer[c.offset++] * 2 ** 32 + buffer[c.offset++] * 2 ** 40;
+	}
+
+	async _decodeChunks(transform: DecodeTransform): Promise<number> {
+		const buffer = await transform._consume(6);
+
+		return buffer[0] + buffer[1] * 2 ** 8 + buffer[2] * 2 ** 16 + buffer[3] * 2 ** 24 + buffer[4] * 2 ** 32 + buffer[5] * 2 ** 40;
+	}
 }

@@ -1,52 +1,38 @@
 import { Context } from "../../utilities/Context";
-import { PointableOptions } from "../../utilities/Pointable";
-import { Stream } from "../../utilities/Stream";
 import { AbstractCodec } from "../Abstract";
+import { DecodeTransform } from "../Abstract/DecodeTransform";
 
-export interface BooleanCodecOptions extends PointableOptions {}
+/**
+ * Creates a codec for a boolean byte
+ *
+ * Serializes to ```[0 or 1]```
+ *
+ * @return	{BooleanCodec} BooleanCodec
+ *
+ * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Boolean/index.ts|Source}
+ */
+export const createBooleanCodec = () => new BooleanCodec();
 
 export class BooleanCodec extends AbstractCodec<boolean> {
-	constructor(options?: BooleanCodecOptions) {
-		super();
-
-		this._id = options?.id;
+	isValid(value: unknown): value is boolean {
+		return typeof value === "boolean";
 	}
 
-	match(value: any, context: Context = new Context()): value is boolean {
-		const isMatch = typeof value === "boolean";
-
-		if (isMatch) this.setContext(value, context);
-
-		return isMatch;
-	}
-
-	encodingLength(value: boolean, context: Context = new Context()): number {
-		this.setContext(value, context);
-
+	byteLength(_value: boolean): number {
 		return 1;
 	}
 
-	write(value: boolean, stream: Stream, context: Context = new Context()): void {
-		this.setContext(value, context);
-
-		stream.buffer[stream.position++] = value ? 0x01 : 0x00;
+	_encode(value: boolean, buffer: Buffer, c: Context): void {
+		buffer[c.offset++] = value ? 1 : 0;
 	}
 
-	read(stream: Stream, context: Context = new Context()): boolean {
-		switch (stream.buffer[stream.position++]) {
-			case 0x01:
-				this.setContext(true, context);
-				return true;
-			case 0x00:
-				this.setContext(false, context);
-				return false;
-			default:
-				this.setContext(false, context);
-				return false;
-		}
+	_decode(buffer: Buffer, c: Context): boolean {
+		return buffer[c.offset++] === 1;
 	}
-}
 
-export function createBooleanCodec(...parameters: ConstructorParameters<typeof BooleanCodec>): BooleanCodec {
-	return new BooleanCodec(...parameters);
+	async _decodeChunks(transform: DecodeTransform): Promise<boolean> {
+		const buffer = await transform._consume(1);
+
+		return this.decode(buffer);
+	}
 }

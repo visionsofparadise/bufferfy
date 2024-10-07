@@ -1,68 +1,136 @@
 import { endianness as osEndianness } from "os";
 import { Context } from "../../utilities/Context";
-import { BufferfyError } from "../../utilities/Error";
-import { PointableOptions } from "../../utilities/Pointable";
-import { Stream } from "../../utilities/Stream";
 import { AbstractCodec } from "../Abstract";
+import { DecodeTransform } from "../Abstract/DecodeTransform";
 import { Endianness } from "../UInt";
+
+export const floatBitValues = [32, 64] as const;
+
+export type FloatBits = (typeof floatBitValues)[number];
 
 export const FLOAT_BIT_BYTE_MAP = {
 	32: 4,
 	64: 8,
 } as const;
 
-export type FloatBits = keyof typeof FLOAT_BIT_BYTE_MAP;
+export type FloatCodec = Float32BECodec | Float32LECodec | Float64BECodec | Float64LECodec;
 
-export interface FloatCodecOptions extends PointableOptions {}
+/**
+ * Creates a codec for a float or double.
+ *
+ * Serializes to ```[FLOAT]```
+ *
+ * @param	{32 | 64} [bits=32] - Bit type of float.
+ * @param	{'LE' | 'BE'} [endianness=os.endianness()] - Endianness
+ * @return	{FloatCodec} FloatCodec
+ *
+ * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Float/index.ts|Source}
+ */
+export const createFloatCodec = (bits: FloatBits = 64, endianness: Endianness = osEndianness()) => {
+	switch (endianness) {
+		case "BE": {
+			switch (bits) {
+				case 32: {
+					return new Float32BECodec();
+				}
+				case 64: {
+					return new Float64BECodec();
+				}
+			}
+		}
+		case "LE": {
+			switch (bits) {
+				case 32: {
+					return new Float32LECodec();
+				}
+				case 64: {
+					return new Float64LECodec();
+				}
+			}
+		}
+	}
+};
 
-export class FloatCodec extends AbstractCodec<number> {
-	public readonly byteLength: number;
-	private readonly _isLittleEndian: boolean;
-
-	constructor(public readonly bits: FloatBits = 32, public readonly endianness: Endianness = osEndianness(), options?: FloatCodecOptions) {
-		super();
-
-		this._id = options?.id;
-		this.byteLength = FLOAT_BIT_BYTE_MAP[bits];
-
-		if (!this.byteLength) throw new BufferfyError("Invalid integer bits");
-
-		this._isLittleEndian = endianness === "LE";
+export class Float32BECodec extends AbstractCodec<number> {
+	isValid(value: unknown): value is number {
+		return typeof value === "number";
 	}
 
-	match(value: any, context: Context = new Context()): value is number {
-		const isMatch = typeof value === "number";
-
-		if (isMatch) this.setContext(value, context);
-
-		return isMatch;
+	byteLength(_: number): 4 {
+		return 4;
 	}
 
-	encodingLength(value: number, context: Context = new Context()): number {
-		this.setContext(value, context);
-
-		return this.byteLength;
+	_encode(value: number, buffer: Buffer, c: Context): void {
+		c.offset = buffer.writeFloatBE(value, c.offset);
 	}
 
-	write(value: number, stream: Stream, context: Context = new Context()): void {
-		this.setContext(value, context);
+	_decode(buffer: Buffer, c: Context): number {
+		const value = buffer.readFloatBE(c.offset);
 
-		stream.view[`setFloat${this.bits}`](stream.position, value, this._isLittleEndian);
+		c.offset += 4;
 
-		stream.position += this.byteLength;
+		return value;
 	}
 
-	read(stream: Stream, context: Context = new Context()): number {
-		const value = stream.view[`getFloat${this.bits}`](stream.position, this._isLittleEndian);
+	async _decodeChunks(transform: DecodeTransform): Promise<number> {
+		const buffer = await transform._consume(4);
 
-		stream.position += this.byteLength;
+		return this.decode(buffer);
+	}
+}
 
-		this.setContext(value, context);
+export class Float32LECodec extends Float32BECodec {
+	_encode(value: number, buffer: Buffer, c: Context): void {
+		c.offset = buffer.writeFloatLE(value, c.offset);
+	}
+
+	_decode(buffer: Buffer, offset: Context): number {
+		const value = buffer.readFloatLE(offset.offset);
+
+		offset.offset += 4;
 
 		return value;
 	}
 }
 
-export function createFloatCodec(...parameters: ConstructorParameters<typeof FloatCodec>): FloatCodec {
-	return new FloatCodec(...parameters);
+export class Float64BECodec extends AbstractCodec<number> {
+	isValid(value: unknown): value is number {
+		return typeof value === "number";
+	}
+
+	byteLength(_: number): 8 {
+		return 8;
+	}
+
+	_encode(value: number, buffer: Buffer, c: Context): void {
+		c.offset = buffer.writeDoubleBE(value, c.offset);
+	}
+
+	_decode(buffer: Buffer, offset: Context): number {
+		const value = buffer.readDoubleBE(offset.offset);
+
+		offset.offset += 8;
+
+		return value;
+	}
+
+	async _decodeChunks(transform: DecodeTransform): Promise<number> {
+		const buffer = await transform._consume(8);
+
+		return this.decode(buffer);
+	}
+}
+
+export class Float64LECodec extends Float64BECodec {
+	_encode(value: number, buffer: Buffer, c: Context): void {
+		c.offset = buffer.writeDoubleLE(value, c.offset);
+	}
+
+	_decode(buffer: Buffer, offset: Context): number {
+		const value = buffer.readDoubleLE(offset.offset);
+
+		offset.offset += 8;
+
+		return value;
+	}
 }

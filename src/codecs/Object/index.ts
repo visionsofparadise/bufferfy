@@ -1,111 +1,88 @@
 import { Context } from "../../utilities/Context";
-import { PointableOptions } from "../../utilities/Pointable";
-import { Simplify } from "../../utilities/Simplify";
-import { Stream } from "../../utilities/Stream";
 import { AbstractCodec, CodecType } from "../Abstract";
-import { OptionalCodec } from "../Optional";
+import { DecodeTransform } from "../Abstract/DecodeTransform";
+import { EncodeTransform } from "../Abstract/EncodeTransform";
 
-type RequiredKeys<T extends Record<string | number, AbstractCodec<any>>> = {
-	[K in keyof T]: T[K] extends OptionalCodec<any> ? undefined : K;
+/**
+ * Creates a codec for a fixed object.
+ *
+ * Serializes to ```[...[PROPERTY_VALUES]]```
+ *
+ * Encodes each property value with the codec associated with that key.
+ *
+ * @param	{Record<string, AbstractCodec>} properties - Properties of the object.
+ * @return	{ObjectCodec} ObjectCodec
+ *
+ * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Object/index.ts|Source}
+ */
+export function createObjectCodec<Properties extends Record<string, AbstractCodec>>(properties: Properties): ObjectCodec<Properties> {
+	return new ObjectCodec<Properties>(properties);
+}
+
+type RequiredKeys<T extends Record<string | number, AbstractCodec>> = {
+	[K in keyof T]: CodecType<T[K]> extends undefined ? undefined : K;
 }[keyof T];
 
-type OptionalKeys<T extends Record<string | number, AbstractCodec<any>>> = {
-	[K in keyof T]: T[K] extends OptionalCodec<any> ? K : undefined;
+type OptionalKeys<T extends Record<string | number, AbstractCodec>> = {
+	[K in keyof T]: CodecType<T[K]> extends undefined ? K : undefined;
 }[keyof T];
 
-type _OutputObject<T extends Record<string | number, AbstractCodec<any>>> = {
+type _OutputObject<T extends Record<string | number, AbstractCodec>> = {
 	[K in Exclude<RequiredKeys<T>, undefined>]: CodecType<T[K]>;
 } & {
 	[K in Exclude<OptionalKeys<T>, undefined>]?: CodecType<T[K]>;
 };
 
-type OutputObject<T extends Record<string | number, AbstractCodec<any>>> = {
+export type OutputObject<T extends Record<string | number, AbstractCodec>> = {
 	[K in keyof _OutputObject<T>]: _OutputObject<T>[K];
 };
 
-export interface ObjectCodecOptions extends PointableOptions {}
+export class ObjectCodec<Properties extends Record<string, AbstractCodec>> extends AbstractCodec<OutputObject<Properties>> {
+	entries: Array<[keyof Properties, AbstractCodec]>;
 
-export class ObjectCodec<Properties extends Record<string | number, AbstractCodec<any>>> extends AbstractCodec<Simplify<OutputObject<Properties>>> {
-	private _reverseEntries: Array<[keyof OutputObject<Properties>, AbstractCodec]>;
-
-	constructor(public readonly properties: Properties, options?: ObjectCodecOptions) {
+	constructor(public readonly properties: Properties) {
 		super();
 
-		this._id = options?.id;
-		this._reverseEntries = Object.entries(properties) as Array<[keyof OutputObject<Properties>, AbstractCodec]>;
-		this._reverseEntries.reverse();
+		this.entries = Object.entries(properties);
 	}
 
-	match(value: any, context: Context = new Context()): value is OutputObject<Properties> {
-		if (!value || typeof value !== "object") return false;
+	isValid(value: unknown): value is OutputObject<Properties> {
+		if (typeof value !== "object" || value === null) return false;
 
-		let index = this._reverseEntries.length;
-
-		while (index--) {
-			const [propertyKey, propertyCodec] = this._reverseEntries[index];
-
-			if (!propertyCodec.match(value[propertyKey], context)) return false;
-		}
-
-		this.setContext(value, context);
+		for (const [key, codec] of this.entries) if (!codec.isValid(value[key as keyof typeof value])) return false;
 
 		return true;
 	}
 
-	encodingLength(value: OutputObject<Properties>, context: Context = new Context()): number {
-		this.setContext(value, context);
+	byteLength(value: OutputObject<Properties>): number {
+		let byteLength = 0;
 
-		let size = 0;
-		let index = this._reverseEntries.length;
+		for (const [key, codec] of this.entries) byteLength += codec.byteLength(value[key as keyof OutputObject<Properties>]);
 
-		while (index--) {
-			const [propertyKey, propertyCodec] = this._reverseEntries[index];
-
-			size += propertyCodec.encodingLength(value[propertyKey], context);
-		}
-
-		return size;
+		return byteLength;
 	}
 
-	write(value: OutputObject<Properties>, stream: Stream, context: Context = new Context()): void {
-		this.setContext(value, context);
-
-		let index = this._reverseEntries.length;
-
-		while (index--) {
-			const [propertyKey, propertyCodec] = this._reverseEntries[index];
-
-			propertyCodec.write(value[propertyKey], stream, context);
-		}
+	_encode(value: OutputObject<Properties>, buffer: Buffer, c: Context): void {
+		for (const [key, codec] of this.entries) codec._encode(value[key as keyof OutputObject<Properties>], buffer, c);
 	}
 
-	read(stream: Stream, context: Context = new Context()): OutputObject<Properties> {
-		const value: Partial<OutputObject<Properties>> = {};
+	async _encodeChunks(value: OutputObject<Properties>, transform: EncodeTransform): Promise<void> {
+		for (const [key, codec] of this.entries) await codec._encodeChunks(value[key as keyof OutputObject<Properties>], transform);
+	}
 
-		let index = this._reverseEntries.length;
+	_decode(buffer: Buffer, c: Context): OutputObject<Properties> {
+		const value: Partial<Record<keyof OutputObject<Properties>, unknown>> = {};
 
-		while (index--) {
-			const [propertyKey, propertyCodec] = this._reverseEntries[index];
-
-			if (propertyCodec instanceof OptionalCodec) {
-				const propertyValue = propertyCodec.read(stream, context);
-
-				if (propertyValue === undefined) continue;
-
-				value[propertyKey] = propertyValue as any;
-
-				continue;
-			}
-
-			value[propertyKey] = propertyCodec.read(stream, context);
-		}
-
-		this.setContext(value as OutputObject<Properties>, context);
+		for (const [key, codec] of this.entries) value[key as keyof OutputObject<Properties>] = codec._decode(buffer, c);
 
 		return value as OutputObject<Properties>;
 	}
-}
 
-export function createObjectCodec<Properties extends Record<string | number, AbstractCodec<any>>>(...parameters: ConstructorParameters<typeof ObjectCodec<Properties>>): ObjectCodec<Properties> {
-	return new ObjectCodec<Properties>(...parameters);
+	async _decodeChunks(transform: DecodeTransform): Promise<OutputObject<Properties>> {
+		const value: Partial<Record<keyof OutputObject<Properties>, unknown>> = {};
+
+		for (const [key, codec] of this.entries) value[key as keyof OutputObject<Properties>] = await codec._decodeChunks(transform);
+
+		return value as OutputObject<Properties>;
+	}
 }

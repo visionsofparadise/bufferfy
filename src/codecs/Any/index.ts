@@ -1,64 +1,74 @@
 import { Context } from "../../utilities/Context";
-import { LengthOptions } from "../../utilities/Length";
-import { PointableOptions } from "../../utilities/Pointable";
-import { Stream } from "../../utilities/Stream";
 import { AbstractCodec } from "../Abstract";
-import { UIntCodec } from "../UInt";
-import { VarUIntCodec } from "../VarUInt";
+import { DecodeTransform } from "../Abstract/DecodeTransform";
+import { VarInt60Codec } from "../VarInt/VarInt60";
 
-export interface AnyCodecOptions<Value extends any> extends Pick<LengthOptions, "lengthCodec">, PointableOptions {
+export interface AnyCodecOptions<Value = any> {
 	encode?: (value: Value) => Buffer;
 	decode?: (buffer: Buffer) => Value;
+	lengthCodec?: AbstractCodec<number>;
 }
 
-export class AnyCodec<Value extends any = any> extends AbstractCodec<Value> {
-	private readonly _encode: (value: Value) => Buffer;
-	private readonly _decode: (buffer: Buffer) => Value;
-	private readonly _lengthCodec: UIntCodec | VarUIntCodec;
+/**
+ * Creates a codec for any or custom values. By default uses JSON.stringify and JSON.parse.
+ *
+ * Serializes to ```[LENGTH][VALUE]```
+ *
+ * @param	{AnyCodecOptions} [options]
+ * @param	{(value) => Buffer} [options.encode] - Sets a custom encoder.
+ * @param	{(buffer) => Value} [options.decode] - Sets a custom decoder.
+ * @param	{AbstractCodec<number>} [options.lengthCodec="VarInt50()"] - Codec to specify how the length is encoded.
+ * @return	{AnyCodec} AnyCodec
+ *
+ * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Any/index.ts|Source}
+ */
+export const createAnyCodec = <Value = any>(options?: AnyCodecOptions<Value>) => new AnyCodec(options);
+
+export class AnyCodec<Value = any> extends AbstractCodec<Value> {
+	private readonly _encodeValue: (value: Value) => Buffer;
+	private readonly _decodeValue: (buffer: Buffer) => Value;
+
+	readonly lengthCodec: AbstractCodec<number>;
 
 	constructor(options?: AnyCodecOptions<Value>) {
 		super();
 
-		this._encode = options?.encode || ((value: Value) => Buffer.from(JSON.stringify(value)));
-		this._decode = options?.decode || ((buffer: Buffer) => JSON.parse(buffer.toString()));
-		this._lengthCodec = options?.lengthCodec || new VarUIntCodec();
+		this._encodeValue = options?.encode || ((value: Value) => Buffer.from(JSON.stringify(value)));
+		this._decodeValue = options?.decode || ((buffer: Buffer) => JSON.parse(buffer.toString()));
+		this.lengthCodec = options?.lengthCodec || new VarInt60Codec();
 	}
 
-	match(value: any, context: Context = new Context()): value is Value {
-		this.setContext(value, context);
-
+	isValid(_value: unknown): _value is any {
 		return true;
 	}
 
-	encodingLength(value: Value, context: Context = new Context()): number {
-		this.setContext(value, context);
+	byteLength(value: Value): number {
+		let byteLength = this._encodeValue(value).byteLength;
 
-		let length = this._encode(value).byteLength;
-
-		return this._lengthCodec.encodingLength(length, context) + length;
+		return this.lengthCodec.byteLength(byteLength) + byteLength;
 	}
 
-	write(value: Value, stream: Stream, context: Context = new Context()): void {
-		this.setContext(value, context);
+	_encode(value: Value, buffer: Buffer, c: Context): void {
+		const valueBuffer = this._encodeValue(value);
 
-		const buffer = this._encode(value);
+		this.lengthCodec._encode(valueBuffer.byteLength, buffer, c);
 
-		this._lengthCodec.write(buffer.byteLength, stream, context);
-
-		stream.position += buffer.copy(stream.buffer, stream.position);
+		c.offset += valueBuffer.copy(buffer, c.offset, 0, valueBuffer.byteLength);
 	}
 
-	read(stream: Stream, context: Context = new Context()): Value {
-		const length = this._lengthCodec.read(stream, context);
+	_decode(buffer: Buffer, c: Context): Value {
+		const byteLength = this.lengthCodec._decode(buffer, c);
 
-		const value = this._decode(stream.buffer.subarray(stream.position, (stream.position += length)));
+		const valueBuffer = buffer.subarray(c.offset, (c.offset += byteLength));
 
-		this.setContext(value, context);
-
-		return value;
+		return this._decodeValue(valueBuffer);
 	}
-}
 
-export function createAnyCodec<Value extends any = any>(...parameters: ConstructorParameters<typeof AnyCodec<Value>>): AnyCodec<Value> {
-	return new AnyCodec<Value>(...parameters);
+	async _decodeChunks(transform: DecodeTransform): Promise<Value> {
+		const byteLength = await this.lengthCodec._decodeChunks(transform);
+
+		const buffer = await transform._consume(byteLength);
+
+		return this._decodeValue(buffer);
+	}
 }

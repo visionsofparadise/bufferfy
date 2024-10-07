@@ -1,9 +1,8 @@
 import { Context } from "../../utilities/Context";
-import { PointableOptions } from "../../utilities/Pointable";
-import { Stream } from "../../utilities/Stream";
 import { AbstractCodec } from "../Abstract";
+import { DecodeTransform } from "../Abstract/DecodeTransform";
 
-const BYTE_MAP: Record<number, number> = {
+const BIT_MAP: Record<number, number> = {
 	0: 0x80,
 	1: 0x40,
 	2: 0x20,
@@ -14,110 +13,76 @@ const BYTE_MAP: Record<number, number> = {
 	7: 0x01,
 };
 
-export interface BitFieldCodecOptions extends PointableOptions {}
+/**
+ * Creates a codec for boolean flags packed into bits of a byte.
+ *
+ * Serializes to ```[...FLAG_BYTES]```
+ *
+ * Packs up to 8 boolean values associated with the given keys, into each byte.
+ *
+ * @param	{Array<string>} keys - Keys for each boolean flag.
+ * @return	{BitFieldCodec} BitFieldCodec
+ *
+ * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/BitField/index.ts|Source}
+ */
+export const createBitFieldCodec = <Key extends string>(keys: Array<Key>) => new BitFieldCodec(keys);
 
-export class BitFieldCodec<Key extends PropertyKey> extends AbstractCodec<Record<Key, boolean>> {
-	private readonly _byteLength: number;
-	private readonly _keys: Array<Key>;
-	private readonly _reverseByteKeys: Array<Array<Key>> = [];
-
-	constructor(keys: Array<Key>, options?: BitFieldCodecOptions) {
+export class BitFieldCodec<Key extends string> extends AbstractCodec<Record<Key, boolean>> {
+	constructor(public readonly keys: Array<Key>) {
 		super();
-
-		this._id = options?.id;
-		this._keys = keys;
-		this._byteLength = Math.ceil(keys.length / 8);
-
-		let byteKeys: Array<Key> = [];
-
-		for (const key of keys) {
-			byteKeys.push(key);
-
-			if (byteKeys.length === 8) {
-				byteKeys.reverse();
-
-				this._reverseByteKeys.push(byteKeys);
-
-				byteKeys = [];
-			}
-		}
-
-		if (byteKeys.length) {
-			byteKeys.reverse();
-
-			this._reverseByteKeys.push(byteKeys);
-		}
-
-		this._reverseByteKeys.reverse();
 	}
 
-	match(value: any, context: Context = new Context()): value is Record<Key, boolean> {
+	isValid(value: unknown): value is Record<Key, boolean> {
 		if (!value || typeof value !== "object") return false;
 
-		let index = this._keys.length;
-
-		while (index--) {
-			const key = this._keys[index];
-
-			if (typeof value[key] !== "boolean") return false;
-		}
-
-		this.setContext(value, context);
+		for (const key of this.keys) if (typeof value[key as keyof typeof value] !== "boolean") return false;
 
 		return true;
 	}
 
-	encodingLength(value: Record<Key, boolean>, context: Context = new Context()): number {
-		this.setContext(value, context);
-
-		return this._byteLength;
+	byteLength(_value: Record<Key, boolean>): number {
+		return Math.ceil(this.keys.length / 8);
 	}
 
-	write(value: Record<Key, boolean>, stream: Stream, context: Context = new Context()): void {
-		this.setContext(value, context);
+	_encode(value: Record<Key, boolean>, buffer: Buffer, c: Context): void {
+		for (let i = 0; i < this.keys.length; i++) {
+			if (i % 8 === 0) buffer[c.offset] = 0;
 
-		let byteKeysIndex = this._reverseByteKeys.length;
+			if (value[this.keys[i]] === true) buffer[c.offset] |= BIT_MAP[i % 8];
 
-		while (byteKeysIndex--) {
-			stream.buffer[stream.position] = 0;
-
-			const byteKeys = this._reverseByteKeys[byteKeysIndex];
-
-			let index = byteKeys.length;
-
-			while (index--) {
-				if (value[byteKeys[index]]) {
-					stream.buffer[stream.position] |= BYTE_MAP[(byteKeys.length - (index + 1)) % 8];
-				}
-			}
-
-			stream.position++;
+			if (i % 8 === 7) c.offset++;
 		}
+
+		if (this.keys.length % 8 !== 0) c.offset++;
 	}
 
-	read(stream: Stream, context: Context = new Context()): Record<Key, boolean> {
+	_decode(buffer: Buffer, c: Context): Record<Key, boolean> {
 		const value: Partial<Record<Key, boolean>> = {};
 
-		let byteKeysIndex = this._reverseByteKeys.length;
+		for (let i = 0; i < this.keys.length; i++) {
+			value[this.keys[i]] = (buffer[c.offset] & BIT_MAP[i % 8]) > 0;
 
-		while (byteKeysIndex--) {
-			const byteKeys = this._reverseByteKeys[byteKeysIndex];
-
-			let index = byteKeys.length;
-
-			while (index--) {
-				value[byteKeys[index]] = (stream.buffer[stream.position] & BYTE_MAP[(byteKeys.length - (index + 1)) % 8]) > 0;
-			}
-
-			stream.position++;
+			if (i % 8 === 7) c.offset++;
 		}
 
-		this.setContext(value as Record<Key, boolean>, context);
+		if (this.keys.length % 8 !== 0) c.offset++;
 
 		return value as Record<Key, boolean>;
 	}
-}
 
-export function createBitFieldCodec<Key extends PropertyKey>(...parameters: ConstructorParameters<typeof BitFieldCodec<Key>>): BitFieldCodec<Key> {
-	return new BitFieldCodec<Key>(...parameters);
+	async _decodeChunks(transform: DecodeTransform): Promise<Record<Key, boolean>> {
+		const value: Partial<Record<Key, boolean>> = {};
+
+		const buffer = await transform._consume(Math.ceil(this.keys.length / 8));
+
+		let offset = 0;
+
+		for (let i = 0; i < this.keys.length; i++) {
+			value[this.keys[i]] = (buffer[offset] & BIT_MAP[i % 8]) > 0;
+
+			if (i % 8 === 7) offset++;
+		}
+
+		return value as Record<Key, boolean>;
+	}
 }

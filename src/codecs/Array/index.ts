@@ -1,76 +1,42 @@
-import { Context } from "../../utilities/Context";
-import { LengthOptions } from "../../utilities/Length";
-import { PointableOptions } from "../../utilities/Pointable";
-import { Stream } from "../../utilities/Stream";
 import { AbstractCodec } from "../Abstract";
-import { PointerCodec } from "../Pointer";
-import { UIntCodec } from "../UInt";
-import { VarUIntCodec } from "../VarUInt";
+import { VarInt60Codec } from "../VarInt/VarInt60";
+import { ArrayFixedCodec } from "./Fixed";
+import { ArrayVariableCodec } from "./Variable";
 
-export interface ArrayCodecOptions extends LengthOptions, PointableOptions {}
+export type ArrayCodec<Item> = ArrayFixedCodec<Item> | ArrayVariableCodec<Item>;
 
-export class ArrayCodec<Item extends any> extends AbstractCodec<Array<Item>> {
-	private readonly _itemCodec: AbstractCodec<Item>;
-	private readonly _length?: number;
-	private readonly _lengthPointer?: PointerCodec<number>;
-	private readonly _lengthCodec: UIntCodec | VarUIntCodec;
+/**
+ * Creates a codec for a fixed length array.
+ *
+ * Serializes to ```[LENGTH?][...ITEMS]```
+ *
+ * Length is present only for variable length arrays.
+ *
+ * @param	{AbstractCodec} itemCodec - The codec for each item in the array.
+ * @param	{number} [length] - Sets a fixed length.
+ * @return	{ArrayCodec} ArrayCodec
+ *
+ * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Array/index.ts|Source}
+ */
+export function createArrayCodec<Item>(itemCodec: AbstractCodec<Item>, length?: number): ArrayFixedCodec<Item>;
 
-	constructor(itemCodec: AbstractCodec<Item>, options?: ArrayCodecOptions) {
-		super();
+/**
+ * Creates a codec for a variable length array.
+ *
+ * Serializes to ```[LENGTH?][...ITEMS]```
+ *
+ * Length is present only for variable length arrays.
+ *
+ * @param	{AbstractCodec} itemCodec - The codec for each item in the array.
+ * @param	{AbstractCodec<number>} [lengthCodec="VarInt50()"] - Codec to specify how the length is encoded.
+ * @return	{ArrayCodec} ArrayCodec
+ *
+ * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Array/index.ts|Source}
+ */
+export function createArrayCodec<Item>(itemCodec: AbstractCodec<Item>, lengthCodec?: AbstractCodec<number>): ArrayVariableCodec<Item>;
 
-		this._itemCodec = itemCodec;
-		this._id = options?.id;
-		this._length = options?.length;
-		this._lengthPointer = options?.lengthPointer;
-		this._lengthCodec = options?.lengthCodec || new VarUIntCodec();
-	}
+export function createArrayCodec<Item>(itemCodec: AbstractCodec<Item>, lengthOrCodec: number | AbstractCodec<number> = new VarInt60Codec()): ArrayCodec<Item> {
+	if (typeof lengthOrCodec === "number") return new ArrayFixedCodec(lengthOrCodec, itemCodec);
 
-	match(value: any, context: Context = new Context()): value is Array<Item> {
-		const isMatch = Array.isArray(value) && value.every((value) => this._itemCodec.match(value, context));
-
-		if (isMatch) this.setContext(value, context);
-
-		return isMatch;
-	}
-
-	encodingLength(value: Array<Item>, context: Context = new Context()): number {
-		this.setContext(value, context);
-
-		let length = 0;
-		let index = value.length;
-
-		while (index--) length += this._itemCodec.encodingLength(value[index], context);
-
-		if (this._length || this._lengthPointer) return length;
-
-		return this._lengthCodec.encodingLength(length, context) + length;
-	}
-
-	write(value: Array<Item>, stream: Stream, context: Context = new Context()): void {
-		this.setContext(value, context);
-
-		if (!this._length && !this._lengthPointer) this._lengthCodec.write(value.length, stream, context);
-
-		let index = value.length;
-
-		while (index--) this._itemCodec.write(value[value.length - (index + 1)], stream, context);
-	}
-
-	read(stream: Stream, context: Context = new Context()): Array<Item> {
-		const value: Array<Item> = [];
-
-		const length = this._length || this._lengthPointer?.getValue(context) || this._lengthCodec.read(stream, context);
-
-		let index = length;
-
-		while (index--) value[length - (index + 1)] = this._itemCodec.read(stream, context);
-
-		this.setContext(value, context);
-
-		return value;
-	}
-}
-
-export function createArrayCodec<Item>(...parameters: ConstructorParameters<typeof ArrayCodec<Item>>): ArrayCodec<Item> {
-	return new ArrayCodec<Item>(...parameters);
+	return new ArrayVariableCodec(itemCodec, lengthOrCodec);
 }

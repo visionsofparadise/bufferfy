@@ -1,74 +1,143 @@
+import { randomBytes } from "crypto";
 import { UnionCodec } from ".";
-import { Context } from "../../utilities/Context";
-import { Stream } from "../../utilities/Stream";
+import { BufferReadStream, BufferWriteStream } from "../../utilities/BufferStream.ignore";
 import { CodecType } from "../Abstract";
-import { StringCodec } from "../String";
-import { UIntCodec } from "../UInt";
-import { UndefinedCodec } from "../Undefined";
+import { ObjectCodec } from "../Object";
+import { StringFixedCodec } from "../String/Fixed";
 
-const context = new Context();
+describe("correctly performs union codec methods", () => {
+	const codec = new UnionCodec([
+		new StringFixedCodec(16, "hex"),
+		new ObjectCodec({
+			test1: new StringFixedCodec(16, "hex"),
+		}),
+	]);
+	const value1: CodecType<typeof codec> = randomBytes(16).toString("hex");
+	const byteLength1 = 17;
+	const value2: CodecType<typeof codec> = {
+		test1: randomBytes(16).toString("hex"),
+	};
+	const byteLength2 = 17;
 
-const codec = new UnionCodec([new StringCodec({ length: 5 }), new UndefinedCodec()], {
-	indexCodec: new UIntCodec(8),
-});
+	it("valid for union value1", () => {
+		const isValid = codec.isValid(value1);
 
-const union1: CodecType<typeof codec> = "test1";
-const union2: CodecType<typeof codec> = undefined;
-
-it("matches union", () => {
-	const isMatch1 = codec.match(union1, context);
-
-	expect(isMatch1).toBe(true);
-
-	const isMatch2 = codec.match(union2, context);
-
-	expect(isMatch2).toBe(true);
-});
-
-it("does not match not union", () => {
-	const isMatch = codec.match(null, context);
-
-	expect(isMatch).toBe(false);
-});
-
-it("returns size of union", () => {
-	const size = codec.encodingLength(union1, context);
-
-	expect(size).toBe(6);
-});
-
-describe("encodes then decodes union value 1", () => {
-	const writeStream = new Stream(Buffer.alloc(6), 0);
-
-	it("encodes union value 1", () => {
-		codec.write(union1, writeStream, context);
-
-		expect(writeStream.position).toBe(6);
+		expect(isValid).toBe(true);
 	});
 
-	const readStream = new Stream(writeStream.buffer, 0);
+	it("invalid for not union value1", () => {
+		const isValid = codec.isValid(null);
 
-	it("decodes union value 1", () => {
-		const value = codec.read(readStream, context);
-
-		expect(value).toStrictEqual(union1);
-	});
-});
-
-describe("encodes then decodes union value 2", () => {
-	const writeStream = new Stream(Buffer.alloc(1), 0);
-
-	it("encodes union value 2", () => {
-		codec.write(union2, writeStream, context);
-
-		expect(writeStream.position).toBe(1);
+		expect(isValid).toBe(false);
 	});
 
-	const readStream = new Stream(writeStream.buffer, 0);
+	it("returns byteLength of union value1", () => {
+		const resultByteLength = codec.byteLength(value1);
 
-	it("decodes union value 2", () => {
-		const value = codec.read(readStream, context);
+		expect(resultByteLength).toBe(byteLength1);
+	});
 
-		expect(value).toStrictEqual(union2);
+	it("encodes union value1 to buffer", async () => {
+		const buffer = codec.encode(value1);
+
+		expect(buffer.byteLength).toBe(byteLength1);
+	});
+
+	it("decodes union value1 from buffer", async () => {
+		const buffer = codec.encode(value1);
+
+		const result = codec.decode(buffer);
+
+		expect(result).toStrictEqual(value1);
+	});
+
+	it(`streams union value1 to buffer`, async () => {
+		const stream = new BufferWriteStream();
+
+		const encoder = codec.Encoder();
+
+		await new Promise((resolve) => {
+			stream.on("finish", resolve);
+
+			encoder.pipe(stream);
+			encoder.write(value1);
+			encoder.end();
+		});
+
+		expect(stream.offset).toBe(byteLength1);
+	});
+
+	it(`streams union value1 from buffer`, async () => {
+		const buffer = codec.encode(value1);
+
+		const stream = new BufferReadStream(buffer);
+
+		const decoder = codec.Decoder();
+
+		await new Promise((resolve) => {
+			decoder.on("finish", resolve);
+
+			stream.pipe(decoder);
+		});
+
+		expect(decoder.read(1)).toStrictEqual(value1);
+	});
+
+	it("valid for union value2", () => {
+		const isValid = codec.isValid(value2);
+
+		expect(isValid).toBe(true);
+	});
+
+	it("returns byteLength of union value2", () => {
+		const resultByteLength = codec.byteLength(value2);
+
+		expect(resultByteLength).toBe(byteLength2);
+	});
+
+	it("encodes union value2 to buffer", async () => {
+		const buffer = codec.encode(value2);
+
+		expect(buffer.byteLength).toBe(byteLength2);
+	});
+
+	it("decodes union value2 from buffer", async () => {
+		const buffer = codec.encode(value2);
+
+		const result = codec.decode(buffer);
+
+		expect(result).toStrictEqual(value2);
+	});
+
+	it(`streams union value2 to buffer`, async () => {
+		const stream = new BufferWriteStream();
+
+		const encoder = codec.Encoder();
+
+		await new Promise((resolve) => {
+			stream.on("finish", resolve);
+
+			encoder.pipe(stream);
+			encoder.write(value2);
+			encoder.end();
+		});
+
+		expect(stream.offset).toBe(byteLength2);
+	});
+
+	it(`streams union value2 from buffer`, async () => {
+		const buffer = codec.encode(value2);
+
+		const stream = new BufferReadStream(buffer);
+
+		const decoder = codec.Decoder();
+
+		await new Promise((resolve) => {
+			decoder.on("finish", resolve);
+
+			stream.pipe(decoder);
+		});
+
+		expect(decoder.read(1)).toStrictEqual(value2);
 	});
 });

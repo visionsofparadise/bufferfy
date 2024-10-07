@@ -1,55 +1,43 @@
-export { AbstractCodec } from "./codecs/Abstract";
-export { AnyCodec } from "./codecs/Any";
-export { ArrayCodec } from "./codecs/Array";
-export { BitFieldCodec } from "./codecs/BitField";
-export { BooleanCodec } from "./codecs/Boolean";
-export { BufferCodec } from "./codecs/Buffer";
-export { ConstantCodec } from "./codecs/Constant";
-export { EnumCodec } from "./codecs/Enum";
-export { FloatCodec } from "./codecs/Float";
-export { IntCodec } from "./codecs/Int";
-export { NullCodec } from "./codecs/Null";
-export { ObjectCodec } from "./codecs/Object";
-export { OptionalCodec } from "./codecs/Optional";
-export { PointerCodec } from "./codecs/Pointer";
-export { RecordCodec } from "./codecs/Record";
-export { StringCodec } from "./codecs/String";
-export { SwitchCodec } from "./codecs/Switch";
-export { TransformCodec } from "./codecs/Transform";
-export { TupleCodec } from "./codecs/Tuple";
-export { UIntCodec } from "./codecs/UInt";
-export { UndefinedCodec } from "./codecs/Undefined";
-export { UnionCodec } from "./codecs/Union";
-export { VarUIntCodec } from "./codecs/VarUInt";
+export { AbstractCodec } from "./Codecs/Abstract";
+export { AnyCodec } from "./Codecs/Any";
+export { type ArrayCodec } from "./Codecs/Array";
+export { ArrayFixedCodec } from "./Codecs/Array/Fixed";
+export { ArrayVariableCodec } from "./Codecs/Array/Variable";
+export { BitFieldCodec } from "./Codecs/BitField";
+export { BooleanCodec } from "./Codecs/Boolean";
+export { type BufferCodec } from "./Codecs/Buffer";
+export { BufferFixedCodec } from "./Codecs/Buffer/Fixed";
+export { BufferVariableCodec } from "./Codecs/Buffer/Variable";
+export { Float32BECodec, Float32LECodec, Float64BECodec, Float64LECodec, type FloatCodec } from "./Codecs/Float";
+export { Int16BECodec, Int16LECodec, Int24BECodec, Int24LECodec, Int32BECodec, Int32LECodec, Int40BECodec, Int40LECodec, Int48BECodec, Int48LECodec, Int8Codec, type IntCodec } from "./Codecs/Int";
+export { ObjectCodec } from "./Codecs/Object";
+export { ObjectVariableCodec } from "./Codecs/Object/Variable";
+export { type RecordCodec } from "./Codecs/Record";
+export { RecordFixedCodec } from "./Codecs/Record/Fixed";
+export { RecordVariableCodec } from "./Codecs/Record/Variable";
+export { type StringCodec } from "./Codecs/String";
+export { StringFixedCodec } from "./Codecs/String/Fixed";
+export { StringVariableCodec } from "./Codecs/String/Variable";
+export { TransformCodec } from "./Codecs/Transform";
+export { TupleCodec } from "./Codecs/Tuple";
+export {
+	UInt16BECodec,
+	UInt16LECodec,
+	UInt24BECodec,
+	UInt24LECodec,
+	UInt32BECodec,
+	UInt32LECodec,
+	UInt40BECodec,
+	UInt40LECodec,
+	UInt48BECodec,
+	UInt48LECodec,
+	UInt8Codec,
+	type UIntCodec,
+} from "./Codecs/UInt";
+export { UnionCodec } from "./Codecs/Union";
+export { type VarIntCodec } from "./Codecs/VarInt";
+export { VarInt15Codec } from "./Codecs/VarInt/VarInt15";
+export { VarInt30Codec } from "./Codecs/VarInt/VarInt30";
+export { VarInt60Codec } from "./Codecs/VarInt/VarInt60";
 
-import { Any, Array, BitField, Boolean, Buffer, Constant, Enum, Float, Int, Null, Object, Optional, Pointer, Record, String, Switch, Transform, Tuple, UInt, Undefined, Union, VarUInt } from "./Codec";
-import { AbstractCodec, CodecType } from "./codecs/Abstract";
-
-export namespace Codec {
-	export type Type<Codec extends AbstractCodec<any>> = CodecType<Codec>;
-}
-
-export const Codec = {
-	Any,
-	Array,
-	BitField,
-	Boolean,
-	Buffer,
-	Constant,
-	Enum,
-	Float,
-	Int,
-	Null,
-	Object,
-	Optional,
-	Pointer,
-	Record,
-	String,
-	Switch,
-	Transform,
-	Tuple,
-	UInt,
-	Undefined,
-	Union,
-	VarUInt,
-};
+export { Codec } from "./Codec";

@@ -1,46 +1,91 @@
-import { FloatCodec } from ".";
-import { Context } from "../../utilities/Context";
-import { Stream } from "../../utilities/Stream";
-import { CodecType } from "../Abstract";
+import { createFloatCodec, FLOAT_BIT_BYTE_MAP, floatBitValues } from ".";
+import { BufferReadStream, BufferWriteStream } from "../../utilities/BufferStream.ignore";
+import { endiannessValues } from "../UInt";
 
-const context = new Context();
+describe("iterates float endianness and bits combinations", () => {
+	for (const endianness of endiannessValues) {
+		for (const bits of floatBitValues) {
+			describe(`correctly performs float${bits}${endianness} codec methods`, () => {
+				const codec = createFloatCodec(bits, endianness);
+				const value = Math.PI;
+				const byteLength = FLOAT_BIT_BYTE_MAP[bits];
 
-const codec = new FloatCodec(32);
+				it(`valid for float${bits}${endianness}`, () => {
+					const isValid = codec.isValid(value);
 
-const float: CodecType<typeof codec> = 85.32127;
+					expect(isValid).toBe(true);
+				});
 
-it("matches float", () => {
-	const isMatch = codec.match(float, context);
+				it(`invalid for not float${bits}${endianness}`, () => {
+					const isValid = codec.isValid(value.toString(10));
 
-	expect(isMatch).toBe(true);
-});
+					expect(isValid).toBe(false);
+				});
 
-it("does not match not float", () => {
-	const isMatch = codec.match(float.toString(10), context);
+				it(`returns byteLength of float${bits}${endianness}`, () => {
+					const resultByteLength = codec.byteLength(value);
 
-	expect(isMatch).toBe(false);
-});
+					expect(resultByteLength).toBe(byteLength);
+				});
 
-it("returns size of float", () => {
-	const size = codec.encodingLength(float, context);
+				it(`encodes float${bits}${endianness} to buffer`, async () => {
+					const buffer = codec.encode(value);
 
-	expect(size).toBe(4);
-});
+					if (bits === 32) expect(buffer[`readFloat${endianness}`]()).toBeCloseTo(value);
+					else expect(buffer[`readDouble${endianness}`]()).toBeCloseTo(value);
 
-describe("encodes then decodes float", () => {
-	const writeStream = new Stream(Buffer.alloc(4), 0);
+					expect(buffer.byteLength).toBe(byteLength);
+				});
 
-	it("encodes float", () => {
-		codec.write(float, writeStream, context);
+				it(`decodes float${bits}${endianness} from buffer`, async () => {
+					const buffer = Buffer.allocUnsafe(byteLength);
 
-		expect(writeStream.position).toBe(4);
-	});
+					if (bits === 32) buffer[`writeFloat${endianness}`](value);
+					else buffer[`writeDouble${endianness}`](value);
 
-	const readStream = new Stream(writeStream.buffer, 0);
+					const result = codec.decode(buffer);
 
-	it("decodes float", () => {
-		const value = codec.read(readStream, context);
+					expect(result).toBeCloseTo(value);
+				});
 
-		expect(value).toBeCloseTo(float);
-	});
+				it(`streams float${bits}${endianness} to buffer`, async () => {
+					const stream = new BufferWriteStream();
+
+					const encoder = codec.Encoder();
+
+					await new Promise((resolve) => {
+						stream.on("finish", resolve);
+
+						encoder.pipe(stream);
+						encoder.write(value);
+						encoder.end();
+					});
+
+					if (bits === 32) expect(stream.buffer![`readFloat${endianness}`]()).toBeCloseTo(value);
+					else expect(stream.buffer![`readDouble${endianness}`]()).toBeCloseTo(value);
+
+					expect(stream.offset).toBe(byteLength);
+				});
+
+				it(`streams float${bits}${endianness} from buffer`, async () => {
+					const buffer = Buffer.allocUnsafe(byteLength);
+
+					if (bits === 32) buffer[`writeFloat${endianness}`](value);
+					else buffer[`writeDouble${endianness}`](value);
+
+					const stream = new BufferReadStream(buffer);
+
+					const decoder = codec.Decoder();
+
+					await new Promise((resolve) => {
+						decoder.on("finish", resolve);
+
+						stream.pipe(decoder);
+					});
+
+					expect(decoder.read(1)).toBeCloseTo(value);
+				});
+			});
+		}
+	}
 });

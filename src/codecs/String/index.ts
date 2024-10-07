@@ -1,106 +1,44 @@
-import { Context } from "../../utilities/Context";
-import { LengthOptions } from "../../utilities/Length";
-import { PointableOptions } from "../../utilities/Pointable";
-import { Stream } from "../../utilities/Stream";
 import { AbstractCodec } from "../Abstract";
-import { PointerCodec } from "../Pointer";
-import { UIntCodec } from "../UInt";
-import { VarUIntCodec } from "../VarUInt";
+import { VarInt60Codec } from "../VarInt/VarInt60";
+import { StringFixedCodec } from "./Fixed";
+import { StringVariableCodec } from "./Variable";
 
-const FIXED_STRING_ENCODINGS = ["binary", "hex", "base64", "base64url"] as const;
+export type StringCodec = StringFixedCodec | StringVariableCodec;
 
-type FixedStringEncoding = (typeof FIXED_STRING_ENCODINGS)[number];
+/**
+ * Creates a codec for a fixed length string.
+ *
+ * Serializes to ```[STRING]```
+ *
+ * Length is present only for variable length strings.
+ *
+ * @param	{BufferEncoding} [encoding="utf8"] - The strings encoding.
+ * @param	{number} [byteLength] - Sets a fixed byte length.
+ * @return	{StringCodec} StringCodec
+ *
+ * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/String/index.ts|Source}
+ */
+export function createStringCodec(encoding?: BufferEncoding, byteLength?: number): StringFixedCodec;
 
-const VARIABLE_STRING_ENCODINGS = ["utf8", "utf-8", "utf16le", "utf-16le", "ucs2", "ucs-2"] as const;
+/**
+ * Creates a codec for a variable length string.
+ *
+ * Serializes to ```[LENGTH][STRING]```
+ *
+ * Length is present only for variable length strings.
+ *
+ * @param	{BufferEncoding} [encoding="utf8"] - The strings encoding.
+ * @param	{AbstractCodec<number>} [lengthCodec="VarUInt()"] - Codec to specify how the length is encoded.
+ * @return	{StringCodec} StringCodec
+ *
+ * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/String/index.ts|Source}
+ */
+export function createStringCodec(encoding?: BufferEncoding, lengthCodec?: AbstractCodec<number>): StringVariableCodec;
 
-type VariableStringEncoding = (typeof VARIABLE_STRING_ENCODINGS)[number];
-
-type StringEncoding = FixedStringEncoding | VariableStringEncoding | BufferEncoding;
-
-const VARIABLE_STRING_ENCODINGS_SET = new Set<StringEncoding>(VARIABLE_STRING_ENCODINGS);
-
-const BYTE_LENGTH_DIVIDER = {
-	binary: 8,
-	hex: 2,
-	base64: 1.325,
-	base64url: 1.325,
-};
-
-export interface StringCodecOptions extends LengthOptions, PointableOptions {
-	encoding?: StringEncoding;
-}
-
-export class StringCodec extends AbstractCodec<string> {
-	private readonly _encoding: StringEncoding;
-	private readonly _length?: number;
-	private readonly _lengthPointer?: PointerCodec<number>;
-	private readonly _lengthCodec: UIntCodec | VarUIntCodec;
-	private readonly _isVariableLengthEncoding: boolean;
-
-	constructor(options?: StringCodecOptions) {
-		super();
-
-		this._id = options?.id;
-		this._encoding = options?.encoding || "utf8";
-		this._length = options?.length;
-		this._lengthPointer = options?.lengthPointer;
-		this._lengthCodec = options?.lengthCodec || new VarUIntCodec();
-		this._isVariableLengthEncoding = VARIABLE_STRING_ENCODINGS_SET.has(this._encoding);
+export function createStringCodec(encoding: BufferEncoding = "utf8", byteLengthOrCodec: number | AbstractCodec<number> = new VarInt60Codec()): StringCodec {
+	if (typeof byteLengthOrCodec === "number") {
+		return new StringFixedCodec(byteLengthOrCodec, encoding);
 	}
 
-	match(value: any, context: Context = new Context()): value is string {
-		const isMatch = typeof value === "string";
-
-		if (isMatch) {
-			if (this._length && value.length !== this._length) return false;
-
-			this.setContext(value, context);
-		}
-
-		return isMatch;
-	}
-
-	encodingLength(value: string, context: Context = new Context()): number {
-		this.setContext(value, context);
-
-		const length = Buffer.byteLength(value, this._encoding);
-
-		if (this._length || this._lengthPointer) return length;
-
-		return this._lengthCodec.encodingLength(value.length, context) + length;
-	}
-
-	write(value: string, stream: Stream, context: Context = new Context()): void {
-		this.setContext(value, context);
-
-		if (!this._length && !this._lengthPointer) this._lengthCodec.write(value.length, stream, context);
-
-		stream.position += stream.buffer.write(value, stream.position, this._encoding);
-	}
-
-	read(stream: Stream, context: Context = new Context()): string {
-		const length = this._length || this._lengthPointer?.getValue(context) || this._lengthCodec.read(stream, context);
-
-		if (this._isVariableLengthEncoding) {
-			const value = stream.buffer.toString(this._encoding, stream.position, Math.min(stream.position + length * 4, stream.buffer.byteLength)).slice(0, length);
-
-			stream.position += Buffer.byteLength(value, this._encoding);
-
-			this.setContext(value, context);
-
-			return value;
-		}
-
-		const byteLength = length / BYTE_LENGTH_DIVIDER[this._encoding as FixedStringEncoding];
-
-		const value = stream.buffer.toString(this._encoding, stream.position, (stream.position += byteLength));
-
-		this.setContext(value, context);
-
-		return value;
-	}
-}
-
-export function createStringCodec(...parameters: ConstructorParameters<typeof StringCodec>): StringCodec {
-	return new StringCodec(...parameters);
+	return new StringVariableCodec(encoding, byteLengthOrCodec);
 }

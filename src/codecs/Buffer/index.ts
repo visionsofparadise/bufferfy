@@ -1,64 +1,40 @@
-import { Context } from "../../utilities/Context";
-import { LengthOptions } from "../../utilities/Length";
-import { PointableOptions } from "../../utilities/Pointable";
-import { Stream } from "../../utilities/Stream";
 import { AbstractCodec } from "../Abstract";
-import { PointerCodec } from "../Pointer";
-import { UIntCodec } from "../UInt";
-import { VarUIntCodec } from "../VarUInt";
+import { VarInt60Codec } from "../VarInt/VarInt60";
+import { BufferFixedCodec } from "./Fixed";
+import { BufferVariableCodec } from "./Variable";
 
-export interface BufferCodecOptions extends LengthOptions, PointableOptions {}
+export type BufferCodec = BufferFixedCodec | BufferVariableCodec;
 
-export class BufferCodec extends AbstractCodec<Buffer> {
-	private readonly _length?: number;
-	private readonly _lengthPointer?: PointerCodec<number>;
-	private readonly _lengthCodec: UIntCodec | VarUIntCodec;
+/**
+ * Creates a codec for a fixed length buffer.
+ *
+ * Serializes to ```[LENGTH?][BUFFER]```
+ *
+ * Length is present only for variable length buffers.
+ *
+ * @param	{number} length - Sets a fixed length.
+ * @return	{BufferCodec} BufferCodec
+ *
+ * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Buffer/index.ts|Source}
+ */
+export function createBufferCodec(length: number): BufferFixedCodec;
 
-	constructor(options?: BufferCodecOptions) {
-		super();
+/**
+ * Creates a codec for a variable length buffer.
+ *
+ * Serializes to ```[LENGTH?][BUFFER]```
+ *
+ * Length is present only for variable length buffers.
+ *
+ * @param	{AbstractCodec<number>} [lengthCodec="VarInt50()"] - Codec to specify how the length is encoded.
+ * @return	{BufferCodec} BufferCodec
+ *
+ * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Buffer/index.ts|Source}
+ */
+export function createBufferCodec(lengthCodec?: AbstractCodec<number>): BufferVariableCodec;
 
-		this._length = options?.length;
-		this._lengthPointer = options?.lengthPointer;
-		this._lengthCodec = options?.lengthCodec || new VarUIntCodec();
-	}
+export function createBufferCodec(lengthOrCodec: number | AbstractCodec<number> = new VarInt60Codec()): BufferCodec {
+	if (typeof lengthOrCodec === "number") return new BufferFixedCodec(lengthOrCodec);
 
-	match(value: any, context: Context = new Context()): value is Buffer {
-		const isMatch = value instanceof Buffer;
-
-		if (isMatch) {
-			if (this._length && value.byteLength !== this._length) return false;
-
-			this.setContext(value, context);
-		}
-
-		return isMatch;
-	}
-
-	encodingLength(value: Buffer, context: Context = new Context()): number {
-		this.setContext(value, context);
-
-		return this._length || this._lengthPointer?.getValue(context) || this._lengthCodec.encodingLength(value.byteLength, context) + value.byteLength;
-	}
-
-	write(value: Buffer, stream: Stream, context: Context = new Context()): void {
-		this.setContext(value, context);
-
-		if (!this._length && !this._lengthPointer) this._lengthCodec.write(value.byteLength, stream, context);
-
-		stream.position += value.copy(stream.buffer, stream.position);
-	}
-
-	read(stream: Stream, context: Context = new Context()): Buffer {
-		const length = this._length || this._lengthPointer?.getValue(context) || this._lengthCodec.read(stream, context);
-
-		const value = stream.buffer.subarray(stream.position, (stream.position += length));
-
-		this.setContext(value, context);
-
-		return value;
-	}
-}
-
-export function createBufferCodec(...parameters: ConstructorParameters<typeof BufferCodec>): BufferCodec {
-	return new BufferCodec(...parameters);
+	return new BufferVariableCodec(lengthOrCodec);
 }

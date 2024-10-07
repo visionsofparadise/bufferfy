@@ -1,12 +1,35 @@
-import { Codec } from "../..";
-import { benchmark } from "../../utilities/benchmark";
+import { ConstantCodec } from ".";
+import { decodeBenchmark, encodeBenchmark, sizeBenchmark } from "../../utilities/benchmark.ignore";
 
-const constant = "test";
+const value = null;
+const codec = new ConstantCodec(value);
 
-const codec = Codec.Constant(constant);
+it(
+	"encode benchmarks for constant codec",
+	async () => {
+		await encodeBenchmark("constant", value, codec);
 
-it("benchmarks for constant", () => {
-	benchmark("constant", constant, codec);
+		expect(true).toBeTruthy();
+	},
+	5 * 60 * 1000
+);
 
-	expect(true).toStrictEqual(true);
-});
+it(
+	"decode benchmarks for constant codec",
+	async () => {
+		await decodeBenchmark("constant", value, codec);
+
+		expect(true).toBeTruthy();
+	},
+	5 * 60 * 1000
+);
+
+it(
+	"size benchmarks for constant codec",
+	async () => {
+		await sizeBenchmark(value, codec);
+
+		expect(true).toBeTruthy();
+	},
+	5 * 60 * 1000
+);

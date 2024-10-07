@@ -1,80 +1,66 @@
 import { Context } from "../../utilities/Context";
 import { BufferfyError } from "../../utilities/Error";
-import { PointableOptions } from "../../utilities/Pointable";
-import { Stream } from "../../utilities/Stream";
 import { AbstractCodec, CodecType } from "../Abstract";
-import { UIntCodec } from "../UInt";
-import { VarUIntCodec } from "../VarUInt";
+import { DecodeTransform } from "../Abstract/DecodeTransform";
+import { VarInt60Codec } from "../VarInt/VarInt60";
 
-export interface UnionCodecOptions extends PointableOptions {
-	indexCodec?: UIntCodec;
-}
+/**
+ * Creates a codec for one of many types of value. Each codec type has a match method that returns true if the input value type matches the codec's type. The union codec iterates through codecs until a codec matches and then uses that codec. Some examples of when the union codec can be useful are:
+ *
+ * - Optional or nullable values.
+ * - Overloaded values.
+ *
+ * Serializes to ```[CODEC_INDEX][VALUE]```
+ *
+ * @param	{Array<AbstractCodec>} codecs - An array of codecs for possible value types.
+ * @param 	{AbstractCodec<number>} [indexCodec="VarInt60Codec()"] - Codec for the index value.
+ * @return	{UnionCodec} UnionCodec
+ *
+ * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Union/index.ts|Source}
+ */
+export const createUnionCodec = <const Codecs extends Array<AbstractCodec<any>>>(codecs: Codecs, indexCodec: AbstractCodec<number> = new VarInt60Codec()) => new UnionCodec(codecs, indexCodec);
 
 export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends AbstractCodec<CodecType<Codecs[number]>> {
-	private readonly _reverseCodecs: Codecs;
-	private readonly _indexCodec: UIntCodec | VarUIntCodec;
-
-	constructor(public readonly codecs: Codecs, options?: UnionCodecOptions) {
+	constructor(public readonly codecs: Codecs, public readonly indexCodec: AbstractCodec<number> = new VarInt60Codec()) {
 		super();
-
-		this._reverseCodecs = [...this.codecs];
-		this._reverseCodecs.reverse();
-
-		this._id = options?.id;
-		this._indexCodec = options?.indexCodec || new VarUIntCodec();
 	}
 
-	match(value: any, context: Context = new Context()): value is CodecType<Codecs[number]> {
-		let index = this.codecs.length;
-
-		while (index--)
-			if (this._reverseCodecs[index].match(value, context)) {
-				this.setContext(value, context);
-
-				return true;
-			}
+	isValid(value: unknown): value is CodecType<Codecs[number]> {
+		for (const codec of this.codecs) if (codec.isValid(value)) return true;
 
 		return false;
 	}
 
-	encodingLength(value: CodecType<Codecs[number]>, context: Context = new Context()): number {
-		this.setContext(value, context);
-
-		let index = this.codecs.length;
-
-		while (index--) {
-			if (this._reverseCodecs[index].match(value, context))
-				return this._indexCodec.encodingLength(this.codecs.length - 1 - index, context) + this._reverseCodecs[index].encodingLength(value, context);
+	byteLength(value: CodecType<Codecs[number]>): number {
+		for (let i = 0; i < this.codecs.length; i++) {
+			if (this.codecs[i].isValid(value)) return this.indexCodec.byteLength(i) + this.codecs[i].byteLength(value);
 		}
 
 		throw new BufferfyError("Value does not match any codec");
 	}
 
-	write(value: CodecType<Codecs[number]>, stream: Stream, context: Context = new Context()): void {
-		this.setContext(value, context);
+	_encode(value: CodecType<Codecs[number]>, buffer: Buffer, c: Context): void {
+		for (let i = 0; i < this.codecs.length; i++) {
+			if (this.codecs[i].isValid(value)) {
+				this.indexCodec._encode(i, buffer, c);
+				this.codecs[i]._encode(value, buffer, c);
 
-		let index = this.codecs.length;
+				return;
+			}
+		}
 
-		while (index-- && !this._reverseCodecs[index].match(value, context)) {}
-
-		if (index < 0) throw new BufferfyError("Value does not match any codec");
-
-		this._indexCodec.write(this.codecs.length - 1 - index, stream, context);
-
-		this._reverseCodecs[index].write(value, stream, context);
+		throw new BufferfyError("Value does not match any codec");
 	}
 
-	read(stream: Stream, context: Context = new Context()): CodecType<Codecs[number]> {
-		const index = this._indexCodec.read(stream, context);
+	_decode(buffer: Buffer, c: Context): CodecType<Codecs[number]> {
+		const index = this.indexCodec._decode(buffer, c);
 
-		const value = this.codecs[index].read(stream, context);
-
-		this.setContext(value, context);
-
-		return value;
+		return this.codecs[index]._decode(buffer, c);
 	}
-}
 
-export function createUnionCodec<const Codecs extends Array<AbstractCodec<any>>>(...parameters: ConstructorParameters<typeof UnionCodec<Codecs>>): UnionCodec<Codecs> {
-	return new UnionCodec<Codecs>(...parameters);
+	async _decodeChunks(transform: DecodeTransform): Promise<CodecType<Codecs[number]>> {
+		const index = await this.indexCodec._decodeChunks(transform);
+
+		return this.codecs[index]._decodeChunks(transform);
+	}
 }

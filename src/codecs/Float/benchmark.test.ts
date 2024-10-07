@@ -1,13 +1,41 @@
-import { Codec } from "../..";
-import { benchmark } from "../../utilities/benchmark";
+import { createFloatCodec, floatBitValues } from ".";
+import { decodeBenchmark, encodeBenchmark, sizeBenchmark } from "../../utilities/benchmark.ignore";
 import { CodecType } from "../Abstract";
+import { endiannessValues } from "../UInt";
 
-const codec = Codec.Float(32);
+for (const endianness of endiannessValues) {
+	for (const bits of floatBitValues) {
+		const codec = createFloatCodec(bits, endianness);
+		const value: CodecType<typeof codec> = Math.PI;
 
-const float: CodecType<typeof codec> = 85.32127;
+		it(
+			`encode benchmarks for float${bits}${endianness} codec`,
+			async () => {
+				await encodeBenchmark(`float${bits}${endianness}`, value, codec);
 
-it("benchmarks for float", () => {
-	benchmark("float", float, codec);
+				expect(true).toBeTruthy();
+			},
+			5 * 60 * 1000
+		);
 
-	expect(true).toStrictEqual(true);
-});
+		it(
+			`decode benchmarks for float${bits}${endianness} codec`,
+			async () => {
+				await decodeBenchmark(`float${bits}${endianness}`, value, codec);
+
+				expect(true).toBeTruthy();
+			},
+			5 * 60 * 1000
+		);
+
+		it(
+			`size benchmarks for float${bits}${endianness} codec`,
+			async () => {
+				await sizeBenchmark(value, codec);
+
+				expect(true).toBeTruthy();
+			},
+			5 * 60 * 1000
+		);
+	}
+}
