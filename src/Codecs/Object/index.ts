@@ -2,6 +2,8 @@ import { Context } from "../../utilities/Context";
 import { AbstractCodec, CodecType } from "../Abstract";
 import { DecodeTransform } from "../Abstract/DecodeTransform";
 import { EncodeTransform } from "../Abstract/EncodeTransform";
+import { ConstantCodec } from "../Constant";
+import { UnionCodec } from "../Union";
 
 /**
  * Creates a codec for a fixed object.
@@ -19,21 +21,21 @@ export function createObjectCodec<Properties extends Record<string, AbstractCode
 	return new ObjectCodec<Properties>(properties);
 }
 
-type RequiredKeys<T extends Record<string | number, AbstractCodec>> = {
-	[K in keyof T]: CodecType<T[K]> extends undefined ? undefined : K;
+type RequiredKeys<T extends Record<string | number, AbstractCodec<any>>> = {
+	[K in keyof T]: T[K] extends UnionCodec<[AbstractCodec, ConstantCodec<undefined>]> ? undefined : K;
 }[keyof T];
 
-type OptionalKeys<T extends Record<string | number, AbstractCodec>> = {
-	[K in keyof T]: CodecType<T[K]> extends undefined ? K : undefined;
+type OptionalKeys<T extends Record<string | number, AbstractCodec<any>>> = {
+	[K in keyof T]: T[K] extends UnionCodec<[AbstractCodec, ConstantCodec<undefined>]> ? K : undefined;
 }[keyof T];
 
-type _OutputObject<T extends Record<string | number, AbstractCodec>> = {
+type _OutputObject<T extends Record<string | number, AbstractCodec<any>>> = {
 	[K in Exclude<RequiredKeys<T>, undefined>]: CodecType<T[K]>;
 } & {
 	[K in Exclude<OptionalKeys<T>, undefined>]?: CodecType<T[K]>;
 };
 
-export type OutputObject<T extends Record<string | number, AbstractCodec>> = {
+type OutputObject<T extends Record<string | number, AbstractCodec<any>>> = {
 	[K in keyof _OutputObject<T>]: _OutputObject<T>[K];
 };
 
