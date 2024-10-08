@@ -73,7 +73,7 @@ export class BitFieldCodec<Key extends string> extends AbstractCodec<Record<Key,
 	async _decodeChunks(transform: DecodeTransform): Promise<Record<Key, boolean>> {
 		const value: Partial<Record<Key, boolean>> = {};
 
-		const buffer = await transform._consume(Math.ceil(this.keys.length / 8));
+		const buffer = await transform.consume(Math.ceil(this.keys.length / 8));
 
 		let offset = 0;
 

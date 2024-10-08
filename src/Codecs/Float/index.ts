@@ -73,7 +73,7 @@ export class Float32BECodec extends AbstractCodec<number> {
 	}
 
 	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform._consume(4);
+		const buffer = await transform.consume(4);
 
 		return this.decode(buffer);
 	}
@@ -115,7 +115,7 @@ export class Float64BECodec extends AbstractCodec<number> {
 	}
 
 	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform._consume(8);
+		const buffer = await transform.consume(8);
 
 		return this.decode(buffer);
 	}

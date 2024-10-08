@@ -53,7 +53,7 @@ export class StringVariableCodec extends AbstractCodec<string> {
 		let byteLength = await this.lengthCodec._decodeChunks(transform);
 
 		while (byteLength) {
-			const buffer = await transform._consume(byteLength, 16);
+			const buffer = await transform.consume(byteLength, 16);
 
 			value += buffer.toString(this.encoding);
 			byteLength -= buffer.byteLength;

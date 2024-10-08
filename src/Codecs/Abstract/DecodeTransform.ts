@@ -11,11 +11,42 @@ export class DecodeTransform<Value = unknown> extends Transform {
 		});
 	}
 
-	_decodeJob: Promise<void> | null | undefined;
-	_chunks: Array<Buffer> = [];
-	_chunksByteLength = 0;
+	protected _decodeJob: Promise<void> | null | undefined;
+	protected _chunks: Array<Buffer> = [];
+	protected _chunksByteLength = 0;
 
-	async _consume(byteLength: number, minimumByteLength: number = byteLength): Promise<Buffer> {
+	_transform(chunk: Buffer, _encoding: BufferEncoding, callback: TransformCallback): void {
+		this._chunks.push(chunk);
+		this._chunksByteLength += chunk.byteLength;
+
+		if (!this._decodeJob) {
+			this._decodeJob = new Promise(async (resolve, reject) => {
+				try {
+					const value = await this.codec._decodeChunks(this);
+
+					callback(null, value);
+
+					this._decodeJob = null;
+
+					resolve();
+				} catch (error) {
+					if (error instanceof Error) callback(error);
+
+					reject(error);
+				}
+			});
+		}
+	}
+
+	_destroy(error: Error | null, callback: (error?: Error | null) => void): void {
+		delete this._decodeJob;
+		this._chunks = [];
+		this._chunksByteLength = 0;
+
+		super._destroy(error, callback);
+	}
+
+	async consume(byteLength: number, minimumByteLength: number = byteLength): Promise<Buffer> {
 		if (byteLength > this._chunksByteLength) byteLength = Math.max(minimumByteLength, this._chunksByteLength);
 
 		while (!this._chunks[0] || byteLength > this._chunksByteLength) await setImmediate();
@@ -63,36 +94,5 @@ export class DecodeTransform<Value = unknown> extends Transform {
 		if (buffer.byteLength < byteLength) throw new BufferfyError("Could not consume chunks");
 
 		return buffer;
-	}
-
-	_transform(chunk: Buffer, _encoding: BufferEncoding, callback: TransformCallback): void {
-		this._chunks.push(chunk);
-		this._chunksByteLength += chunk.byteLength;
-
-		if (!this._decodeJob) {
-			this._decodeJob = new Promise(async (resolve, reject) => {
-				try {
-					const value = await this.codec._decodeChunks(this);
-
-					callback(null, value);
-
-					this._decodeJob = null;
-
-					resolve();
-				} catch (error) {
-					if (error instanceof Error) callback(error);
-
-					reject(error);
-				}
-			});
-		}
-	}
-
-	_destroy(error: Error | null, callback: (error?: Error | null) => void): void {
-		delete this._decodeJob;
-		this._chunks = [];
-		this._chunksByteLength = 0;
-
-		super._destroy(error, callback);
 	}
 }

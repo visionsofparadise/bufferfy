@@ -31,7 +31,7 @@ export class BooleanCodec extends AbstractCodec<boolean> {
 	}
 
 	async _decodeChunks(transform: DecodeTransform): Promise<boolean> {
-		const buffer = await transform._consume(1);
+		const buffer = await transform.consume(1);
 
 		return this.decode(buffer);
 	}

@@ -44,6 +44,6 @@ export class BufferVariableCodec extends AbstractCodec<Buffer> {
 	async _decodeChunks(transform: DecodeTransform): Promise<Buffer> {
 		const byteLength = await this.lengthCodec._decodeChunks(transform);
 
-		return transform._consume(byteLength);
+		return transform.consume(byteLength);
 	}
 }

@@ -67,7 +67,7 @@ export class AnyCodec<Value = any> extends AbstractCodec<Value> {
 	async _decodeChunks(transform: DecodeTransform): Promise<Value> {
 		const byteLength = await this.lengthCodec._decodeChunks(transform);
 
-		const buffer = await transform._consume(byteLength);
+		const buffer = await transform.consume(byteLength);
 
 		return this._decodeValue(buffer);
 	}

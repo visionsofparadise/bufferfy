@@ -39,6 +39,6 @@ export class BufferFixedCodec extends AbstractCodec<Buffer> {
 	}
 
 	async _decodeChunks(transform: DecodeTransform): Promise<Buffer> {
-		return transform._consume(this._byteLength);
+		return transform.consume(this._byteLength);
 	}
 }

@@ -10,7 +10,7 @@ export class EncodeTransform<Value = unknown> extends Transform {
 		});
 	}
 
-	_queue: Promise<void> | undefined = new Promise<void>((resolve) => resolve());
+	protected _queue: Promise<void> | undefined = new Promise<void>((resolve) => resolve());
 
 	_transform(object: Value, _encoding: BufferEncoding, callback: TransformCallback): void {
 		this._queue = this._queue?.then(() => {

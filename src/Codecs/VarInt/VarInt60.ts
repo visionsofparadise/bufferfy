@@ -112,7 +112,7 @@ export class VarInt60Codec extends AbstractCodec<number> {
 	}
 
 	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const lengthBuffer = await transform._consume(1);
+		const lengthBuffer = await transform.consume(1);
 
 		const byte0 = lengthBuffer[0];
 		const lengthBits = (0xe0 & byte0) as 0x00 | 0x20 | 0x40 | 0x60 | 0x80 | 0xa0 | 0xc0;
@@ -122,32 +122,32 @@ export class VarInt60Codec extends AbstractCodec<number> {
 				return byte0;
 			}
 			case 0x20: {
-				const restBuffer = await transform._consume(1);
+				const restBuffer = await transform.consume(1);
 
 				return (0x1f & byte0) * 2 ** 8 + restBuffer[0];
 			}
 			case 0x40: {
-				const restBuffer = await transform._consume(2);
+				const restBuffer = await transform.consume(2);
 
 				return (0x1f & byte0) * 2 ** 16 + restBuffer[0] * 2 ** 8 + restBuffer[1];
 			}
 			case 0x60: {
-				const restBuffer = await transform._consume(3);
+				const restBuffer = await transform.consume(3);
 
 				return (0x1f & byte0) * 2 ** 24 + restBuffer[0] * 2 ** 16 + restBuffer[1] * 2 ** 8 + restBuffer[2];
 			}
 			case 0x80: {
-				const restBuffer = await transform._consume(4);
+				const restBuffer = await transform.consume(4);
 
 				return (0x1f & byte0) * 2 ** 32 + restBuffer[0] * 2 ** 24 + restBuffer[1] * 2 ** 16 + restBuffer[2] * 2 ** 8 + restBuffer[3];
 			}
 			case 0xa0: {
-				const restBuffer = await transform._consume(5);
+				const restBuffer = await transform.consume(5);
 
 				return (0x1f & byte0) * 2 ** 40 + restBuffer[0] * 2 ** 32 + restBuffer[1] * 2 ** 24 + restBuffer[2] * 2 ** 16 + restBuffer[3] * 2 ** 8 + restBuffer[4];
 			}
 			case 0xc0: {
-				const restBuffer = await transform._consume(6);
+				const restBuffer = await transform.consume(6);
 
 				return (0x1f & byte0) * 2 ** 48 + restBuffer[0] * 2 ** 40 + restBuffer[1] * 2 ** 32 + restBuffer[2] * 2 ** 24 + restBuffer[3] * 2 ** 16 + restBuffer[4] * 2 ** 8 + restBuffer[5];
 			}

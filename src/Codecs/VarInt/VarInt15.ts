@@ -44,7 +44,7 @@ export class VarInt15Codec extends AbstractCodec<number> {
 	}
 
 	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const lengthBuffer = await transform._consume(1);
+		const lengthBuffer = await transform.consume(1);
 
 		const byte0 = lengthBuffer[0];
 		const lengthBits = (0x80 & byte0) as 0x00 | 0x80;
@@ -54,7 +54,7 @@ export class VarInt15Codec extends AbstractCodec<number> {
 				return byte0;
 			}
 			case 0x80: {
-				const restBuffer = await transform._consume(1);
+				const restBuffer = await transform.consume(1);
 
 				return (0x7f & byte0) * 2 ** 8 + restBuffer[0];
 			}

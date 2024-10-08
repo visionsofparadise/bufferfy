@@ -6,22 +6,6 @@ import { RecordVariableCodec } from "./Variable";
 export type RecordCodec<Key extends string, Value> = RecordFixedCodec<Key, Value> | RecordVariableCodec<Key, Value>;
 
 /**
- * Creates a codec for a fixed size record or map of keys and values.
- *
- * Serializes to ```[...[[KEY][VALUE]]]```
- *
- * Length is present only for variable length records.
- *
- * @param	{AbstractCodec<string>} keyCodec - Codec for keys.
- * @param	{AbstractCodec} valueCodec - Codec for values.
- * @param	{number} length - Sets a fixed length.
- * @return	{RecordCodec} RecordCodec
- *
- * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Record/index.ts|Source}
- */
-export function createRecordCodec<Key extends string, Value>(keyCodec: AbstractCodec<Key>, valueCodec: AbstractCodec<Value>, length: number): RecordFixedCodec<Key, Value>;
-
-/**
  * Creates a codec for a variable size record or map of keys and values.
  *
  * Serializes to ```[LENGTH][...[[KEY][VALUE]]]```
@@ -36,6 +20,22 @@ export function createRecordCodec<Key extends string, Value>(keyCodec: AbstractC
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Record/index.ts|Source}
  */
 export function createRecordCodec<Key extends string, Value>(keyCodec: AbstractCodec<Key>, valueCodec: AbstractCodec<Value>, lengthCodec?: AbstractCodec<number>): RecordVariableCodec<Key, Value>;
+
+/**
+ * Creates a codec for a fixed size record or map of keys and values.
+ *
+ * Serializes to ```[...[[KEY][VALUE]]]```
+ *
+ * Length is present only for variable length records.
+ *
+ * @param	{AbstractCodec<string>} keyCodec - Codec for keys.
+ * @param	{AbstractCodec} valueCodec - Codec for values.
+ * @param	{number} length - Sets a fixed length.
+ * @return	{RecordCodec} RecordCodec
+ *
+ * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Record/index.ts|Source}
+ */
+export function createRecordCodec<Key extends string, Value>(keyCodec: AbstractCodec<Key>, valueCodec: AbstractCodec<Value>, length: number): RecordFixedCodec<Key, Value>;
 
 export function createRecordCodec<Key extends string, Value>(
 	keyCodec: AbstractCodec<Key>,

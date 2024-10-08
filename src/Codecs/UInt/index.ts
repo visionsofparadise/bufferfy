@@ -104,7 +104,7 @@ export class UInt8Codec extends AbstractCodec<number> {
 	}
 
 	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform._consume(1);
+		const buffer = await transform.consume(1);
 
 		return buffer[0];
 	}
@@ -129,7 +129,7 @@ export class UInt16BECodec extends AbstractCodec<number> {
 	}
 
 	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform._consume(2);
+		const buffer = await transform.consume(2);
 
 		return buffer[0] * 2 ** 8 + buffer[1];
 	}
@@ -146,7 +146,7 @@ export class UInt16LECodec extends UInt16BECodec {
 	}
 
 	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform._consume(2);
+		const buffer = await transform.consume(2);
 
 		return buffer[0] + buffer[1] * 2 ** 8;
 	}
@@ -172,7 +172,7 @@ export class UInt24BECodec extends AbstractCodec<number> {
 	}
 
 	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform._consume(3);
+		const buffer = await transform.consume(3);
 
 		return buffer[0] * 2 ** 16 + buffer[1] * 2 ** 8 + buffer[2];
 	}
@@ -190,7 +190,7 @@ export class UInt24LECodec extends UInt24BECodec {
 	}
 
 	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform._consume(3);
+		const buffer = await transform.consume(3);
 
 		return buffer[0] + buffer[1] * 2 ** 8 + buffer[2] * 2 ** 16;
 	}
@@ -217,7 +217,7 @@ export class UInt32BECodec extends AbstractCodec<number> {
 	}
 
 	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform._consume(4);
+		const buffer = await transform.consume(4);
 
 		return buffer[0] * 2 ** 24 + buffer[1] * 2 ** 16 + buffer[2] * 2 ** 8 + buffer[3];
 	}
@@ -236,7 +236,7 @@ export class UInt32LECodec extends UInt32BECodec {
 	}
 
 	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform._consume(4);
+		const buffer = await transform.consume(4);
 
 		return buffer[0] * 2 ** 24 + buffer[1] * 2 ** 16 + buffer[2] * 2 ** 8 + buffer[3];
 	}
@@ -264,7 +264,7 @@ export class UInt40BECodec extends AbstractCodec<number> {
 	}
 
 	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform._consume(5);
+		const buffer = await transform.consume(5);
 
 		return buffer[0] * 2 ** 32 + buffer[1] * 2 ** 24 + buffer[2] * 2 ** 16 + buffer[3] * 2 ** 8 + buffer[4];
 	}
@@ -284,7 +284,7 @@ export class UInt40LECodec extends UInt40BECodec {
 	}
 
 	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform._consume(5);
+		const buffer = await transform.consume(5);
 
 		return buffer[0] + buffer[1] * 2 ** 8 + buffer[2] * 2 ** 16 + buffer[3] * 2 ** 24 + buffer[4] * 2 ** 32;
 	}
@@ -313,7 +313,7 @@ export class UInt48BECodec extends AbstractCodec<number> {
 	}
 
 	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform._consume(6);
+		const buffer = await transform.consume(6);
 
 		return buffer[0] * 2 ** 40 + buffer[1] * 2 ** 32 + buffer[2] * 2 ** 24 + buffer[3] * 2 ** 16 + buffer[4] * 2 ** 8 + buffer[5];
 	}
@@ -334,7 +334,7 @@ export class UInt48LECodec extends UInt48BECodec {
 	}
 
 	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform._consume(6);
+		const buffer = await transform.consume(6);
 
 		return buffer[0] + buffer[1] * 2 ** 8 + buffer[2] * 2 ** 16 + buffer[3] * 2 ** 24 + buffer[4] * 2 ** 32 + buffer[5] * 2 ** 40;
 	}
