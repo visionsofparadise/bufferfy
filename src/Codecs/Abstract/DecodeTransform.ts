@@ -11,9 +11,9 @@ export class DecodeTransform<Value = unknown> extends Transform {
 		});
 	}
 
-	private _decodeJob: Promise<void> | null | undefined;
-	private _chunks: Array<Buffer> = [];
-	private _chunksByteLength = 0;
+	_decodeJob: Promise<void> | null | undefined;
+	_chunks: Array<Buffer> = [];
+	_chunksByteLength = 0;
 
 	async _consume(byteLength: number, minimumByteLength: number = byteLength): Promise<Buffer> {
 		if (byteLength > this._chunksByteLength) byteLength = Math.max(minimumByteLength, this._chunksByteLength);

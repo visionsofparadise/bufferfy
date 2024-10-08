@@ -4,7 +4,7 @@ import { DecodeTransform } from "../Abstract/DecodeTransform";
 
 export interface TransformCodecOptions<Source, Target> {
 	encode: (source: Source) => Target;
-	decode: (target: Target) => Source;
+	decode: (target: Target, buffer: Buffer) => Source;
 }
 
 /**
@@ -26,7 +26,7 @@ export const createTransformCodec = <Source, Target>(targetCodec: AbstractCodec<
 
 export class TransformCodec<Source, Target> extends AbstractCodec<Source> {
 	private readonly _encodeSource: (source: Source) => Target;
-	private readonly _decodeTarget: (target: Target) => Source;
+	private readonly _decodeTarget: (target: Target, buffer: Buffer) => Source;
 
 	constructor(public readonly targetCodec: AbstractCodec<Target>, options: TransformCodecOptions<Source, Target>) {
 		super();
@@ -54,14 +54,18 @@ export class TransformCodec<Source, Target> extends AbstractCodec<Source> {
 	}
 
 	_decode(buffer: Buffer, c: Context): Source {
+		const preOffset = c.offset;
+
 		const targetValue = this.targetCodec._decode(buffer, c);
 
-		return this._decodeTarget(targetValue);
+		const postOffset = c.offset;
+
+		return this._decodeTarget(targetValue, buffer.subarray(preOffset, postOffset));
 	}
 
 	async _decodeChunks(transform: DecodeTransform): Promise<Source> {
 		const targetValue = await this.targetCodec._decodeChunks(transform);
 
-		return this._decodeTarget(targetValue);
+		return this._decodeTarget(targetValue, this.targetCodec.encode(targetValue));
 	}
 }
