@@ -8,6 +8,7 @@ export { BooleanCodec } from "./Codecs/Boolean";
 export { type BufferCodec } from "./Codecs/Buffer";
 export { BufferFixedCodec } from "./Codecs/Buffer/Fixed";
 export { BufferVariableCodec } from "./Codecs/Buffer/Variable";
+export { ConstantCodec } from "./Codecs/Constant";
 export { Float32BECodec, Float32LECodec, Float64BECodec, Float64LECodec, type FloatCodec } from "./Codecs/Float";
 export { Int16BECodec, Int16LECodec, Int24BECodec, Int24LECodec, Int32BECodec, Int32LECodec, Int40BECodec, Int40LECodec, Int48BECodec, Int48LECodec, Int8Codec, type IntCodec } from "./Codecs/Int";
 export { ObjectCodec } from "./Codecs/Object";
