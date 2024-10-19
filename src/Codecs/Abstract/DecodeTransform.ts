@@ -25,9 +25,11 @@ export class DecodeTransform<Value = unknown> extends Transform {
 					while (this._chunksByteLength) {
 						const value = await this.codec._decodeChunks(this);
 
-						callback(null, value);
+						this.push(value);
 					}
-					
+
+					callback(null);
+
 					this._decodeJob = null;
 
 					resolve();
