@@ -22,10 +22,12 @@ export class DecodeTransform<Value = unknown> extends Transform {
 		if (!this._decodeJob) {
 			this._decodeJob = new Promise(async (resolve, reject) => {
 				try {
-					const value = await this.codec._decodeChunks(this);
+					while (this._chunksByteLength) {
+						const value = await this.codec._decodeChunks(this);
 
-					callback(null, value);
-
+						callback(null, value);
+					}
+					
 					this._decodeJob = null;
 
 					resolve();
