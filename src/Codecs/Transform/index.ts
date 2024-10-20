@@ -3,6 +3,7 @@ import { AbstractCodec } from "../Abstract";
 import { DecodeTransform } from "../Abstract/DecodeTransform";
 
 export interface TransformCodecOptions<Source, Target> {
+	isValid?: (source: unknown) => boolean;
 	encode: (source: Source) => Target;
 	decode: (target: Target, buffer: Buffer) => Source;
 }
@@ -16,6 +17,7 @@ export interface TransformCodecOptions<Source, Target> {
  *
  * @param	{AbstractCodec} targetCodec - The wrapped codec.
  * @param	{TransformCodecOptions} options
+ * @param	{(value) => boolean} [options.isValid=targetCodec.isValid] - Function that returns true if the input is a valid source type.
  * @param	{(source) => target} options.encode - Function that transforms from source to target.
  * @param	{(target, buffer) => source} options.decode - Function that transforms from target to source.
  * @return	{TransformCodec} TransformCodec
@@ -25,19 +27,21 @@ export interface TransformCodecOptions<Source, Target> {
 export const createTransformCodec = <Source, Target>(targetCodec: AbstractCodec<Target>, options: TransformCodecOptions<Source, Target>) => new TransformCodec(targetCodec, options);
 
 export class TransformCodec<Source, Target> extends AbstractCodec<Source> {
+	private readonly _isSourceValid: (value: unknown) => boolean;
 	private readonly _encodeSource: (source: Source) => Target;
 	private readonly _decodeTarget: (target: Target, buffer: Buffer) => Source;
 
 	constructor(public readonly targetCodec: AbstractCodec<Target>, options: TransformCodecOptions<Source, Target>) {
 		super();
 
+		this._isSourceValid = options.isValid || ((value: unknown) => targetCodec.isValid(options.encode(value as any)));
 		this._encodeSource = options.encode;
 		this._decodeTarget = options.decode;
 	}
 
 	isValid(value: unknown): value is Source {
 		try {
-			const isValid = this.targetCodec.isValid(this._encodeSource(value as any));
+			const isValid = this._isSourceValid(value);
 
 			return isValid;
 		} catch (error) {
