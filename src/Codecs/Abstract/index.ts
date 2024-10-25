@@ -36,18 +36,6 @@ export abstract class AbstractCodec<Value = unknown> {
 	abstract _encode(value: Value, buffer: Buffer, c: Context): void;
 
 	/**
-	 * Used internally to recursively encode via a transform stream.
-	 *
-	 * @param	{Value} value - Value of this codec's type.
-	 * @param	{EncodeTransform} transform - The transform that is being worked on.
-	 * @return	{Promise<void>}
-	 *
-	 */
-	async _encodeChunks(value: Value, transform: EncodeTransform): Promise<void> {
-		await transform.pushAsync(this.encode(value));
-	}
-
-	/**
 	 * Encodes a value of this codecs type into a buffer.
 	 *
 	 * @param	{Value} value - Value of this codec's type.
@@ -81,15 +69,6 @@ export abstract class AbstractCodec<Value = unknown> {
 	 *
 	 */
 	abstract _decode(buffer: Buffer, c: Context): Value;
-
-	/**
-	 * Used internally to recursively decode via a transform stream.
-	 *
-	 * @param	{DecodeTransform} transform - The transform that is being worked on.
-	 * @return	{Promise<Value>} Value of this codec's type.
-	 *
-	 */
-	abstract _decodeChunks(transform: DecodeTransform): Promise<Value>;
 
 	/**
 	 * Decodes a buffer to a value of this codecs type.

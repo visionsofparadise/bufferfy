@@ -1,7 +1,5 @@
 import { Context } from "../../utilities/Context";
 import { AbstractCodec, CodecType } from "../Abstract";
-import { DecodeTransform } from "../Abstract/DecodeTransform";
-import { EncodeTransform } from "../Abstract/EncodeTransform";
 import { ConstantCodec } from "../Constant";
 import { UnionCodec } from "../Union";
 
@@ -68,22 +66,10 @@ export class ObjectCodec<Properties extends Record<string, AbstractCodec>> exten
 		for (const [key, codec] of this.entries) codec._encode(value[key as keyof OutputObject<Properties>], buffer, c);
 	}
 
-	async _encodeChunks(value: OutputObject<Properties>, transform: EncodeTransform): Promise<void> {
-		for (const [key, codec] of this.entries) await codec._encodeChunks(value[key as keyof OutputObject<Properties>], transform);
-	}
-
 	_decode(buffer: Buffer, c: Context): OutputObject<Properties> {
 		const value: Partial<Record<keyof OutputObject<Properties>, unknown>> = {};
 
 		for (const [key, codec] of this.entries) value[key as keyof OutputObject<Properties>] = codec._decode(buffer, c);
-
-		return value as OutputObject<Properties>;
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<OutputObject<Properties>> {
-		const value: Partial<Record<keyof OutputObject<Properties>, unknown>> = {};
-
-		for (const [key, codec] of this.entries) value[key as keyof OutputObject<Properties>] = await codec._decodeChunks(transform);
 
 		return value as OutputObject<Properties>;
 	}

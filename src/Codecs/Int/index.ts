@@ -1,6 +1,5 @@
 import { endianness as osEndianness } from "os";
 import { Context } from "../../utilities/Context";
-import { DecodeTransform } from "../Abstract/DecodeTransform";
 import {
 	Endianness,
 	UInt16BECodec,
@@ -87,10 +86,6 @@ export class Int8Codec extends UInt8Codec {
 	_decode(buffer: Buffer, c: Context): number {
 		return super._decode(buffer, c) - 127;
 	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		return (await super._decodeChunks(transform)) - 127;
-	}
 }
 
 export class Int16BECodec extends UInt16BECodec {
@@ -104,10 +99,6 @@ export class Int16BECodec extends UInt16BECodec {
 
 	_decode(buffer: Buffer, c: Context): number {
 		return super._decode(buffer, c) - 32767;
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		return (await super._decodeChunks(transform)) - 32767;
 	}
 }
 
@@ -123,10 +114,6 @@ export class Int16LECodec extends UInt16LECodec {
 	_decode(buffer: Buffer, c: Context): number {
 		return super._decode(buffer, c) - 32767;
 	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		return (await super._decodeChunks(transform)) - 32767;
-	}
 }
 
 export class Int24BECodec extends UInt24BECodec {
@@ -140,10 +127,6 @@ export class Int24BECodec extends UInt24BECodec {
 
 	_decode(buffer: Buffer, c: Context): number {
 		return super._decode(buffer, c) - 8388607;
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		return (await super._decodeChunks(transform)) - 8388607;
 	}
 }
 
@@ -159,10 +142,6 @@ export class Int24LECodec extends UInt24LECodec {
 	_decode(buffer: Buffer, c: Context): number {
 		return super._decode(buffer, c) - 8388607;
 	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		return (await super._decodeChunks(transform)) - 8388607;
-	}
 }
 
 export class Int32BECodec extends UInt32BECodec {
@@ -176,10 +155,6 @@ export class Int32BECodec extends UInt32BECodec {
 
 	_decode(buffer: Buffer, c: Context): number {
 		return super._decode(buffer, c) - 2147483647;
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		return (await super._decodeChunks(transform)) - 2147483647;
 	}
 }
 
@@ -195,10 +170,6 @@ export class Int32LECodec extends UInt32LECodec {
 	_decode(buffer: Buffer, c: Context): number {
 		return super._decode(buffer, c) - 2147483647;
 	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		return (await super._decodeChunks(transform)) - 2147483647;
-	}
 }
 
 export class Int40BECodec extends UInt40BECodec {
@@ -212,10 +183,6 @@ export class Int40BECodec extends UInt40BECodec {
 
 	_decode(buffer: Buffer, c: Context): number {
 		return super._decode(buffer, c) - 549755813887;
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		return (await super._decodeChunks(transform)) - 549755813887;
 	}
 }
 
@@ -231,10 +198,6 @@ export class Int40LECodec extends UInt40LECodec {
 	_decode(buffer: Buffer, c: Context): number {
 		return super._decode(buffer, c) - 549755813887;
 	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		return (await super._decodeChunks(transform)) - 549755813887;
-	}
 }
 
 export class Int48BECodec extends UInt48BECodec {
@@ -249,10 +212,6 @@ export class Int48BECodec extends UInt48BECodec {
 	_decode(buffer: Buffer, c: Context): number {
 		return super._decode(buffer, c) - 140737488355327;
 	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		return (await super._decodeChunks(transform)) - 140737488355327;
-	}
 }
 
 export class Int48LECodec extends UInt48LECodec {
@@ -266,9 +225,5 @@ export class Int48LECodec extends UInt48LECodec {
 
 	_decode(buffer: Buffer, c: Context): number {
 		return super._decode(buffer, c) - 140737488355327;
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		return (await super._decodeChunks(transform)) - 140737488355327;
 	}
 }

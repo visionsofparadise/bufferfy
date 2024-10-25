@@ -1,6 +1,6 @@
 import { Context } from "../../utilities/Context";
+import { BufferfyByteLengthError } from "../../utilities/Error";
 import { AbstractCodec } from "../Abstract";
-import { DecodeTransform } from "../Abstract/DecodeTransform";
 
 export class VarInt15Codec extends AbstractCodec<number> {
 	isValid(value: unknown): value is number {
@@ -30,33 +30,21 @@ export class VarInt15Codec extends AbstractCodec<number> {
 	}
 
 	_decode(buffer: Buffer, c: Context): number {
+		if (buffer.byteLength < c.offset + 1) throw new BufferfyByteLengthError();
+
 		const byte0 = buffer[c.offset++];
 		const lengthBits = (0x80 & byte0) as 0x00 | 0x80;
 
-		switch (lengthBits) {
-			case 0x00: {
+		const remainingByteLength = (lengthBits / 128) as 0 | 1;
+
+		if (buffer.byteLength < c.offset + remainingByteLength) throw new BufferfyByteLengthError();
+
+		switch (remainingByteLength) {
+			case 0: {
 				return byte0;
 			}
-			case 0x80: {
+			case 1: {
 				return (0x7f & byte0) * 2 ** 8 + buffer[c.offset++];
-			}
-		}
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const lengthBuffer = await transform.consume(1);
-
-		const byte0 = lengthBuffer[0];
-		const lengthBits = (0x80 & byte0) as 0x00 | 0x80;
-
-		switch (lengthBits) {
-			case 0x00: {
-				return byte0;
-			}
-			case 0x80: {
-				const restBuffer = await transform.consume(1);
-
-				return (0x7f & byte0) * 2 ** 8 + restBuffer[0];
 			}
 		}
 	}

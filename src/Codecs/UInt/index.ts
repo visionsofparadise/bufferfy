@@ -1,7 +1,7 @@
 import { endianness as osEndianness } from "os";
 import { Context } from "../../utilities/Context";
+import { BufferfyByteLengthError } from "../../utilities/Error";
 import { AbstractCodec } from "../Abstract";
-import { DecodeTransform } from "../Abstract/DecodeTransform";
 
 export const endiannessValues = ["BE", "LE"] as const;
 
@@ -100,13 +100,9 @@ export class UInt8Codec extends AbstractCodec<number> {
 	}
 
 	_decode(buffer: Buffer, c: Context): number {
+		if (buffer.byteLength < c.offset + 1) throw new BufferfyByteLengthError();
+
 		return buffer[c.offset++];
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform.consume(1);
-
-		return buffer[0];
 	}
 }
 
@@ -125,13 +121,9 @@ export class UInt16BECodec extends AbstractCodec<number> {
 	}
 
 	_decode(buffer: Buffer, c: Context): number {
+		if (buffer.byteLength < c.offset + 2) throw new BufferfyByteLengthError();
+
 		return buffer[c.offset++] * 2 ** 8 + buffer[c.offset++];
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform.consume(2);
-
-		return buffer[0] * 2 ** 8 + buffer[1];
 	}
 }
 
@@ -142,13 +134,9 @@ export class UInt16LECodec extends UInt16BECodec {
 	}
 
 	_decode(buffer: Buffer, c: Context): number {
+		if (buffer.byteLength < c.offset + 2) throw new BufferfyByteLengthError();
+
 		return buffer[c.offset++] + buffer[c.offset++] * 2 ** 8;
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform.consume(2);
-
-		return buffer[0] + buffer[1] * 2 ** 8;
 	}
 }
 
@@ -168,13 +156,9 @@ export class UInt24BECodec extends AbstractCodec<number> {
 	}
 
 	_decode(buffer: Buffer, c: Context): number {
+		if (buffer.byteLength < c.offset + 3) throw new BufferfyByteLengthError();
+
 		return buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++];
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform.consume(3);
-
-		return buffer[0] * 2 ** 16 + buffer[1] * 2 ** 8 + buffer[2];
 	}
 }
 
@@ -186,13 +170,9 @@ export class UInt24LECodec extends UInt24BECodec {
 	}
 
 	_decode(buffer: Buffer, c: Context): number {
+		if (buffer.byteLength < c.offset + 3) throw new BufferfyByteLengthError();
+
 		return buffer[c.offset++] + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++] * 2 ** 16;
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform.consume(3);
-
-		return buffer[0] + buffer[1] * 2 ** 8 + buffer[2] * 2 ** 16;
 	}
 }
 
@@ -213,13 +193,9 @@ export class UInt32BECodec extends AbstractCodec<number> {
 	}
 
 	_decode(buffer: Buffer, c: Context): number {
+		if (buffer.byteLength < c.offset + 4) throw new BufferfyByteLengthError();
+
 		return buffer[c.offset++] * 2 ** 24 + buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++];
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform.consume(4);
-
-		return buffer[0] * 2 ** 24 + buffer[1] * 2 ** 16 + buffer[2] * 2 ** 8 + buffer[3];
 	}
 }
 
@@ -232,13 +208,9 @@ export class UInt32LECodec extends UInt32BECodec {
 	}
 
 	_decode(buffer: Buffer, c: Context): number {
+		if (buffer.byteLength < c.offset + 4) throw new BufferfyByteLengthError();
+
 		return buffer[c.offset++] * 2 ** 24 + buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++];
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform.consume(4);
-
-		return buffer[0] * 2 ** 24 + buffer[1] * 2 ** 16 + buffer[2] * 2 ** 8 + buffer[3];
 	}
 }
 
@@ -260,13 +232,9 @@ export class UInt40BECodec extends AbstractCodec<number> {
 	}
 
 	_decode(buffer: Buffer, c: Context): number {
+		if (buffer.byteLength < c.offset + 5) throw new BufferfyByteLengthError();
+
 		return buffer[c.offset++] * 2 ** 32 + buffer[c.offset++] * 2 ** 24 + buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++];
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform.consume(5);
-
-		return buffer[0] * 2 ** 32 + buffer[1] * 2 ** 24 + buffer[2] * 2 ** 16 + buffer[3] * 2 ** 8 + buffer[4];
 	}
 }
 
@@ -280,13 +248,9 @@ export class UInt40LECodec extends UInt40BECodec {
 	}
 
 	_decode(buffer: Buffer, c: Context): number {
+		if (buffer.byteLength < c.offset + 5) throw new BufferfyByteLengthError();
+
 		return buffer[c.offset++] + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 24 + buffer[c.offset++] * 2 ** 32;
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform.consume(5);
-
-		return buffer[0] + buffer[1] * 2 ** 8 + buffer[2] * 2 ** 16 + buffer[3] * 2 ** 24 + buffer[4] * 2 ** 32;
 	}
 }
 
@@ -309,13 +273,9 @@ export class UInt48BECodec extends AbstractCodec<number> {
 	}
 
 	_decode(buffer: Buffer, c: Context): number {
+		if (buffer.byteLength < c.offset + 6) throw new BufferfyByteLengthError();
+
 		return buffer[c.offset++] * 2 ** 40 + buffer[c.offset++] * 2 ** 32 + buffer[c.offset++] * 2 ** 24 + buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++];
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform.consume(6);
-
-		return buffer[0] * 2 ** 40 + buffer[1] * 2 ** 32 + buffer[2] * 2 ** 24 + buffer[3] * 2 ** 16 + buffer[4] * 2 ** 8 + buffer[5];
 	}
 }
 
@@ -330,12 +290,8 @@ export class UInt48LECodec extends UInt48BECodec {
 	}
 
 	_decode(buffer: Buffer, c: Context): number {
+		if (buffer.byteLength < c.offset + 6) throw new BufferfyByteLengthError();
+
 		return buffer[c.offset++] + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 24 + buffer[c.offset++] * 2 ** 32 + buffer[c.offset++] * 2 ** 40;
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform.consume(6);
-
-		return buffer[0] + buffer[1] * 2 ** 8 + buffer[2] * 2 ** 16 + buffer[3] * 2 ** 24 + buffer[4] * 2 ** 32 + buffer[5] * 2 ** 40;
 	}
 }

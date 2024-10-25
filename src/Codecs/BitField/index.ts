@@ -1,6 +1,6 @@
 import { Context } from "../../utilities/Context";
+import { BufferfyByteLengthError } from "../../utilities/Error";
 import { AbstractCodec } from "../Abstract";
-import { DecodeTransform } from "../Abstract/DecodeTransform";
 
 const BIT_MAP: Record<number, number> = {
 	0: 0x80,
@@ -57,6 +57,8 @@ export class BitFieldCodec<Key extends string> extends AbstractCodec<Record<Key,
 	}
 
 	_decode(buffer: Buffer, c: Context): Record<Key, boolean> {
+		if (buffer.byteLength < c.offset + Math.ceil(this.keys.length / 8)) throw new BufferfyByteLengthError();
+
 		const value: Partial<Record<Key, boolean>> = {};
 
 		for (let i = 0; i < this.keys.length; i++) {
@@ -66,22 +68,6 @@ export class BitFieldCodec<Key extends string> extends AbstractCodec<Record<Key,
 		}
 
 		if (this.keys.length % 8 !== 0) c.offset++;
-
-		return value as Record<Key, boolean>;
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<Record<Key, boolean>> {
-		const value: Partial<Record<Key, boolean>> = {};
-
-		const buffer = await transform.consume(Math.ceil(this.keys.length / 8));
-
-		let offset = 0;
-
-		for (let i = 0; i < this.keys.length; i++) {
-			value[this.keys[i]] = (buffer[offset] & BIT_MAP[i % 8]) > 0;
-
-			if (i % 8 === 7) offset++;
-		}
 
 		return value as Record<Key, boolean>;
 	}

@@ -1,7 +1,7 @@
 import { endianness as osEndianness } from "os";
 import { Context } from "../../utilities/Context";
+import { BufferfyByteLengthError } from "../../utilities/Error";
 import { AbstractCodec } from "../Abstract";
-import { DecodeTransform } from "../Abstract/DecodeTransform";
 import { Endianness } from "../UInt";
 
 export const floatBitValues = [32, 64] as const;
@@ -65,17 +65,13 @@ export class Float32BECodec extends AbstractCodec<number> {
 	}
 
 	_decode(buffer: Buffer, c: Context): number {
+		if (buffer.byteLength < c.offset + 4) throw new BufferfyByteLengthError();
+
 		const value = buffer.readFloatBE(c.offset);
 
 		c.offset += 4;
 
 		return value;
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform.consume(4);
-
-		return this.decode(buffer);
 	}
 }
 
@@ -84,10 +80,12 @@ export class Float32LECodec extends Float32BECodec {
 		c.offset = buffer.writeFloatLE(value, c.offset);
 	}
 
-	_decode(buffer: Buffer, offset: Context): number {
-		const value = buffer.readFloatLE(offset.offset);
+	_decode(buffer: Buffer, c: Context): number {
+		if (buffer.byteLength < c.offset + 4) throw new BufferfyByteLengthError();
 
-		offset.offset += 4;
+		const value = buffer.readFloatLE(c.offset);
+
+		c.offset += 4;
 
 		return value;
 	}
@@ -106,18 +104,14 @@ export class Float64BECodec extends AbstractCodec<number> {
 		c.offset = buffer.writeDoubleBE(value, c.offset);
 	}
 
-	_decode(buffer: Buffer, offset: Context): number {
-		const value = buffer.readDoubleBE(offset.offset);
+	_decode(buffer: Buffer, c: Context): number {
+		if (buffer.byteLength < c.offset + 8) throw new BufferfyByteLengthError();
 
-		offset.offset += 8;
+		const value = buffer.readDoubleBE(c.offset);
+
+		c.offset += 8;
 
 		return value;
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const buffer = await transform.consume(8);
-
-		return this.decode(buffer);
 	}
 }
 
@@ -126,10 +120,12 @@ export class Float64LECodec extends Float64BECodec {
 		c.offset = buffer.writeDoubleLE(value, c.offset);
 	}
 
-	_decode(buffer: Buffer, offset: Context): number {
-		const value = buffer.readDoubleLE(offset.offset);
+	_decode(buffer: Buffer, c: Context): number {
+		if (buffer.byteLength < c.offset + 8) throw new BufferfyByteLengthError();
 
-		offset.offset += 8;
+		const value = buffer.readDoubleLE(c.offset);
+
+		c.offset += 8;
 
 		return value;
 	}

@@ -1,7 +1,6 @@
 import { Context } from "../../utilities/Context";
+import { BufferfyByteLengthError } from "../../utilities/Error";
 import { AbstractCodec } from "../Abstract";
-import { DecodeTransform } from "../Abstract/DecodeTransform";
-import { EncodeTransform } from "../Abstract/EncodeTransform";
 import { VarInt60Codec } from "../VarInt/VarInt60";
 
 export class StringVariableCodec extends AbstractCodec<string> {
@@ -27,38 +26,11 @@ export class StringVariableCodec extends AbstractCodec<string> {
 		c.offset += buffer.write(value, c.offset, c.offset + byteLength, this.encoding);
 	}
 
-	async _encodeChunks(value: string, transform: EncodeTransform): Promise<void> {
-		const buffer = Buffer.from(value, this.encoding);
-
-		await this.lengthCodec._encodeChunks(buffer.byteLength, transform);
-
-		let offset = 0;
-
-		while (offset < buffer.byteLength) {
-			const chunk = buffer.subarray(offset, (offset += Math.min(buffer.byteLength - offset, transform.readableHighWaterMark - transform.readableLength)));
-
-			await transform.pushAsync(chunk);
-		}
-	}
-
 	_decode(buffer: Buffer, c: Context): string {
 		const byteLength = this.lengthCodec._decode(buffer, c);
 
+		if (buffer.byteLength < c.offset + byteLength) throw new BufferfyByteLengthError();
+
 		return buffer.toString(this.encoding, c.offset, (c.offset += byteLength));
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<string> {
-		let value = "";
-
-		let byteLength = await this.lengthCodec._decodeChunks(transform);
-
-		while (byteLength) {
-			const buffer = await transform.consume(byteLength, 16);
-
-			value += buffer.toString(this.encoding);
-			byteLength -= buffer.byteLength;
-		}
-
-		return value;
 	}
 }

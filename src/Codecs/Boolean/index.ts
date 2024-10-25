@@ -1,6 +1,6 @@
 import { Context } from "../../utilities/Context";
+import { BufferfyByteLengthError } from "../../utilities/Error";
 import { AbstractCodec } from "../Abstract";
-import { DecodeTransform } from "../Abstract/DecodeTransform";
 
 /**
  * Creates a codec for a boolean byte
@@ -27,12 +27,8 @@ export class BooleanCodec extends AbstractCodec<boolean> {
 	}
 
 	_decode(buffer: Buffer, c: Context): boolean {
+		if (buffer.byteLength < c.offset + 1) throw new BufferfyByteLengthError();
+
 		return buffer[c.offset++] === 1;
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<boolean> {
-		const buffer = await transform.consume(1);
-
-		return this.decode(buffer);
 	}
 }

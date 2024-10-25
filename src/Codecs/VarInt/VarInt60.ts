@@ -1,6 +1,6 @@
 import { Context } from "../../utilities/Context";
+import { BufferfyByteLengthError } from "../../utilities/Error";
 import { AbstractCodec } from "../Abstract";
-import { DecodeTransform } from "../Abstract/DecodeTransform";
 
 export class VarInt60Codec extends AbstractCodec<number> {
 	isValid(value: unknown): value is number {
@@ -75,29 +75,35 @@ export class VarInt60Codec extends AbstractCodec<number> {
 	}
 
 	_decode(buffer: Buffer, c: Context): number {
+		if (buffer.byteLength < c.offset + 1) throw new BufferfyByteLengthError();
+
 		const byte0 = buffer[c.offset++];
 		const lengthBits = (0xe0 & byte0) as 0x00 | 0x20 | 0x40 | 0x60 | 0x80 | 0xa0 | 0xc0;
 
-		switch (lengthBits) {
-			case 0x00: {
+		const remainingByteLength = (lengthBits / 32) as 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
+		if (buffer.byteLength < c.offset + remainingByteLength) throw new BufferfyByteLengthError();
+
+		switch (remainingByteLength) {
+			case 0: {
 				return byte0;
 			}
-			case 0x20: {
+			case 1: {
 				return (0x1f & byte0) * 2 ** 8 + buffer[c.offset++];
 			}
-			case 0x40: {
+			case 2: {
 				return (0x1f & byte0) * 2 ** 16 + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++];
 			}
-			case 0x60: {
+			case 3: {
 				return (0x1f & byte0) * 2 ** 24 + buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++];
 			}
-			case 0x80: {
+			case 4: {
 				return (0x1f & byte0) * 2 ** 32 + buffer[c.offset++] * 2 ** 24 + buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++];
 			}
-			case 0xa0: {
+			case 5: {
 				return (0x1f & byte0) * 2 ** 40 + buffer[c.offset++] * 2 ** 32 + buffer[c.offset++] * 2 ** 24 + buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++];
 			}
-			case 0xc0: {
+			case 6: {
 				return (
 					(0x1f & byte0) * 2 ** 48 +
 					buffer[c.offset++] * 2 ** 40 +
@@ -107,49 +113,6 @@ export class VarInt60Codec extends AbstractCodec<number> {
 					buffer[c.offset++] * 2 ** 8 +
 					buffer[c.offset++]
 				);
-			}
-		}
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<number> {
-		const lengthBuffer = await transform.consume(1);
-
-		const byte0 = lengthBuffer[0];
-		const lengthBits = (0xe0 & byte0) as 0x00 | 0x20 | 0x40 | 0x60 | 0x80 | 0xa0 | 0xc0;
-
-		switch (lengthBits) {
-			case 0x00: {
-				return byte0;
-			}
-			case 0x20: {
-				const restBuffer = await transform.consume(1);
-
-				return (0x1f & byte0) * 2 ** 8 + restBuffer[0];
-			}
-			case 0x40: {
-				const restBuffer = await transform.consume(2);
-
-				return (0x1f & byte0) * 2 ** 16 + restBuffer[0] * 2 ** 8 + restBuffer[1];
-			}
-			case 0x60: {
-				const restBuffer = await transform.consume(3);
-
-				return (0x1f & byte0) * 2 ** 24 + restBuffer[0] * 2 ** 16 + restBuffer[1] * 2 ** 8 + restBuffer[2];
-			}
-			case 0x80: {
-				const restBuffer = await transform.consume(4);
-
-				return (0x1f & byte0) * 2 ** 32 + restBuffer[0] * 2 ** 24 + restBuffer[1] * 2 ** 16 + restBuffer[2] * 2 ** 8 + restBuffer[3];
-			}
-			case 0xa0: {
-				const restBuffer = await transform.consume(5);
-
-				return (0x1f & byte0) * 2 ** 40 + restBuffer[0] * 2 ** 32 + restBuffer[1] * 2 ** 24 + restBuffer[2] * 2 ** 16 + restBuffer[3] * 2 ** 8 + restBuffer[4];
-			}
-			case 0xc0: {
-				const restBuffer = await transform.consume(6);
-
-				return (0x1f & byte0) * 2 ** 48 + restBuffer[0] * 2 ** 40 + restBuffer[1] * 2 ** 32 + restBuffer[2] * 2 ** 24 + restBuffer[3] * 2 ** 16 + restBuffer[4] * 2 ** 8 + restBuffer[5];
 			}
 		}
 	}

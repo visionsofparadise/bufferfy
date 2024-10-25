@@ -1,7 +1,6 @@
 import { Context } from "../../utilities/Context";
 import { BufferfyError } from "../../utilities/Error";
 import { AbstractCodec, CodecType } from "../Abstract";
-import { DecodeTransform } from "../Abstract/DecodeTransform";
 import { VarInt60Codec } from "../VarInt/VarInt60";
 
 /**
@@ -56,11 +55,5 @@ export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends 
 		const index = this.indexCodec._decode(buffer, c);
 
 		return this.codecs[index]._decode(buffer, c);
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<CodecType<Codecs[number]>> {
-		const index = await this.indexCodec._decodeChunks(transform);
-
-		return this.codecs[index]._decodeChunks(transform);
 	}
 }

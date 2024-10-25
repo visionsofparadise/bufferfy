@@ -1,6 +1,6 @@
 import { Context } from "../../utilities/Context";
+import { BufferfyByteLengthError } from "../../utilities/Error";
 import { AbstractCodec } from "../Abstract";
-import { DecodeTransform } from "../Abstract/DecodeTransform";
 import { VarInt60Codec } from "../VarInt/VarInt60";
 
 export interface AnyCodecOptions<Value = any> {
@@ -59,16 +59,10 @@ export class AnyCodec<Value = any> extends AbstractCodec<Value> {
 	_decode(buffer: Buffer, c: Context): Value {
 		const byteLength = this.lengthCodec._decode(buffer, c);
 
+		if (buffer.byteLength < c.offset + byteLength) throw new BufferfyByteLengthError();
+
 		const valueBuffer = buffer.subarray(c.offset, (c.offset += byteLength));
 
 		return this._decodeValue(valueBuffer);
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<Value> {
-		const byteLength = await this.lengthCodec._decodeChunks(transform);
-
-		const buffer = await transform.consume(byteLength);
-
-		return this._decodeValue(buffer);
 	}
 }

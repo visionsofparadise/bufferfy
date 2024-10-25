@@ -1,7 +1,6 @@
 import { isDeepStrictEqual } from "util";
 import { Context } from "../../utilities/Context";
 import { AbstractCodec } from "../Abstract";
-import { DecodeTransform } from "../Abstract/DecodeTransform";
 
 /**
  * Creates a codec for a constant.
@@ -39,10 +38,6 @@ export class ConstantCodec<Value> extends AbstractCodec<Value> {
 	}
 
 	_decode(_buffer: Buffer, _c: Context): Value {
-		return this.value;
-	}
-
-	async _decodeChunks(_transform: DecodeTransform): Promise<Value> {
 		return this.value;
 	}
 }

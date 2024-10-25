@@ -1,7 +1,5 @@
 import { Context } from "../../utilities/Context";
 import { AbstractCodec } from "../Abstract";
-import { DecodeTransform } from "../Abstract/DecodeTransform";
-import { EncodeTransform } from "../Abstract/EncodeTransform";
 
 /**
  * Creates a codec for a tuple of values.
@@ -52,22 +50,10 @@ export class TupleCodec<Tuple extends [...any[]]> extends AbstractCodec<Tuple> {
 		for (let i = 0; i < this.codecs.length; i++) this.codecs[i]._encode(value[i], buffer, c);
 	}
 
-	async _encodeChunks(value: Tuple, transform: EncodeTransform): Promise<void> {
-		for (let i = 0; i < this.codecs.length; i++) await this.codecs[i]._encodeChunks(value[i], transform);
-	}
-
 	_decode(buffer: Buffer, c: Context): Tuple {
 		const value: Array<AbstractCodec<Tuple[number]>> = new Array(this.codecs.length);
 
 		for (let i = 0; i < this.codecs.length; i++) value[i] = this.codecs[i]._decode(buffer, c);
-
-		return value as Tuple;
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<Tuple> {
-		const value: Array<AbstractCodec<Tuple[number]>> = new Array(this.codecs.length);
-
-		for (let i = 0; i < this.codecs.length; i++) value[i] = await this.codecs[i]._decodeChunks(transform);
 
 		return value as Tuple;
 	}

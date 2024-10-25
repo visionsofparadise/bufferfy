@@ -1,7 +1,6 @@
 import { Context } from "../../utilities/Context";
+import { BufferfyByteLengthError } from "../../utilities/Error";
 import { AbstractCodec } from "../Abstract";
-import { DecodeTransform } from "../Abstract/DecodeTransform";
-import { EncodeTransform } from "../Abstract/EncodeTransform";
 
 export class BufferFixedCodec extends AbstractCodec<Buffer> {
 	private _byteLength: number;
@@ -24,21 +23,9 @@ export class BufferFixedCodec extends AbstractCodec<Buffer> {
 		c.offset += value.copy(buffer, c.offset);
 	}
 
-	async _encodeChunks(value: Buffer, transform: EncodeTransform): Promise<void> {
-		let offset = 0;
-
-		while (offset < this._byteLength) {
-			const chunk = value.subarray(offset, (offset += Math.min(this._byteLength - offset, transform.readableHighWaterMark - transform.readableLength)));
-
-			await transform.pushAsync(chunk);
-		}
-	}
-
 	_decode(buffer: Buffer, c: Context): Buffer {
-		return buffer.subarray(c.offset, (c.offset += this._byteLength));
-	}
+		if (buffer.byteLength < c.offset + this._byteLength) throw new BufferfyByteLengthError();
 
-	async _decodeChunks(transform: DecodeTransform): Promise<Buffer> {
-		return transform.consume(this._byteLength);
+		return buffer.subarray(c.offset, (c.offset += this._byteLength));
 	}
 }

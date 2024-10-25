@@ -6,7 +6,7 @@ A serialization and deserialization library that space-efficiently packs data in
 - Provides accurate typescript types.
 - Serializes to a significantly smaller buffer than message pack and JSON stringify.
 - Performs at the same speed as message pack and JSON stringify.
-- Stream serialization and deserialization progressively. Useful for data that is very large.
+- Encode and decode transforms for streams.
 
 ## Install
 

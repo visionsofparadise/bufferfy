@@ -1,6 +1,5 @@
 import { Context } from "../../utilities/Context";
 import { AbstractCodec } from "../Abstract";
-import { DecodeTransform } from "../Abstract/DecodeTransform";
 
 export interface TransformCodecOptions<Source, Target> {
 	isValid?: (source: unknown) => boolean;
@@ -65,11 +64,5 @@ export class TransformCodec<Source, Target> extends AbstractCodec<Source> {
 		const postOffset = c.offset;
 
 		return this._decodeTarget(targetValue, buffer.subarray(preOffset, postOffset));
-	}
-
-	async _decodeChunks(transform: DecodeTransform): Promise<Source> {
-		const targetValue = await this.targetCodec._decodeChunks(transform);
-
-		return this._decodeTarget(targetValue, this.targetCodec.encode(targetValue));
 	}
 }
