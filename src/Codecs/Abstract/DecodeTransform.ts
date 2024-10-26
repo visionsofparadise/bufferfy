@@ -23,7 +23,13 @@ export class DecodeTransform<Value = unknown> extends Transform {
 
 				while (!this.push(value)) await setImmediate();
 
-				this._valueBuffer = Buffer.from([]);
+				const byteLength = this.codec.byteLength(value);
+
+				if (byteLength >= this._valueBuffer.byteLength) {
+					this._valueBuffer = Buffer.from([]);
+				} else {
+					this._valueBuffer = this._valueBuffer.subarray(byteLength);
+				}
 
 				callback(null);
 			} catch (error) {
