@@ -14,13 +14,13 @@ import { AbstractCodec } from "../Abstract";
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Constant/index.ts|Source}
  */
-export const createConstantCodec = <Value>(value: Value) => {
+export const createConstantCodec = <const Value>(value: Value) => {
 	if (typeof value === "object" && value !== null) return new DeepConstantCodec(value);
 
 	return new ConstantCodec(value);
 };
 
-export class ConstantCodec<Value> extends AbstractCodec<Value> {
+export class ConstantCodec<const Value> extends AbstractCodec<Value> {
 	constructor(public readonly value: Value) {
 		super();
 	}
