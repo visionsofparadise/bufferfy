@@ -13,21 +13,23 @@ export class DecodeTransform<Value = unknown> extends Transform {
 
 	protected _valueBuffer: Buffer = Buffer.from([]);
 
-	_transform(chunk: Buffer, _encoding: BufferEncoding, callback: TransformCallback): void {
+	_transform(chunk: Buffer, encoding: BufferEncoding, callback: TransformCallback): void {
 		this._valueBuffer = Buffer.concat([this._valueBuffer, chunk]);
 
 		try {
-			const value = this.codec.decode(this._valueBuffer);
+			while (this._valueBuffer.byteLength) {
+				const value = this.codec.decode(this._valueBuffer);
 
-			callback(null, value);
+				this.push(value, encoding);
 
-			const byteLength = this.codec.byteLength(value);
+				const byteLength = this.codec.byteLength(value);
 
-			if (byteLength >= this._valueBuffer.byteLength) {
-				this._valueBuffer = Buffer.from([]);
-			} else {
 				this._valueBuffer = this._valueBuffer.subarray(byteLength);
 			}
+
+			callback(null);
+
+			return;
 		} catch (error) {
 			if (error instanceof BufferfyByteLengthError) {
 				callback(null);

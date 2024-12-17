@@ -57,7 +57,7 @@ describe("correctly performs variable string codec methods", () => {
 	});
 
 	it(`streams variable string from buffer`, async () => {
-		const buffer = codec.encode(value);
+		const buffer = Buffer.concat([codec.encode(value), codec.encode(value), codec.encode(value)]);
 
 		const stream = new BufferReadStream(buffer);
 
@@ -69,6 +69,8 @@ describe("correctly performs variable string codec methods", () => {
 			stream.pipe(decoder);
 		});
 
+		expect(decoder.read(1)).toStrictEqual(value);
+		expect(decoder.read(1)).toStrictEqual(value);
 		expect(decoder.read(1)).toStrictEqual(value);
 	});
 });
