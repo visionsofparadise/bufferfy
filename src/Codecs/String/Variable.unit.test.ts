@@ -1,5 +1,5 @@
 import { randomBytes } from "crypto";
-import { BufferReadStream, BufferWriteStream } from "../../utilities/BufferStream.ignore";
+import { BytesReadableStream, BytesWritableStream } from "../../utilities/BytesStream.ignore";
 import { CodecType } from "../Abstract";
 import { StringVariableCodec } from "./Variable";
 
@@ -15,7 +15,7 @@ describe("correctly performs variable string codec methods", () => {
 	});
 
 	it("invalid for not variable string", () => {
-		const isValid = codec.isValid(Buffer.from(value));
+		const isValid = codec.isValid(null);
 
 		expect(isValid).toBe(false);
 	});
@@ -41,17 +41,18 @@ describe("correctly performs variable string codec methods", () => {
 	});
 
 	it(`streams variable string to buffer`, async () => {
-		const stream = new BufferWriteStream();
+		const stream = new BytesWritableStream();
 
 		const encoder = codec.Encoder();
 
-		await new Promise((resolve) => {
-			stream.on("finish", resolve);
+		const promise = encoder.readable.pipeTo(stream);
 
-			encoder.pipe(stream);
-			encoder.write(value);
-			encoder.end();
-		});
+		const writer = encoder.writable.getWriter();
+
+		await writer.write(value);
+		await writer.close();
+
+		await promise;
 
 		expect(stream.offset).toBe(byteLength);
 	});
@@ -59,18 +60,21 @@ describe("correctly performs variable string codec methods", () => {
 	it(`streams variable string from buffer`, async () => {
 		const buffer = Buffer.concat([codec.encode(value), codec.encode(value), codec.encode(value)]);
 
-		const stream = new BufferReadStream(buffer);
+		const stream = new BytesReadableStream(buffer);
 
 		const decoder = codec.Decoder();
 
-		await new Promise((resolve) => {
-			decoder.on("finish", resolve);
+		const readable = stream.pipeThrough(decoder);
 
-			stream.pipe(decoder);
-		});
+		const reader = readable.getReader();
 
-		expect(decoder.read(1)).toStrictEqual(value);
-		expect(decoder.read(1)).toStrictEqual(value);
-		expect(decoder.read(1)).toStrictEqual(value);
+		const result1 = await reader.read();
+		const result2 = await reader.read();
+		const result3 = await reader.read();
+		await reader.cancel();
+
+		expect(result1.value).toStrictEqual(value);
+		expect(result2.value).toStrictEqual(value);
+		expect(result3.value).toStrictEqual(value);
 	});
 });

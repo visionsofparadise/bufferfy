@@ -26,14 +26,14 @@ export class RecordFixedCodec<Key extends string, Value extends any> extends Abs
 		return byteLength;
 	}
 
-	_encode(value: Record<Key, Value>, buffer: Buffer, c: Context): void {
+	_encode(value: Record<Key, Value>, buffer: Uint8Array, c: Context): void {
 		for (const [key, property] of Object.entries(value) as Array<[Key, Value]>) {
 			this.keyCodec._encode(key, buffer, c);
 			this.valueCodec._encode(property, buffer, c);
 		}
 	}
 
-	_decode(buffer: Buffer, c: Context): Record<Key, Value> {
+	_decode(buffer: Uint8Array, c: Context): Record<Key, Value> {
 		const value: Partial<Record<Key, Value>> = {};
 
 		let index = this.length;

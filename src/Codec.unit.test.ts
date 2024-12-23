@@ -1,10 +1,10 @@
-import { BufferReadStream, BufferWriteStream } from "./utilities/BufferStream.ignore";
+import { BytesReadableStream, BytesWritableStream } from "./utilities/BytesStream.ignore";
 import { CommonCodec, commonValue, SpreadCodec, spreadValue } from "./utilities/TestValues.ignore";
 
 describe("encodes and decodes spread of types", () => {
 	const byteLength = 50;
 
-	let buffer: Buffer | undefined;
+	let bytes: Uint8Array | undefined;
 
 	it("valid for spread value", () => {
 		const isValid = SpreadCodec.isValid(spreadValue);
@@ -25,54 +25,56 @@ describe("encodes and decodes spread of types", () => {
 	});
 
 	it("encodes spread value", () => {
-		buffer = SpreadCodec.encode(spreadValue);
+		bytes = SpreadCodec.encode(spreadValue);
 
-		expect(buffer.byteLength).toBe(byteLength);
+		expect(bytes.byteLength).toBe(byteLength);
 	});
 
 	it("decodes spread value", () => {
-		const resultValue = SpreadCodec.decode(buffer!);
+		const resultValue = SpreadCodec.decode(bytes!);
 
 		expect(resultValue).toStrictEqual(spreadValue);
 	});
 
-	it(`streams spread value to buffer`, async () => {
-		const stream = new BufferWriteStream();
+	it(`streams spread value to bytes`, async () => {
+		const stream = new BytesWritableStream();
 
 		const encoder = SpreadCodec.Encoder();
 
-		await new Promise((resolve) => {
-			stream.on("finish", resolve);
+		const promise = encoder.readable.pipeTo(stream);
 
-			encoder.pipe(stream);
-			encoder.write(spreadValue);
-			encoder.end();
-		});
+		const writer = encoder.writable.getWriter();
+
+		await writer.write(spreadValue);
+		await writer.close();
+
+		await promise;
 
 		expect(stream.offset).toBe(byteLength);
 	});
 
-	it(`streams spread value from buffer`, async () => {
+	it(`streams spread value from bytes`, async () => {
 		const buffer = SpreadCodec.encode(spreadValue);
 
-		const stream = new BufferReadStream(buffer);
+		const stream = new BytesReadableStream(buffer);
 
 		const decoder = SpreadCodec.Decoder();
 
-		await new Promise((resolve) => {
-			decoder.on("finish", resolve);
+		const readable = stream.pipeThrough(decoder);
 
-			stream.pipe(decoder);
-		});
+		const reader = readable.getReader();
 
-		expect(decoder.read(1)).toStrictEqual(spreadValue);
+		const result = await reader.read();
+		await reader.cancel();
+
+		expect(result.value).toStrictEqual(spreadValue);
 	});
 });
 
 describe("encodes and decodes common types", () => {
 	const byteLength = 1050;
 
-	let buffer: Buffer | undefined;
+	let bytes: Uint8Array | undefined;
 
 	it("valid for common value", () => {
 		const isValid = CommonCodec.isValid(commonValue);
@@ -93,46 +95,48 @@ describe("encodes and decodes common types", () => {
 	});
 
 	it("encodes common value", () => {
-		buffer = CommonCodec.encode(commonValue);
+		bytes = CommonCodec.encode(commonValue);
 
-		expect(buffer.byteLength).toBe(byteLength);
+		expect(bytes.byteLength).toBe(byteLength);
 	});
 
 	it("decodes common value", () => {
-		const resultValue = CommonCodec.decode(buffer!);
+		const resultValue = CommonCodec.decode(bytes!);
 
 		expect(resultValue).toStrictEqual(commonValue);
 	});
 
-	it(`streams common value to buffer`, async () => {
-		const stream = new BufferWriteStream();
+	it(`streams common value to bytes`, async () => {
+		const stream = new BytesWritableStream();
 
 		const encoder = CommonCodec.Encoder();
 
-		await new Promise((resolve) => {
-			stream.on("finish", resolve);
+		const promise = encoder.readable.pipeTo(stream);
 
-			encoder.pipe(stream);
-			encoder.write(commonValue);
-			encoder.end();
-		});
+		const writer = encoder.writable.getWriter();
+
+		await writer.write(commonValue);
+		await writer.close();
+
+		await promise;
 
 		expect(stream.offset).toBe(byteLength);
 	});
 
-	it(`streams common value from buffer`, async () => {
-		const buffer = CommonCodec.encode(commonValue);
+	it(`streams common value from bytes`, async () => {
+		const bytes = CommonCodec.encode(commonValue);
 
-		const stream = new BufferReadStream(buffer);
+		const stream = new BytesReadableStream(bytes);
 
 		const decoder = CommonCodec.Decoder();
 
-		await new Promise((resolve) => {
-			decoder.on("finish", resolve);
+		const readable = stream.pipeThrough(decoder);
 
-			stream.pipe(decoder);
-		});
+		const reader = readable.getReader();
 
-		expect(decoder.read(1)).toStrictEqual(commonValue);
+		const result = await reader.read();
+		await reader.cancel();
+
+		expect(result.value).toStrictEqual(commonValue);
 	});
 });

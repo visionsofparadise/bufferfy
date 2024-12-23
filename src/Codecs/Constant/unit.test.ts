@@ -1,5 +1,4 @@
 import { ConstantCodec } from ".";
-import { BufferReadStream } from "../../utilities/BufferStream.ignore";
 
 describe("correctly performs null codec methods", () => {
 	const value = null;
@@ -31,24 +30,8 @@ describe("correctly performs null codec methods", () => {
 	});
 
 	it("decodes null from buffer", async () => {
-		const result = codec.decode(Buffer.from([]));
+		const result = codec.decode(Uint8Array.from([]));
 
-		expect(result).toStrictEqual(value);
-	});
-
-	it(`streams null from buffer`, async () => {
-		const buffer = codec.encode(value);
-
-		const stream = new BufferReadStream(buffer);
-
-		const decoder = codec.Decoder();
-
-		await new Promise((resolve) => {
-			decoder.on("finish", resolve);
-
-			stream.pipe(decoder);
-		});
-
-		expect(decoder.read(1)).toStrictEqual(value);
+		expect(result).toBe(value);
 	});
 });

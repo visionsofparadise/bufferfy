@@ -79,11 +79,11 @@ export class Int8Codec extends UInt8Codec {
 		return typeof value === "number" && Number.isInteger(value) && value >= -127 && value <= 127;
 	}
 
-	_encode(value: number, buffer: Buffer, c: Context): void {
+	_encode(value: number, buffer: Uint8Array, c: Context): void {
 		super._encode(value + 127, buffer, c);
 	}
 
-	_decode(buffer: Buffer, c: Context): number {
+	_decode(buffer: Uint8Array, c: Context): number {
 		return super._decode(buffer, c) - 127;
 	}
 }
@@ -93,11 +93,11 @@ export class Int16BECodec extends UInt16BECodec {
 		return typeof value === "number" && Number.isInteger(value) && value >= -32767 && value <= 32767;
 	}
 
-	_encode(value: number, buffer: Buffer, c: Context): void {
+	_encode(value: number, buffer: Uint8Array, c: Context): void {
 		super._encode(value + 32767, buffer, c);
 	}
 
-	_decode(buffer: Buffer, c: Context): number {
+	_decode(buffer: Uint8Array, c: Context): number {
 		return super._decode(buffer, c) - 32767;
 	}
 }
@@ -107,11 +107,11 @@ export class Int16LECodec extends UInt16LECodec {
 		return typeof value === "number" && Number.isInteger(value) && value >= -32767 && value <= 32767;
 	}
 
-	_encode(value: number, buffer: Buffer, c: Context): void {
+	_encode(value: number, buffer: Uint8Array, c: Context): void {
 		super._encode(value + 32767, buffer, c);
 	}
 
-	_decode(buffer: Buffer, c: Context): number {
+	_decode(buffer: Uint8Array, c: Context): number {
 		return super._decode(buffer, c) - 32767;
 	}
 }
@@ -121,11 +121,11 @@ export class Int24BECodec extends UInt24BECodec {
 		return typeof value === "number" && Number.isInteger(value) && value >= -8388607 && value <= 8388607;
 	}
 
-	_encode(value: number, buffer: Buffer, c: Context): void {
+	_encode(value: number, buffer: Uint8Array, c: Context): void {
 		super._encode(value + 8388607, buffer, c);
 	}
 
-	_decode(buffer: Buffer, c: Context): number {
+	_decode(buffer: Uint8Array, c: Context): number {
 		return super._decode(buffer, c) - 8388607;
 	}
 }
@@ -135,11 +135,11 @@ export class Int24LECodec extends UInt24LECodec {
 		return typeof value === "number" && Number.isInteger(value) && value >= -8388607 && value <= 8388607;
 	}
 
-	_encode(value: number, buffer: Buffer, c: Context): void {
+	_encode(value: number, buffer: Uint8Array, c: Context): void {
 		super._encode(value + 8388607, buffer, c);
 	}
 
-	_decode(buffer: Buffer, c: Context): number {
+	_decode(buffer: Uint8Array, c: Context): number {
 		return super._decode(buffer, c) - 8388607;
 	}
 }
@@ -149,11 +149,11 @@ export class Int32BECodec extends UInt32BECodec {
 		return typeof value === "number" && Number.isInteger(value) && value >= -2147483647 && value <= 2147483647;
 	}
 
-	_encode(value: number, buffer: Buffer, c: Context): void {
+	_encode(value: number, buffer: Uint8Array, c: Context): void {
 		super._encode(value + 2147483647, buffer, c);
 	}
 
-	_decode(buffer: Buffer, c: Context): number {
+	_decode(buffer: Uint8Array, c: Context): number {
 		return super._decode(buffer, c) - 2147483647;
 	}
 }
@@ -163,11 +163,11 @@ export class Int32LECodec extends UInt32LECodec {
 		return typeof value === "number" && Number.isInteger(value) && value >= -2147483647 && value <= 2147483647;
 	}
 
-	_encode(value: number, buffer: Buffer, c: Context): void {
+	_encode(value: number, buffer: Uint8Array, c: Context): void {
 		super._encode(value + 2147483647, buffer, c);
 	}
 
-	_decode(buffer: Buffer, c: Context): number {
+	_decode(buffer: Uint8Array, c: Context): number {
 		return super._decode(buffer, c) - 2147483647;
 	}
 }
@@ -177,11 +177,11 @@ export class Int40BECodec extends UInt40BECodec {
 		return typeof value === "number" && Number.isInteger(value) && value >= -549755813887 && value <= 549755813887;
 	}
 
-	_encode(value: number, buffer: Buffer, c: Context): void {
+	_encode(value: number, buffer: Uint8Array, c: Context): void {
 		super._encode(value + 549755813887, buffer, c);
 	}
 
-	_decode(buffer: Buffer, c: Context): number {
+	_decode(buffer: Uint8Array, c: Context): number {
 		return super._decode(buffer, c) - 549755813887;
 	}
 }
@@ -191,11 +191,11 @@ export class Int40LECodec extends UInt40LECodec {
 		return typeof value === "number" && Number.isInteger(value) && value >= -549755813887 && value <= 549755813887;
 	}
 
-	_encode(value: number, buffer: Buffer, c: Context): void {
+	_encode(value: number, buffer: Uint8Array, c: Context): void {
 		super._encode(value + 549755813887, buffer, c);
 	}
 
-	_decode(buffer: Buffer, c: Context): number {
+	_decode(buffer: Uint8Array, c: Context): number {
 		return super._decode(buffer, c) - 549755813887;
 	}
 }
@@ -205,11 +205,11 @@ export class Int48BECodec extends UInt48BECodec {
 		return typeof value === "number" && Number.isInteger(value) && value >= -140737488355327 && value <= 140737488355327;
 	}
 
-	_encode(value: number, buffer: Buffer, c: Context): void {
+	_encode(value: number, buffer: Uint8Array, c: Context): void {
 		super._encode(value + 140737488355327, buffer, c);
 	}
 
-	_decode(buffer: Buffer, c: Context): number {
+	_decode(buffer: Uint8Array, c: Context): number {
 		return super._decode(buffer, c) - 140737488355327;
 	}
 }
@@ -219,11 +219,11 @@ export class Int48LECodec extends UInt48LECodec {
 		return typeof value === "number" && Number.isInteger(value) && value >= -140737488355327 && value <= 140737488355327;
 	}
 
-	_encode(value: number, buffer: Buffer, c: Context): void {
+	_encode(value: number, buffer: Uint8Array, c: Context): void {
 		super._encode(value + 140737488355327, buffer, c);
 	}
 
-	_decode(buffer: Buffer, c: Context): number {
+	_decode(buffer: Uint8Array, c: Context): number {
 		return super._decode(buffer, c) - 140737488355327;
 	}
 }

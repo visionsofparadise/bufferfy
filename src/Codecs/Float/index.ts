@@ -24,7 +24,7 @@ export type FloatCodec = Float32BECodec | Float32LECodec | Float64BECodec | Floa
  * @param	{'LE' | 'BE'} [endianness=os.endianness()] - Endianness
  * @return	{FloatCodec} FloatCodec
  *
- * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Float/index.ts|Source}
+ * {@link https://github.com/visionsofparadise/dataViewfy/blob/main/src/Codecs/Float/index.ts|Source}
  */
 export const createFloatCodec = (bits: FloatBits = 64, endianness: Endianness = osEndianness()) => {
 	switch (endianness) {
@@ -60,14 +60,20 @@ export class Float32BECodec extends AbstractCodec<number> {
 		return 4;
 	}
 
-	_encode(value: number, buffer: Buffer, c: Context): void {
-		c.offset = buffer.writeFloatBE(value, c.offset);
+	_encode(value: number, buffer: Uint8Array, c: Context): void {
+		const dataView = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+
+		dataView.setFloat32(c.offset, value, false);
+
+		c.offset += 4;
 	}
 
-	_decode(buffer: Buffer, c: Context): number {
+	_decode(buffer: Uint8Array, c: Context): number {
 		if (buffer.byteLength < c.offset + 4) throw new BufferfyByteLengthError();
 
-		const value = buffer.readFloatBE(c.offset);
+		const dataView = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+
+		const value = dataView.getFloat32(c.offset, false);
 
 		c.offset += 4;
 
@@ -76,14 +82,20 @@ export class Float32BECodec extends AbstractCodec<number> {
 }
 
 export class Float32LECodec extends Float32BECodec {
-	_encode(value: number, buffer: Buffer, c: Context): void {
-		c.offset = buffer.writeFloatLE(value, c.offset);
+	_encode(value: number, buffer: Uint8Array, c: Context): void {
+		const dataView = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+
+		dataView.setFloat32(c.offset, value, true);
+
+		c.offset += 4;
 	}
 
-	_decode(buffer: Buffer, c: Context): number {
+	_decode(buffer: Uint8Array, c: Context): number {
 		if (buffer.byteLength < c.offset + 4) throw new BufferfyByteLengthError();
 
-		const value = buffer.readFloatLE(c.offset);
+		const dataView = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+
+		const value = dataView.getFloat32(c.offset, true);
 
 		c.offset += 4;
 
@@ -100,14 +112,20 @@ export class Float64BECodec extends AbstractCodec<number> {
 		return 8;
 	}
 
-	_encode(value: number, buffer: Buffer, c: Context): void {
-		c.offset = buffer.writeDoubleBE(value, c.offset);
+	_encode(value: number, buffer: Uint8Array, c: Context): void {
+		const dataView = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+
+		dataView.setFloat64(c.offset, value, false);
+
+		c.offset += 8;
 	}
 
-	_decode(buffer: Buffer, c: Context): number {
+	_decode(buffer: Uint8Array, c: Context): number {
 		if (buffer.byteLength < c.offset + 8) throw new BufferfyByteLengthError();
 
-		const value = buffer.readDoubleBE(c.offset);
+		const dataView = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+
+		const value = dataView.getFloat64(c.offset, false);
 
 		c.offset += 8;
 
@@ -116,14 +134,20 @@ export class Float64BECodec extends AbstractCodec<number> {
 }
 
 export class Float64LECodec extends Float64BECodec {
-	_encode(value: number, buffer: Buffer, c: Context): void {
-		c.offset = buffer.writeDoubleLE(value, c.offset);
+	_encode(value: number, buffer: Uint8Array, c: Context): void {
+		const dataView = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+
+		dataView.setFloat64(c.offset, value, true);
+
+		c.offset += 8;
 	}
 
-	_decode(buffer: Buffer, c: Context): number {
+	_decode(buffer: Uint8Array, c: Context): number {
 		if (buffer.byteLength < c.offset + 8) throw new BufferfyByteLengthError();
 
-		const value = buffer.readDoubleLE(c.offset);
+		const dataView = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+
+		const value = dataView.getFloat64(c.offset, true);
 
 		c.offset += 8;
 

@@ -3,6 +3,8 @@ import { VarInt60Codec } from "../VarInt/VarInt60";
 import { StringFixedCodec } from "./Fixed";
 import { StringVariableCodec } from "./Variable";
 
+export type StringEncoding = "hex" | "base32" | "base58" | "base64" | "base64url" | "utf8";
+
 export type StringCodec = StringFixedCodec | StringVariableCodec;
 
 /**
@@ -12,13 +14,13 @@ export type StringCodec = StringFixedCodec | StringVariableCodec;
  *
  * Length is present only for variable length strings.
  *
- * @param	{BufferEncoding} [encoding="utf8"] - The strings encoding.
+ * @param	{StringEncoding} [encoding="utf8"] - The strings encoding.
  * @param	{AbstractCodec<number>} [lengthCodec="VarUInt()"] - Codec to specify how the length is encoded.
  * @return	{StringCodec} StringCodec
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/String/index.ts|Source}
  */
-export function createStringCodec(encoding?: BufferEncoding, lengthCodec?: AbstractCodec<number>): StringVariableCodec;
+export function createStringCodec(encoding?: StringEncoding, lengthCodec?: AbstractCodec<number>): StringVariableCodec;
 
 /**
  * Creates a codec for a fixed length string.
@@ -27,15 +29,15 @@ export function createStringCodec(encoding?: BufferEncoding, lengthCodec?: Abstr
  *
  * Length is present only for variable length strings.
  *
- * @param	{BufferEncoding} [encoding="utf8"] - The strings encoding.
+ * @param	{StringEncoding} [encoding="utf8"] - The strings encoding.
  * @param	{number} [byteLength] - Sets a fixed byte length.
  * @return	{StringCodec} StringCodec
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/String/index.ts|Source}
  */
-export function createStringCodec(encoding?: BufferEncoding, byteLength?: number): StringFixedCodec;
+export function createStringCodec(encoding?: StringEncoding, byteLength?: number): StringFixedCodec;
 
-export function createStringCodec(encoding: BufferEncoding = "utf8", byteLengthOrCodec: number | AbstractCodec<number> = new VarInt60Codec()): StringCodec {
+export function createStringCodec(encoding: StringEncoding = "utf8", byteLengthOrCodec: number | AbstractCodec<number> = new VarInt60Codec()): StringCodec {
 	if (typeof byteLengthOrCodec === "number") {
 		return new StringFixedCodec(byteLengthOrCodec, encoding);
 	}

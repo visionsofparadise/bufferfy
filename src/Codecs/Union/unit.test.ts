@@ -1,6 +1,6 @@
 import { randomBytes } from "crypto";
 import { UnionCodec } from ".";
-import { BufferReadStream, BufferWriteStream } from "../../utilities/BufferStream.ignore";
+import { BytesReadableStream, BytesWritableStream } from "../../utilities/BytesStream.ignore";
 import { CodecType } from "../Abstract";
 import { ObjectCodec } from "../Object";
 import { StringFixedCodec } from "../String/Fixed";
@@ -52,17 +52,18 @@ describe("correctly performs union codec methods", () => {
 	});
 
 	it(`streams union value1 to buffer`, async () => {
-		const stream = new BufferWriteStream();
+		const stream = new BytesWritableStream();
 
 		const encoder = codec.Encoder();
 
-		await new Promise((resolve) => {
-			stream.on("finish", resolve);
+		const promise = encoder.readable.pipeTo(stream);
 
-			encoder.pipe(stream);
-			encoder.write(value1);
-			encoder.end();
-		});
+		const writer = encoder.writable.getWriter();
+
+		await writer.write(value1);
+		await writer.close();
+
+		await promise;
 
 		expect(stream.offset).toBe(byteLength1);
 	});
@@ -70,17 +71,18 @@ describe("correctly performs union codec methods", () => {
 	it(`streams union value1 from buffer`, async () => {
 		const buffer = codec.encode(value1);
 
-		const stream = new BufferReadStream(buffer);
+		const stream = new BytesReadableStream(buffer);
 
 		const decoder = codec.Decoder();
 
-		await new Promise((resolve) => {
-			decoder.on("finish", resolve);
+		const readable = stream.pipeThrough(decoder);
 
-			stream.pipe(decoder);
-		});
+		const reader = readable.getReader();
 
-		expect(decoder.read(1)).toStrictEqual(value1);
+		const result = await reader.read();
+		await reader.cancel();
+
+		expect(result.value).toStrictEqual(value1);
 	});
 
 	it("valid for union value2", () => {
@@ -110,17 +112,18 @@ describe("correctly performs union codec methods", () => {
 	});
 
 	it(`streams union value2 to buffer`, async () => {
-		const stream = new BufferWriteStream();
+		const stream = new BytesWritableStream();
 
 		const encoder = codec.Encoder();
 
-		await new Promise((resolve) => {
-			stream.on("finish", resolve);
+		const promise = encoder.readable.pipeTo(stream);
 
-			encoder.pipe(stream);
-			encoder.write(value2);
-			encoder.end();
-		});
+		const writer = encoder.writable.getWriter();
+
+		await writer.write(value2);
+		await writer.close();
+
+		await promise;
 
 		expect(stream.offset).toBe(byteLength2);
 	});
@@ -128,16 +131,17 @@ describe("correctly performs union codec methods", () => {
 	it(`streams union value2 from buffer`, async () => {
 		const buffer = codec.encode(value2);
 
-		const stream = new BufferReadStream(buffer);
+		const stream = new BytesReadableStream(buffer);
 
 		const decoder = codec.Decoder();
 
-		await new Promise((resolve) => {
-			decoder.on("finish", resolve);
+		const readable = stream.pipeThrough(decoder);
 
-			stream.pipe(decoder);
-		});
+		const reader = readable.getReader();
 
-		expect(decoder.read(1)).toStrictEqual(value2);
+		const result = await reader.read();
+		await reader.cancel();
+
+		expect(result.value).toStrictEqual(value2);
 	});
 });

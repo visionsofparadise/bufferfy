@@ -22,11 +22,11 @@ export class ArrayFixedCodec<Item> extends AbstractCodec<Array<Item>> {
 		return byteLength;
 	}
 
-	_encode(value: Array<Item>, buffer: Buffer, c: Context): void {
+	_encode(value: Array<Item>, buffer: Uint8Array, c: Context): void {
 		for (const item of value) this.itemCodec._encode(item, buffer, c);
 	}
 
-	_decode(buffer: Buffer, c: Context): Array<Item> {
+	_decode(buffer: Uint8Array, c: Context): Array<Item> {
 		const value: Array<Item> = Array(this.length);
 
 		for (let i = 0; i < this.length; i++) value[i] = this.itemCodec._decode(buffer, c);

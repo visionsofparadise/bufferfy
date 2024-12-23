@@ -8,6 +8,12 @@ A serialization and deserialization library that space-efficiently packs data in
 - Performs at the same speed as message pack and JSON stringify.
 - Encode and decode transforms for streams.
 
+## 3.0.0 Update
+
+This module is now browser compatible, due to this the following changes have been made:
+- When handling bytes, Uint8Arrays are now used instead of node buffers.
+- Node style streams have been replaced by WebApi streams.
+
 ## Install
 
 ```
@@ -84,7 +90,7 @@ Returns the value type of the provided codec.
 - [Array](https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Array/index.ts)
 - [BitField](https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/BitField/index.ts)
 - [Boolean](https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Boolean/index.ts)
-- [Buffer](https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Buffer/index.ts)
+- [Bytes](https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Bytes/index.ts)
 - [Constant](https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Constant/index.ts)
 - [Float](https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Float/index.ts)
 - [Int](https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Int/index.ts)

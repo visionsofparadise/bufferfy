@@ -38,7 +38,7 @@ export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends 
 		throw new BufferfyError("Value does not match any codec");
 	}
 
-	_encode(value: CodecType<Codecs[number]>, buffer: Buffer, c: Context): void {
+	_encode(value: CodecType<Codecs[number]>, buffer: Uint8Array, c: Context): void {
 		for (let i = 0; i < this.codecs.length; i++) {
 			if (this.codecs[i].isValid(value)) {
 				this.indexCodec._encode(i, buffer, c);
@@ -51,7 +51,7 @@ export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends 
 		throw new BufferfyError("Value does not match any codec");
 	}
 
-	_decode(buffer: Buffer, c: Context): CodecType<Codecs[number]> {
+	_decode(buffer: Uint8Array, c: Context): CodecType<Codecs[number]> {
 		const index = this.indexCodec._decode(buffer, c);
 
 		return this.codecs[index]._decode(buffer, c);

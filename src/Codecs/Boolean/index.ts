@@ -22,11 +22,11 @@ export class BooleanCodec extends AbstractCodec<boolean> {
 		return 1;
 	}
 
-	_encode(value: boolean, buffer: Buffer, c: Context): void {
+	_encode(value: boolean, buffer: Uint8Array, c: Context): void {
 		buffer[c.offset++] = value ? 1 : 0;
 	}
 
-	_decode(buffer: Buffer, c: Context): boolean {
+	_decode(buffer: Uint8Array, c: Context): boolean {
 		if (buffer.byteLength < c.offset + 1) throw new BufferfyByteLengthError();
 
 		return buffer[c.offset++] === 1;

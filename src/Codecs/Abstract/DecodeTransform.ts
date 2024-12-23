@@ -1,57 +1,32 @@
-import { Transform, TransformCallback, TransformOptions } from "stream";
+import { TransformStream } from "stream/web";
+import { concat } from "uint8array-tools";
 import { AbstractCodec } from ".";
 import { BufferfyByteLengthError } from "../../utilities/Error";
 
-export class DecodeTransform<Value = unknown> extends Transform {
-	constructor(public readonly codec: AbstractCodec<Value>, options?: TransformOptions) {
+export class DecodeTransformStream<Value = unknown> extends TransformStream<Uint8Array, Value> {
+	private _valueBytes = Uint8Array.from([]);
+
+	constructor(codec: AbstractCodec<Value>) {
 		super({
-			...options,
-			writableObjectMode: false,
-			readableObjectMode: true,
+			transform: async (chunk, controller) => {
+				this._valueBytes = concat([this._valueBytes, chunk]);
+
+				try {
+					while (this._valueBytes.byteLength) {
+						const value = codec.decode(this._valueBytes);
+
+						controller.enqueue(value);
+
+						const byteLength = codec.byteLength(value);
+
+						this._valueBytes = this._valueBytes.subarray(byteLength, this._valueBytes.byteLength);
+					}
+				} catch (error) {
+					if (error instanceof BufferfyByteLengthError) return;
+
+					controller.error(error);
+				}
+			},
 		});
-	}
-
-	protected _valueBuffer: Buffer = Buffer.from([]);
-
-	_transform(chunk: Buffer, encoding: BufferEncoding, callback: TransformCallback): void {
-		this._valueBuffer = Buffer.concat([this._valueBuffer, chunk]);
-
-		try {
-			while (this._valueBuffer.byteLength) {
-				const value = this.codec.decode(this._valueBuffer);
-
-				this.push(value, encoding);
-
-				const byteLength = this.codec.byteLength(value);
-
-				this._valueBuffer = this._valueBuffer.subarray(byteLength);
-			}
-
-			callback(null);
-
-			return;
-		} catch (error) {
-			if (error instanceof BufferfyByteLengthError) {
-				callback(null);
-
-				return;
-			}
-
-			if (error instanceof Error) {
-				callback(error);
-
-				return;
-			}
-
-			callback(new Error("Error in decode transform"));
-
-			return;
-		}
-	}
-
-	_destroy(error: Error | null, callback: (error?: Error | null) => void): void {
-		this._valueBuffer = Buffer.from([]);
-
-		super._destroy(error, callback);
 	}
 }

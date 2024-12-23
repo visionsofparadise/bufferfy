@@ -25,7 +25,7 @@ export class RecordVariableCodec<Key extends string, Value extends any> extends 
 		return byteLength;
 	}
 
-	_encode(value: Record<Key, Value>, buffer: Buffer, c: Context): void {
+	_encode(value: Record<Key, Value>, buffer: Uint8Array, c: Context): void {
 		const entries = Object.entries(value) as Array<[Key, Value]>;
 
 		this.lengthCodec._encode(entries.length, buffer, c);
@@ -36,7 +36,7 @@ export class RecordVariableCodec<Key extends string, Value extends any> extends 
 		}
 	}
 
-	_decode(buffer: Buffer, c: Context): Record<Key, Value> {
+	_decode(buffer: Uint8Array, c: Context): Record<Key, Value> {
 		const value: Partial<Record<Key, Value>> = {};
 
 		let index = this.lengthCodec._decode(buffer, c);

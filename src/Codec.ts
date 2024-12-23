@@ -3,7 +3,7 @@ import { createAnyCodec } from "./Codecs/Any";
 import { createArrayCodec } from "./Codecs/Array";
 import { createBitFieldCodec } from "./Codecs/BitField";
 import { createBooleanCodec } from "./Codecs/Boolean";
-import { createBufferCodec } from "./Codecs/Buffer";
+import { createBytesCodec } from "./Codecs/Bytes";
 import { createConstantCodec } from "./Codecs/Constant";
 import { createFloatCodec } from "./Codecs/Float";
 import { createIntCodec } from "./Codecs/Int";
@@ -28,7 +28,7 @@ export const Codec = {
 	Array: createArrayCodec,
 	BitField: createBitFieldCodec,
 	Boolean: createBooleanCodec(),
-	Buffer: createBufferCodec,
+	Bytes: createBytesCodec,
 	Constant: createConstantCodec,
 	Enum: <const Value>(enumValues: Array<Value>, indexCodec: AbstractCodec<number>) =>
 		createUnionCodec(

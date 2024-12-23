@@ -5,7 +5,7 @@ export const SpreadCodec = Codec.Object({
 	any: Codec.Any(),
 	array: Codec.Array(Codec.BitField(["test1", "test2", "test3", "test4", "test5", "test6", "test7"]), Codec.UInt(8)),
 	boolean: Codec.Boolean,
-	buffer: Codec.Buffer(1),
+	buffer: Codec.Bytes(1),
 	constant: Codec.Constant("test"),
 	enumerated: Codec.Enum(["test1", "test2"], Codec.UInt(8)),
 	null: Codec.Null,
@@ -34,7 +34,7 @@ export const spreadValue: SpreadValue = {
 		},
 	],
 	boolean: true,
-	buffer: Buffer.from([1]),
+	buffer: Uint8Array.from([1]),
 	constant: "test",
 	enumerated: "test2",
 	null: null,
@@ -50,7 +50,7 @@ export const CommonCodec = Codec.Object({
 	id: Codec.String("hex", 32),
 	ids: Codec.Array(Codec.String("hex", 32)),
 	records: Codec.Record(
-		Codec.String("ascii", Codec.UInt(8)),
+		Codec.String("utf8", Codec.UInt(8)),
 		Codec.Union(
 			[
 				Codec.Object({

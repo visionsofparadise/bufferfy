@@ -1,5 +1,5 @@
 import { BooleanCodec } from ".";
-import { BufferReadStream, BufferWriteStream } from "../../utilities/BufferStream.ignore";
+import { BytesReadableStream, BytesWritableStream } from "../../utilities/BytesStream.ignore";
 
 describe("correctly performs boolean codec methods", () => {
 	const codec = new BooleanCodec();
@@ -31,23 +31,24 @@ describe("correctly performs boolean codec methods", () => {
 	});
 
 	it("decodes boolean from buffer", async () => {
-		const result = codec.decode(Buffer.from([1]));
+		const result = codec.decode(Uint8Array.from([1]));
 
 		expect(result).toStrictEqual(value);
 	});
 
 	it(`streams boolean to buffer`, async () => {
-		const stream = new BufferWriteStream();
+		const stream = new BytesWritableStream();
 
 		const encoder = codec.Encoder();
 
-		await new Promise((resolve) => {
-			stream.on("finish", resolve);
+		const promise = encoder.readable.pipeTo(stream);
 
-			encoder.pipe(stream);
-			encoder.write(value);
-			encoder.end();
-		});
+		const writer = encoder.writable.getWriter();
+
+		await writer.write(value);
+		await writer.close();
+
+		await promise;
 
 		expect(stream.offset).toBe(byteLength);
 	});
@@ -55,16 +56,17 @@ describe("correctly performs boolean codec methods", () => {
 	it(`streams boolean from buffer`, async () => {
 		const buffer = codec.encode(value);
 
-		const stream = new BufferReadStream(buffer);
+		const stream = new BytesReadableStream(buffer);
 
 		const decoder = codec.Decoder();
 
-		await new Promise((resolve) => {
-			decoder.on("finish", resolve);
+		const readable = stream.pipeThrough(decoder);
 
-			stream.pipe(decoder);
-		});
+		const reader = readable.getReader();
 
-		expect(decoder.read(1)).toStrictEqual(value);
+		const result = await reader.read();
+		await reader.cancel();
+
+		expect(result.value).toStrictEqual(value);
 	});
 });

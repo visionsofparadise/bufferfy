@@ -62,11 +62,11 @@ export class ObjectCodec<Properties extends Record<string, AbstractCodec>> exten
 		return byteLength;
 	}
 
-	_encode(value: OutputObject<Properties>, buffer: Buffer, c: Context): void {
+	_encode(value: OutputObject<Properties>, buffer: Uint8Array, c: Context): void {
 		for (const [key, codec] of this.entries) codec._encode(value[key as keyof OutputObject<Properties>], buffer, c);
 	}
 
-	_decode(buffer: Buffer, c: Context): OutputObject<Properties> {
+	_decode(buffer: Uint8Array, c: Context): OutputObject<Properties> {
 		const value: Partial<Record<keyof OutputObject<Properties>, unknown>> = {};
 
 		for (const [key, codec] of this.entries) value[key as keyof OutputObject<Properties>] = codec._decode(buffer, c);

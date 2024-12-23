@@ -1,4 +1,4 @@
-import { BufferReadStream, BufferWriteStream } from "../../utilities/BufferStream.ignore";
+import { BytesReadableStream, BytesWritableStream } from "../../utilities/BytesStream.ignore";
 import { CodecType } from "../Abstract";
 import { VarInt15Codec } from "./VarInt15";
 
@@ -39,7 +39,7 @@ describe("correctly performs varInt15 codec methods for 1 byte", () => {
 	});
 
 	it("decodes varInt15 from buffer", async () => {
-		const buffer = Buffer.from([value]);
+		const buffer = Uint8Array.from([value]);
 
 		const result = codec.decode(buffer);
 
@@ -47,38 +47,38 @@ describe("correctly performs varInt15 codec methods for 1 byte", () => {
 	});
 
 	it(`streams varInt15 to buffer`, async () => {
-		const stream = new BufferWriteStream();
+		const stream = new BytesWritableStream();
 
 		const encoder = codec.Encoder();
 
-		await new Promise((resolve) => {
-			stream.on("finish", resolve);
+		const promise = encoder.readable.pipeTo(stream);
 
-			encoder.pipe(stream);
-			encoder.write(value);
-			encoder.end();
-		});
+		const writer = encoder.writable.getWriter();
 
-		expect(stream.buffer![0]).toBe(value);
+		await writer.write(value);
+		await writer.close();
+
+		await promise;
+
+		expect(stream.bytes![0]).toBe(value);
 		expect(stream.offset).toBe(byteLength);
 	});
 
 	it(`streams varInt15 from buffer`, async () => {
-		const buffer = Buffer.allocUnsafe(byteLength);
+		const buffer = codec.encode(value);
 
-		buffer[0] = value;
-
-		const stream = new BufferReadStream(buffer);
+		const stream = new BytesReadableStream(buffer);
 
 		const decoder = codec.Decoder();
 
-		await new Promise((resolve) => {
-			decoder.on("finish", resolve);
+		const readable = stream.pipeThrough(decoder);
 
-			stream.pipe(decoder);
-		});
+		const reader = readable.getReader();
 
-		expect(decoder.read(1)).toBe(value);
+		const result = await reader.read();
+		await reader.cancel();
+
+		expect(result.value).toStrictEqual(value);
 	});
 });
 
@@ -123,17 +123,18 @@ describe("correctly performs varInt15 codec methods for 2 bytes max", () => {
 	it(`streams varInt15 from buffer`, async () => {
 		const buffer = codec.encode(value);
 
-		const stream = new BufferReadStream(buffer);
+		const stream = new BytesReadableStream(buffer);
 
 		const decoder = codec.Decoder();
 
-		await new Promise((resolve) => {
-			decoder.on("finish", resolve);
+		const readable = stream.pipeThrough(decoder);
 
-			stream.pipe(decoder);
-		});
+		const reader = readable.getReader();
 
-		expect(decoder.read(1)).toBe(value);
+		const result = await reader.read();
+		await reader.cancel();
+
+		expect(result.value).toStrictEqual(value);
 	});
 });
 
@@ -172,16 +173,17 @@ describe("correctly performs varInt15 codec methods for 2 bytes min", () => {
 	it(`streams varInt15 from buffer`, async () => {
 		const buffer = codec.encode(value);
 
-		const stream = new BufferReadStream(buffer);
+		const stream = new BytesReadableStream(buffer);
 
 		const decoder = codec.Decoder();
 
-		await new Promise((resolve) => {
-			decoder.on("finish", resolve);
+		const readable = stream.pipeThrough(decoder);
 
-			stream.pipe(decoder);
-		});
+		const reader = readable.getReader();
 
-		expect(decoder.read(1)).toBe(value);
+		const result = await reader.read();
+		await reader.cancel();
+
+		expect(result.value).toStrictEqual(value);
 	});
 });

@@ -1,5 +1,5 @@
 import { createFloatCodec, FLOAT_BIT_BYTE_MAP, floatBitValues } from ".";
-import { BufferReadStream, BufferWriteStream } from "../../utilities/BufferStream.ignore";
+import { BytesReadableStream, BytesWritableStream } from "../../utilities/BytesStream.ignore";
 import { endiannessValues } from "../UInt";
 
 describe("iterates float endianness and bits combinations", () => {
@@ -31,59 +31,63 @@ describe("iterates float endianness and bits combinations", () => {
 				it(`encodes float${bits}${endianness} to buffer`, async () => {
 					const buffer = codec.encode(value);
 
-					if (bits === 32) expect(buffer[`readFloat${endianness}`]()).toBeCloseTo(value);
-					else expect(buffer[`readDouble${endianness}`]()).toBeCloseTo(value);
+					expect(codec.decode(buffer)).toBeCloseTo(value);
 
 					expect(buffer.byteLength).toBe(byteLength);
 				});
 
 				it(`decodes float${bits}${endianness} from buffer`, async () => {
-					const buffer = Buffer.allocUnsafe(byteLength);
+					const buffer = new ArrayBuffer(byteLength);
 
-					if (bits === 32) buffer[`writeFloat${endianness}`](value);
-					else buffer[`writeDouble${endianness}`](value);
+					const dataView = new DataView(buffer, 0, byteLength);
 
-					const result = codec.decode(buffer);
+					if (bits === 32) dataView.setFloat32(0, value, endianness === "LE");
+					else dataView.setFloat64(0, value, endianness === "LE");
+
+					const result = codec.decode(new Uint8Array(buffer, 0, byteLength));
 
 					expect(result).toBeCloseTo(value);
 				});
 
 				it(`streams float${bits}${endianness} to buffer`, async () => {
-					const stream = new BufferWriteStream();
+					const stream = new BytesWritableStream();
 
 					const encoder = codec.Encoder();
 
-					await new Promise((resolve) => {
-						stream.on("finish", resolve);
+					const promise = encoder.readable.pipeTo(stream);
 
-						encoder.pipe(stream);
-						encoder.write(value);
-						encoder.end();
-					});
+					const writer = encoder.writable.getWriter();
 
-					if (bits === 32) expect(stream.buffer![`readFloat${endianness}`]()).toBeCloseTo(value);
-					else expect(stream.buffer![`readDouble${endianness}`]()).toBeCloseTo(value);
+					await writer.write(value);
+					await writer.close();
+
+					await promise;
+
+					expect(codec.decode(stream.bytes!)).toBeCloseTo(value);
 
 					expect(stream.offset).toBe(byteLength);
 				});
 
 				it(`streams float${bits}${endianness} from buffer`, async () => {
-					const buffer = Buffer.allocUnsafe(byteLength);
+					const buffer = new ArrayBuffer(byteLength);
 
-					if (bits === 32) buffer[`writeFloat${endianness}`](value);
-					else buffer[`writeDouble${endianness}`](value);
+					const dataView = new DataView(buffer, 0, byteLength);
 
-					const stream = new BufferReadStream(buffer);
+					if (bits === 32) dataView.setFloat32(0, value, endianness === "LE");
+					else dataView.setFloat64(0, value, endianness === "LE");
+
+					const stream = new BytesReadableStream(new Uint8Array(buffer, 0, byteLength));
 
 					const decoder = codec.Decoder();
 
-					await new Promise((resolve) => {
-						decoder.on("finish", resolve);
+					const readable = stream.pipeThrough(decoder);
 
-						stream.pipe(decoder);
-					});
+					const reader = readable.getReader();
 
-					expect(decoder.read(1)).toBeCloseTo(value);
+					const result = await reader.read();
+					await reader.cancel();
+
+					expect(result.value).toBeCloseTo(value);
 				});
 			});
 		}

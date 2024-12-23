@@ -44,7 +44,7 @@ export class BitFieldCodec<Key extends string> extends AbstractCodec<Record<Key,
 		return Math.ceil(this.keys.length / 8);
 	}
 
-	_encode(value: Record<Key, boolean>, buffer: Buffer, c: Context): void {
+	_encode(value: Record<Key, boolean>, buffer: Uint8Array, c: Context): void {
 		for (let i = 0; i < this.keys.length; i++) {
 			if (i % 8 === 0) buffer[c.offset] = 0;
 
@@ -56,7 +56,7 @@ export class BitFieldCodec<Key extends string> extends AbstractCodec<Record<Key,
 		if (this.keys.length % 8 !== 0) c.offset++;
 	}
 
-	_decode(buffer: Buffer, c: Context): Record<Key, boolean> {
+	_decode(buffer: Uint8Array, c: Context): Record<Key, boolean> {
 		if (buffer.byteLength < c.offset + Math.ceil(this.keys.length / 8)) throw new BufferfyByteLengthError();
 
 		const value: Partial<Record<Key, boolean>> = {};

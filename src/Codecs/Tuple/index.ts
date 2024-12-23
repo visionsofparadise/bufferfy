@@ -46,11 +46,11 @@ export class TupleCodec<Tuple extends [...any[]]> extends AbstractCodec<Tuple> {
 		return byteLength;
 	}
 
-	_encode(value: Tuple, buffer: Buffer, c: Context): void {
+	_encode(value: Tuple, buffer: Uint8Array, c: Context): void {
 		for (let i = 0; i < this.codecs.length; i++) this.codecs[i]._encode(value[i], buffer, c);
 	}
 
-	_decode(buffer: Buffer, c: Context): Tuple {
+	_decode(buffer: Uint8Array, c: Context): Tuple {
 		const value: Array<AbstractCodec<Tuple[number]>> = new Array(this.codecs.length);
 
 		for (let i = 0; i < this.codecs.length; i++) value[i] = this.codecs[i]._decode(buffer, c);

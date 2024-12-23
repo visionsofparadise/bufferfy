@@ -1,47 +1,47 @@
-import { hex } from "@scure/base";
 import { randomBytes } from "crypto";
+import { compare } from "uint8array-tools";
 import { BytesReadableStream, BytesWritableStream } from "../../utilities/BytesStream.ignore";
 import { CodecType } from "../Abstract";
-import { StringFixedCodec } from "./Fixed";
+import { BytesFixedCodec } from "./Fixed";
 
-describe("correctly performs fixed string codec methods", () => {
+describe("correctly performs bytes codec methods", () => {
+	const codec = new BytesFixedCodec(16);
+	const value: CodecType<typeof codec> = randomBytes(16);
 	const byteLength = 16;
-	const codec = new StringFixedCodec(16, "hex");
-	const value: CodecType<typeof codec> = hex.encode(randomBytes(16));
 
-	it("valid for fixed string", () => {
+	it("valid for bytes", () => {
 		const isValid = codec.isValid(value);
 
 		expect(isValid).toBe(true);
 	});
 
-	it("invalid for not fixed string", () => {
-		const isValid = codec.isValid(null);
+	it("invalid for not bytes", () => {
+		const isValid = codec.isValid(value.toString());
 
 		expect(isValid).toBe(false);
 	});
 
-	it("returns byteLength of fixed string", () => {
+	it("returns byteLength of bytes", () => {
 		const resultByteLength = codec.byteLength(value);
 
 		expect(resultByteLength).toBe(byteLength);
 	});
 
-	it("encodes fixed string to buffer", async () => {
-		const buffer = codec.encode(value);
+	it("encodes bytes to bytes", async () => {
+		const bytes = codec.encode(value);
 
-		expect(buffer.byteLength).toBe(byteLength);
+		expect(bytes.byteLength).toBe(byteLength);
 	});
 
-	it("decodes buffer from fixed string", async () => {
-		const buffer = hex.decode(value);
+	it("decodes bytes from bytes", async () => {
+		const bytes = codec.encode(value);
 
-		const result = codec.decode(buffer);
+		const result = codec.decode(bytes);
 
-		expect(result).toStrictEqual(value);
+		expect(compare(bytes, result)).toBe(0);
 	});
 
-	it(`streams fixed string to buffer`, async () => {
+	it(`streams bytes to bytes`, async () => {
 		const stream = new BytesWritableStream();
 
 		const encoder = codec.Encoder();
@@ -58,7 +58,7 @@ describe("correctly performs fixed string codec methods", () => {
 		expect(stream.offset).toBe(byteLength);
 	});
 
-	it(`streams fixed string from buffer`, async () => {
+	it(`streams bytes from bytes`, async () => {
 		const buffer = codec.encode(value);
 
 		const stream = new BytesReadableStream(buffer);
@@ -72,6 +72,6 @@ describe("correctly performs fixed string codec methods", () => {
 		const result = await reader.read();
 		await reader.cancel();
 
-		expect(result.value).toStrictEqual(value);
+		expect(compare(result.value!, value)).toBe(0);
 	});
 });

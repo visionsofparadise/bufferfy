@@ -11,7 +11,7 @@ export class VarInt30Codec extends AbstractCodec<number> {
 		return value < 64 ? 1 : value < 16384 ? 2 : value < 4194304 ? 3 : 4;
 	}
 
-	_encode(value: number, buffer: Buffer, c: Context): void {
+	_encode(value: number, buffer: Uint8Array, c: Context): void {
 		const byteLength = this.byteLength(value);
 
 		switch (byteLength) {
@@ -44,7 +44,7 @@ export class VarInt30Codec extends AbstractCodec<number> {
 		}
 	}
 
-	_decode(buffer: Buffer, c: Context): number {
+	_decode(buffer: Uint8Array, c: Context): number {
 		if (buffer.byteLength < c.offset + 1) throw new BufferfyByteLengthError();
 
 		const byte0 = buffer[c.offset++];

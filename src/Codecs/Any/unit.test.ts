@@ -1,5 +1,5 @@
 import { AnyCodec } from ".";
-import { BufferReadStream, BufferWriteStream } from "../../utilities/BufferStream.ignore";
+import { BytesReadableStream, BytesWritableStream } from "../../utilities/BytesStream.ignore";
 import { CodecType } from "../Abstract";
 
 describe("correctly performs any codec methods", () => {
@@ -37,17 +37,18 @@ describe("correctly performs any codec methods", () => {
 	});
 
 	it(`streams any to buffer`, async () => {
-		const stream = new BufferWriteStream();
+		const stream = new BytesWritableStream();
 
 		const encoder = codec.Encoder();
 
-		await new Promise((resolve) => {
-			stream.on("finish", resolve);
+		const promise = encoder.readable.pipeTo(stream);
 
-			encoder.pipe(stream);
-			encoder.write(value);
-			encoder.end();
-		});
+		const writer = encoder.writable.getWriter();
+
+		await writer.write(value);
+		await writer.close();
+
+		await promise;
 
 		expect(stream.offset).toBe(byteLength);
 	});
@@ -55,16 +56,17 @@ describe("correctly performs any codec methods", () => {
 	it(`streams any from buffer`, async () => {
 		const buffer = codec.encode(value);
 
-		const stream = new BufferReadStream(buffer);
+		const stream = new BytesReadableStream(buffer);
 
 		const decoder = codec.Decoder();
 
-		await new Promise((resolve) => {
-			decoder.on("finish", resolve);
+		const readable = stream.pipeThrough(decoder);
 
-			stream.pipe(decoder);
-		});
+		const reader = readable.getReader();
 
-		expect(decoder.read(1)).toStrictEqual(value);
+		const result = await reader.read();
+		await reader.cancel();
+
+		expect(result.value).toStrictEqual(value);
 	});
 });

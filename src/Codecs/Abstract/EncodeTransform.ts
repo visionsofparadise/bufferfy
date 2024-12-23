@@ -1,30 +1,18 @@
-import { Transform, TransformCallback, TransformOptions } from "stream";
+import { TransformStream } from "stream/web";
 import { AbstractCodec } from ".";
 
-export class EncodeTransform<Value = unknown> extends Transform {
-	constructor(public readonly codec: AbstractCodec<Value>, options?: TransformOptions) {
+export class EncodeTransformStream<Value = unknown> extends TransformStream<Value, Uint8Array> {
+	constructor(codec: AbstractCodec<Value>) {
 		super({
-			...options,
-			writableObjectMode: true,
-			readableObjectMode: false,
+			async transform(value, controller) {
+				try {
+					const chunk = codec.encode(value);
+
+					controller.enqueue(chunk);
+				} catch (error) {
+					controller.error(error);
+				}
+			},
 		});
-	}
-
-	_transform(object: Value, _encoding: BufferEncoding, callback: TransformCallback): void {
-		try {
-			const chunk = this.codec.encode(object);
-
-			callback(null, chunk);
-		} catch (error) {
-			if (error instanceof Error) {
-				callback(error);
-
-				return;
-			}
-
-			callback(new Error("Error in encode transform"));
-
-			return;
-		}
 	}
 }

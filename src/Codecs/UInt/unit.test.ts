@@ -1,5 +1,5 @@
 import { createUIntCodec, endiannessValues, UInt8Codec, UINT_BIT_BYTE_MAP, uIntBitValues } from ".";
-import { BufferReadStream, BufferWriteStream } from "../../utilities/BufferStream.ignore";
+import { BytesReadableStream, BytesWritableStream } from "../../utilities/BytesStream.ignore";
 import { CodecType } from "../Abstract";
 
 describe("correctly performs uInt8 codec methods", () => {
@@ -34,7 +34,7 @@ describe("correctly performs uInt8 codec methods", () => {
 	});
 
 	it("decodes uInt8 from buffer", async () => {
-		const buffer = Buffer.from([value]);
+		const buffer = Uint8Array.from([value]);
 
 		const result = codec.decode(buffer);
 
@@ -42,38 +42,38 @@ describe("correctly performs uInt8 codec methods", () => {
 	});
 
 	it(`streams uInt8 to buffer`, async () => {
-		const stream = new BufferWriteStream();
+		const stream = new BytesWritableStream();
 
 		const encoder = codec.Encoder();
 
-		await new Promise((resolve) => {
-			stream.on("finish", resolve);
+		const promise = encoder.readable.pipeTo(stream);
 
-			encoder.pipe(stream);
-			encoder.write(value);
-			encoder.end();
-		});
+		const writer = encoder.writable.getWriter();
 
-		expect(stream.buffer![0]).toBe(value);
+		await writer.write(value);
+		await writer.close();
+
+		await promise;
+
+		expect(stream.bytes![0]).toBe(value);
 		expect(stream.offset).toBe(byteLength);
 	});
 
 	it(`streams uInt8 from buffer`, async () => {
-		const buffer = Buffer.allocUnsafe(byteLength);
+		const buffer = Uint8Array.from([value]);
 
-		buffer[0] = value;
-
-		const stream = new BufferReadStream(buffer);
+		const stream = new BytesReadableStream(buffer);
 
 		const decoder = codec.Decoder();
 
-		await new Promise((resolve) => {
-			decoder.on("finish", resolve);
+		const readable = stream.pipeThrough(decoder);
 
-			stream.pipe(decoder);
-		});
+		const reader = readable.getReader();
 
-		expect(decoder.read(1)).toBe(value);
+		const result = await reader.read();
+		await reader.cancel();
+
+		expect(result.value).toStrictEqual(value);
 	});
 });
 
@@ -108,14 +108,14 @@ describe("iterates uInt endianness and bits combinations", () => {
 				it(`encodes uInt${bits}${endianness} to buffer`, async () => {
 					const buffer = codec.encode(value);
 
-					expect(buffer[`readUInt${endianness}`](0, byteLength)).toBe(value);
+					const result = codec.decode(buffer);
+
+					expect(result).toBe(value);
 					expect(buffer.byteLength).toBe(byteLength);
 				});
 
 				it(`decodes uInt${bits}${endianness} from buffer`, async () => {
-					const buffer = Buffer.allocUnsafe(byteLength);
-
-					buffer[`writeUInt${endianness}`](value, 0, byteLength);
+					const buffer = codec.encode(value);
 
 					const result = codec.decode(buffer);
 
@@ -123,38 +123,38 @@ describe("iterates uInt endianness and bits combinations", () => {
 				});
 
 				it(`streams uInt${bits}${endianness} to buffer`, async () => {
-					const stream = new BufferWriteStream();
+					const stream = new BytesWritableStream();
 
 					const encoder = codec.Encoder();
 
-					await new Promise((resolve) => {
-						stream.on("finish", resolve);
+					const promise = encoder.readable.pipeTo(stream);
 
-						encoder.pipe(stream);
-						encoder.write(value);
-						encoder.end();
-					});
+					const writer = encoder.writable.getWriter();
 
-					expect(stream.buffer![`readUInt${endianness}`](0, byteLength)).toBe(value);
+					await writer.write(value);
+					await writer.close();
+
+					await promise;
+
+					expect(codec.decode(stream.bytes!)).toBe(value);
 					expect(stream.offset).toBe(byteLength);
 				});
 
 				it(`streams uInt${bits}${endianness} from buffer`, async () => {
-					const buffer = Buffer.allocUnsafe(byteLength);
+					const buffer = codec.encode(value);
 
-					buffer[`writeUInt${endianness}`](value, 0, byteLength);
-
-					const stream = new BufferReadStream(buffer);
+					const stream = new BytesReadableStream(buffer);
 
 					const decoder = codec.Decoder();
 
-					await new Promise((resolve) => {
-						decoder.on("finish", resolve);
+					const readable = stream.pipeThrough(decoder);
 
-						stream.pipe(decoder);
-					});
+					const reader = readable.getReader();
 
-					expect(decoder.read(1)).toBe(value);
+					const result = await reader.read();
+					await reader.cancel();
+
+					expect(result.value).toStrictEqual(value);
 				});
 			});
 		}

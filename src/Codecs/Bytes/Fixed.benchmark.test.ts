@@ -1,15 +1,15 @@
 import { randomBytes } from "crypto";
 import { decodeBenchmark, encodeBenchmark, sizeBenchmark } from "../../utilities/benchmark.ignore";
 import { CodecType } from "../Abstract";
-import { BufferVariableCodec } from "./Variable";
+import { BytesFixedCodec } from "./Fixed";
 
-const codec = new BufferVariableCodec();
+const codec = new BytesFixedCodec(1024);
 const value: CodecType<typeof codec> = randomBytes(1024);
 
 it(
-	"encode benchmarks for bufferVariable codec",
+	"encode benchmarks for bufferFixed codec",
 	async () => {
-		await encodeBenchmark("bufferVariable", value, codec);
+		await encodeBenchmark("bufferFixed", value, codec);
 
 		expect(true).toBeTruthy();
 	},
@@ -17,9 +17,9 @@ it(
 );
 
 it(
-	"decode benchmarks for bufferVariable codec",
+	"decode benchmarks for bufferFixed codec",
 	async () => {
-		await decodeBenchmark("bufferVariable", value, codec);
+		await decodeBenchmark("bufferFixed", value, codec);
 
 		expect(true).toBeTruthy();
 	},
@@ -27,7 +27,7 @@ it(
 );
 
 it(
-	"size benchmarks for bufferVariable codec",
+	"size benchmarks for bufferFixed codec",
 	async () => {
 		await sizeBenchmark(value, codec);
 

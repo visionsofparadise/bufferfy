@@ -3,30 +3,34 @@ import { BufferfyByteLengthError } from "../../utilities/Error";
 import { AbstractCodec } from "../Abstract";
 import { VarInt60Codec } from "../VarInt/VarInt60";
 
-export class BufferVariableCodec extends AbstractCodec<Buffer> {
+export class BytesVariableCodec extends AbstractCodec<Uint8Array> {
 	constructor(public readonly lengthCodec: AbstractCodec<number> = new VarInt60Codec()) {
 		super();
 	}
 
-	isValid(value: unknown): value is Buffer {
-		return value instanceof Buffer;
+	isValid(value: unknown): value is Uint8Array {
+		return value instanceof Uint8Array;
 	}
 
-	byteLength(value: Buffer): number {
+	byteLength(value: Uint8Array): number {
 		return this.lengthCodec.byteLength(value.byteLength) + value.byteLength;
 	}
 
-	_encode(value: Buffer, buffer: Buffer, c: Context): void {
+	_encode(value: Uint8Array, buffer: Uint8Array, c: Context): void {
 		this.lengthCodec._encode(value.byteLength, buffer, c);
 
-		c.offset += value.copy(buffer, c.offset);
+		for (const byte of value) buffer[c.offset++] = byte;
 	}
 
-	_decode(buffer: Buffer, c: Context): Buffer {
+	_decode(buffer: Uint8Array, c: Context): Uint8Array {
 		const byteLength = this.lengthCodec._decode(buffer, c);
 
 		if (buffer.byteLength < c.offset + byteLength) throw new BufferfyByteLengthError();
 
-		return buffer.subarray(c.offset, (c.offset += byteLength));
+		const value = new Uint8Array(buffer.buffer, buffer.byteOffset + c.offset, byteLength);
+
+		c.offset += byteLength;
+
+		return value;
 	}
 }

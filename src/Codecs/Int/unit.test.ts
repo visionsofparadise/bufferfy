@@ -1,5 +1,5 @@
 import { createIntCodec, Int8Codec } from ".";
-import { BufferReadStream, BufferWriteStream } from "../../utilities/BufferStream.ignore";
+import { BytesReadableStream, BytesWritableStream } from "../../utilities/BytesStream.ignore";
 import { CodecType } from "../Abstract";
 import { endiannessValues, UINT_BIT_BYTE_MAP, uIntBitValues } from "../UInt";
 
@@ -30,12 +30,12 @@ describe("correctly performs int8 codec methods", () => {
 	it("encodes int8 to buffer", async () => {
 		const buffer = codec.encode(value);
 
-		expect(buffer[0]).toBe(0);
+		expect(codec.decode(buffer)).toBe(value);
 		expect(buffer.byteLength).toBe(byteLength);
 	});
 
 	it("decodes int8 from buffer", async () => {
-		const buffer = Buffer.from([0]);
+		const buffer = Uint8Array.from([0]);
 
 		const result = codec.decode(buffer);
 
@@ -43,19 +43,20 @@ describe("correctly performs int8 codec methods", () => {
 	});
 
 	it(`streams int8 to buffer`, async () => {
-		const stream = new BufferWriteStream();
+		const stream = new BytesWritableStream();
 
 		const encoder = codec.Encoder();
 
-		await new Promise((resolve) => {
-			stream.on("finish", resolve);
+		const promise = encoder.readable.pipeTo(stream);
 
-			encoder.pipe(stream);
-			encoder.write(value);
-			encoder.end();
-		});
+		const writer = encoder.writable.getWriter();
 
-		expect(stream.buffer![0]).toBe(0);
+		await writer.write(value);
+		await writer.close();
+
+		await promise;
+
+		expect(codec.decode(stream.bytes!)).toBe(value);
 		expect(stream.offset).toBe(byteLength);
 	});
 
@@ -64,17 +65,18 @@ describe("correctly performs int8 codec methods", () => {
 
 		buffer[0] = 0;
 
-		const stream = new BufferReadStream(buffer);
+		const stream = new BytesReadableStream(buffer);
 
 		const decoder = codec.Decoder();
 
-		await new Promise((resolve) => {
-			decoder.on("finish", resolve);
+		const readable = stream.pipeThrough(decoder);
 
-			stream.pipe(decoder);
-		});
+		const reader = readable.getReader();
 
-		expect(decoder.read(1)).toBe(value);
+		const result = await reader.read();
+		await reader.cancel();
+
+		expect(result.value).toStrictEqual(value);
 	});
 });
 
@@ -109,7 +111,7 @@ describe("iterates int endianness and bits combinations", () => {
 				it(`encodes int${bits}${endianness} to buffer`, async () => {
 					const buffer = codec.encode(value);
 
-					expect(buffer[`readUInt${endianness}`](0, byteLength)).toBe(0);
+					expect(codec.decode(buffer)).toBe(value);
 					expect(buffer.byteLength).toBe(byteLength);
 				});
 
@@ -124,19 +126,20 @@ describe("iterates int endianness and bits combinations", () => {
 				});
 
 				it(`streams int${bits}${endianness} to buffer`, async () => {
-					const stream = new BufferWriteStream();
+					const stream = new BytesWritableStream();
 
 					const encoder = codec.Encoder();
 
-					await new Promise((resolve) => {
-						stream.on("finish", resolve);
+					const promise = encoder.readable.pipeTo(stream);
 
-						encoder.pipe(stream);
-						encoder.write(value);
-						encoder.end();
-					});
+					const writer = encoder.writable.getWriter();
 
-					expect(stream.buffer![`readUInt${endianness}`](0, byteLength)).toBe(0);
+					await writer.write(value);
+					await writer.close();
+
+					await promise;
+
+					expect(codec.decode(stream.bytes!)).toBe(value);
 					expect(stream.offset).toBe(byteLength);
 				});
 
@@ -145,17 +148,18 @@ describe("iterates int endianness and bits combinations", () => {
 
 					buffer[`writeUInt${endianness}`](0, 0, byteLength);
 
-					const stream = new BufferReadStream(buffer);
+					const stream = new BytesReadableStream(buffer);
 
 					const decoder = codec.Decoder();
 
-					await new Promise((resolve) => {
-						decoder.on("finish", resolve);
+					const readable = stream.pipeThrough(decoder);
 
-						stream.pipe(decoder);
-					});
+					const reader = readable.getReader();
 
-					expect(decoder.read(1)).toBe(value);
+					const result = await reader.read();
+					await reader.cancel();
+
+					expect(result.value).toStrictEqual(value);
 				});
 			});
 		}

@@ -33,11 +33,11 @@ export class ConstantCodec<const Value> extends AbstractCodec<Value> {
 		return 0;
 	}
 
-	_encode(_value: Value, _buffer: Buffer, _c: Context): void {
+	_encode(_value: Value, _buffer: Uint8Array, _c: Context): void {
 		return;
 	}
 
-	_decode(_buffer: Buffer, _c: Context): Value {
+	_decode(_buffer: Uint8Array, _c: Context): Value {
 		return this.value;
 	}
 }

@@ -23,13 +23,13 @@ export class ArrayVariableCodec<Item> extends AbstractCodec<Array<Item>> {
 		return byteLength;
 	}
 
-	_encode(value: Array<Item>, buffer: Buffer, c: Context): void {
+	_encode(value: Array<Item>, buffer: Uint8Array, c: Context): void {
 		this.lengthCodec._encode(value.length, buffer, c);
 
 		for (const item of value) this.itemCodec._encode(item, buffer, c);
 	}
 
-	_decode(buffer: Buffer, c: Context): Array<Item> {
+	_decode(buffer: Uint8Array, c: Context): Array<Item> {
 		const length = this.lengthCodec._decode(buffer, c);
 
 		const value: Array<Item> = Array(length);

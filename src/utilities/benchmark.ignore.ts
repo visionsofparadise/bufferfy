@@ -52,7 +52,7 @@ export const encodeBenchmark = async (name: string, value: any, codec: AbstractC
 		.add(
 			"JSON.stringify".padEnd(bufferfyEncodeId.length, " "),
 			() => {
-				Buffer.from(JSON.stringify(value));
+				new TextEncoder().encode(JSON.stringify(value));
 			},
 			options
 		)
@@ -66,7 +66,7 @@ export const encodeBenchmark = async (name: string, value: any, codec: AbstractC
 export const decodeBenchmark = async (name: string, value: any, codec: AbstractCodec, options?: Benchmark.Options) => {
 	const bufferfyBuffer = codec.encode(value);
 	const msgPackBuffer = pack(value);
-	const jsonBuffer = Buffer.from(JSON.stringify(value));
+	const jsonBuffer = new TextEncoder().encode(JSON.stringify(value));
 
 	const bufferfyDecodeId = `bufferfy.decode.${name}`;
 
@@ -92,7 +92,7 @@ export const decodeBenchmark = async (name: string, value: any, codec: AbstractC
 		.add(
 			"JSON.parse".padEnd(bufferfyDecodeId.length, " "),
 			() => {
-				JSON.parse(jsonBuffer.toString());
+				JSON.parse(new TextDecoder().decode(jsonBuffer));
 			},
 			options
 		)
@@ -107,7 +107,7 @@ export const decodeBenchmark = async (name: string, value: any, codec: AbstractC
 export const sizeBenchmark = async (value: any, codec: AbstractCodec) => {
 	const bufferfyBuffer = codec.encode(value);
 	const msgPackBuffer = pack(value);
-	const jsonBuffer = Buffer.from(JSON.stringify(value));
+	const jsonBuffer = new TextEncoder().encode(JSON.stringify(value));
 
 	console.log("bufferfy.size" + `	${bufferfyBuffer.byteLength}`);
 	console.log("msgpack.size" + `	${msgPackBuffer.byteLength}`);

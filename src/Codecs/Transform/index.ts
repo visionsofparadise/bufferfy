@@ -4,7 +4,7 @@ import { AbstractCodec } from "../Abstract";
 export interface TransformCodecOptions<Source, Target> {
 	isValid?: (source: unknown) => boolean;
 	encode: (source: Source) => Target;
-	decode: (target: Target, buffer: Buffer) => Source;
+	decode: (target: Target, buffer: Uint8Array) => Source;
 }
 
 /**
@@ -28,7 +28,7 @@ export const createTransformCodec = <Source, Target>(targetCodec: AbstractCodec<
 export class TransformCodec<Source, Target> extends AbstractCodec<Source> {
 	private readonly _isSourceValid: (value: unknown) => boolean;
 	private readonly _encodeSource: (source: Source) => Target;
-	private readonly _decodeTarget: (target: Target, buffer: Buffer) => Source;
+	private readonly _decodeTarget: (target: Target, buffer: Uint8Array) => Source;
 
 	constructor(public readonly targetCodec: AbstractCodec<Target>, options: TransformCodecOptions<Source, Target>) {
 		super();
@@ -52,17 +52,19 @@ export class TransformCodec<Source, Target> extends AbstractCodec<Source> {
 		return this.targetCodec.byteLength(this._encodeSource(value));
 	}
 
-	_encode(value: Source, buffer: Buffer, c: Context): void {
+	_encode(value: Source, buffer: Uint8Array, c: Context): void {
 		return this.targetCodec._encode(this._encodeSource(value), buffer, c);
 	}
 
-	_decode(buffer: Buffer, c: Context): Source {
+	_decode(buffer: Uint8Array, c: Context): Source {
 		const preOffset = c.offset;
 
 		const targetValue = this.targetCodec._decode(buffer, c);
 
 		const postOffset = c.offset;
 
-		return this._decodeTarget(targetValue, buffer.subarray(preOffset, postOffset));
+		const targetBuffer = new Uint8Array(buffer.buffer, buffer.byteOffset + preOffset, postOffset - preOffset);
+
+		return this._decodeTarget(targetValue, targetBuffer);
 	}
 }
