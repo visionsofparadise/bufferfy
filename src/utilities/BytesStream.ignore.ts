@@ -1,5 +1,3 @@
-import { ReadableStream, WritableStream } from "stream/web";
-
 export class BytesWritableStream extends WritableStream<Uint8Array> {
 	bytes = new Uint8Array(new ArrayBuffer(4096));
 	offset = 0;

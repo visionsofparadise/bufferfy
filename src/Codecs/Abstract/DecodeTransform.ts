@@ -1,4 +1,3 @@
-import { TransformStream } from "stream/web";
 import { concat } from "uint8array-tools";
 import { AbstractCodec } from ".";
 import { BufferfyByteLengthError } from "../../utilities/Error";

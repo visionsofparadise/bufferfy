@@ -1,4 +1,3 @@
-import { TransformStream } from "stream/web";
 import { AbstractCodec } from ".";
 
 export class EncodeTransformStream<Value = unknown> extends TransformStream<Value, Uint8Array> {
