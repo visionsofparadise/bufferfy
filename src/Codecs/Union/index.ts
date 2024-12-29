@@ -9,6 +9,8 @@ import { VarInt60Codec } from "../VarInt/VarInt60";
  * - Optional or nullable values.
  * - Overloaded values.
  *
+ * Nested union codecs are flattened to a single array of possible codecs.
+ *
  * Serializes to ```[CODEC_INDEX][VALUE]```
  *
  * @param	{Array<AbstractCodec>} codecs - An array of codecs for possible value types.
@@ -20,8 +22,15 @@ import { VarInt60Codec } from "../VarInt/VarInt60";
 export const createUnionCodec = <const Codecs extends Array<AbstractCodec<any>>>(codecs: Codecs, indexCodec: AbstractCodec<number> = new VarInt60Codec()) => new UnionCodec(codecs, indexCodec);
 
 export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends AbstractCodec<CodecType<Codecs[number]>> {
-	constructor(public readonly codecs: Codecs, public readonly indexCodec: AbstractCodec<number> = new VarInt60Codec()) {
+	codecs: Codecs;
+	constructor(codecs: Codecs, public readonly indexCodec: AbstractCodec<number> = new VarInt60Codec()) {
 		super();
+
+		this.codecs = codecs.flatMap((codec): AbstractCodec<any> | Array<AbstractCodec<any>> => {
+			if (codec instanceof UnionCodec) return codec.codecs;
+
+			return codec;
+		}) as Codecs;
 	}
 
 	isValid(value: unknown): value is CodecType<Codecs[number]> {
