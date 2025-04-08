@@ -12,6 +12,7 @@ import { mergeObjectCodecs } from "./Codecs/Object/Merge";
 import { omitObjectCodec } from "./Codecs/Object/Omit";
 import { pickObjectCodec } from "./Codecs/Object/Pick";
 import { createRecordCodec } from "./Codecs/Record";
+import { createRecursiveCodec } from "./Codecs/Recursive";
 import { createStringCodec } from "./Codecs/String";
 import { createTransformCodec } from "./Codecs/Transform";
 import { createTupleCodec } from "./Codecs/Tuple";
@@ -46,6 +47,7 @@ export const Codec = {
 	Optional: <Value>(codec: AbstractCodec<Value>) => createUnionCodec([codec, createConstantCodec(undefined)]),
 	Pick: pickObjectCodec,
 	Record: createRecordCodec,
+	Recursive: createRecursiveCodec,
 	String: createStringCodec,
 	Transform: createTransformCodec,
 	True: createConstantCodec(true),

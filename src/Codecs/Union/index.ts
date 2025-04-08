@@ -23,6 +23,7 @@ export const createUnionCodec = <const Codecs extends Array<AbstractCodec<any>>>
 
 export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends AbstractCodec<CodecType<Codecs[number]>> {
 	codecs: Codecs;
+
 	constructor(codecs: Codecs, public readonly indexCodec: AbstractCodec<number> = new VarInt60Codec()) {
 		super();
 

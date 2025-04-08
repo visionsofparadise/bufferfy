@@ -79,12 +79,8 @@ export const createUIntCodec = (bits: UIntBits = 48, endianness: Endianness = os
 };
 
 export class UInt8Codec extends AbstractCodec<number> {
-	_bufferMap: Record<number, Buffer> = {};
-
 	constructor() {
 		super();
-
-		for (let i = 0; i < 256; i++) this._bufferMap[i] = Buffer.from([i]);
 	}
 
 	isValid(value: unknown): value is number {

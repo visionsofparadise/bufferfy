@@ -15,6 +15,7 @@ export { ObjectCodec } from "./Codecs/Object";
 export { type RecordCodec } from "./Codecs/Record";
 export { RecordFixedCodec } from "./Codecs/Record/Fixed";
 export { RecordVariableCodec } from "./Codecs/Record/Variable";
+export { DeferredCodec, RecursiveCodec } from "./Codecs/Recursive";
 export { type StringCodec } from "./Codecs/String";
 export { StringFixedCodec } from "./Codecs/String/Fixed";
 export { StringVariableCodec } from "./Codecs/String/Variable";
