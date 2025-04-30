@@ -20,7 +20,7 @@ export class StringFixedCodec extends AbstractCodec<string> {
 		return typeof value === "string";
 	}
 
-	byteLength(_value: string): number {
+	byteLength(): number {
 		return this._byteLength;
 	}
 

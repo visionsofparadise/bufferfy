@@ -19,7 +19,7 @@ describe("correctly performs boolean codec methods", () => {
 	});
 
 	it("returns byteLength of boolean", () => {
-		const resultByteLength = codec.byteLength(value);
+		const resultByteLength = codec.byteLength();
 
 		expect(resultByteLength).toBe(byteLength);
 	});

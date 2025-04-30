@@ -22,7 +22,7 @@ describe("correctly performs bytes codec methods", () => {
 	});
 
 	it("returns byteLength of bytes", () => {
-		const resultByteLength = codec.byteLength(value);
+		const resultByteLength = codec.byteLength();
 
 		expect(resultByteLength).toBe(byteLength);
 	});

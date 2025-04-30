@@ -87,7 +87,7 @@ export class UInt8Codec extends AbstractCodec<number> {
 		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 256;
 	}
 
-	byteLength(_: number): 1 {
+	byteLength(): 1 {
 		return 1;
 	}
 
@@ -107,7 +107,7 @@ export class UInt16BECodec extends AbstractCodec<number> {
 		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 65536;
 	}
 
-	byteLength(_: number): 2 {
+	byteLength(): 2 {
 		return 2;
 	}
 
@@ -141,7 +141,7 @@ export class UInt24BECodec extends AbstractCodec<number> {
 		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 16777216;
 	}
 
-	byteLength(_: number): 3 {
+	byteLength(): 3 {
 		return 3;
 	}
 
@@ -177,7 +177,7 @@ export class UInt32BECodec extends AbstractCodec<number> {
 		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 4294967296;
 	}
 
-	byteLength(_: number): 4 {
+	byteLength(): 4 {
 		return 4;
 	}
 
@@ -215,7 +215,7 @@ export class UInt40BECodec extends AbstractCodec<number> {
 		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 1099511627776;
 	}
 
-	byteLength(_: number): 5 {
+	byteLength(): 5 {
 		return 5;
 	}
 
@@ -255,7 +255,7 @@ export class UInt48BECodec extends AbstractCodec<number> {
 		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 281474976710656;
 	}
 
-	byteLength(_: number): 6 {
+	byteLength(): 6 {
 		return 6;
 	}
 

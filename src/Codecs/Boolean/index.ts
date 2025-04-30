@@ -18,7 +18,7 @@ export class BooleanCodec extends AbstractCodec<boolean> {
 		return typeof value === "boolean";
 	}
 
-	byteLength(_value: boolean): number {
+	byteLength(): 1 {
 		return 1;
 	}
 

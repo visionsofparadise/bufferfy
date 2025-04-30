@@ -22,7 +22,7 @@ describe("correctly performs fixed string codec methods", () => {
 	});
 
 	it("returns byteLength of fixed string", () => {
-		const resultByteLength = codec.byteLength(value);
+		const resultByteLength = codec.byteLength();
 
 		expect(resultByteLength).toBe(byteLength);
 	});

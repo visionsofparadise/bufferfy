@@ -22,7 +22,7 @@ describe("correctly performs int8 codec methods", () => {
 	});
 
 	it("returns byteLength of int8", () => {
-		const resultByteLength = codec.byteLength(value);
+		const resultByteLength = codec.byteLength();
 
 		expect(resultByteLength).toBe(byteLength);
 	});
@@ -103,7 +103,7 @@ describe("iterates int endianness and bits combinations", () => {
 				});
 
 				it(`returns byteLength of int${bits}${endianness}`, () => {
-					const resultByteLength = codec.byteLength(value);
+					const resultByteLength = codec.byteLength();
 
 					expect(resultByteLength).toBe(byteLength);
 				});

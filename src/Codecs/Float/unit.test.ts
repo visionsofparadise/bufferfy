@@ -23,7 +23,7 @@ describe("iterates float endianness and bits combinations", () => {
 				});
 
 				it(`returns byteLength of float${bits}${endianness}`, () => {
-					const resultByteLength = codec.byteLength(value);
+					const resultByteLength = codec.byteLength();
 
 					expect(resultByteLength).toBe(byteLength);
 				});

@@ -18,7 +18,7 @@ describe("correctly performs null codec methods", () => {
 	});
 
 	it("returns byteLength of null", () => {
-		const resultByteLength = codec.byteLength(value);
+		const resultByteLength = codec.byteLength();
 
 		expect(resultByteLength).toBe(byteLength);
 	});

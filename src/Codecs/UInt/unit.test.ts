@@ -21,7 +21,7 @@ describe("correctly performs uInt8 codec methods", () => {
 	});
 
 	it("returns byteLength of uInt8", () => {
-		const resultByteLength = codec.byteLength(value);
+		const resultByteLength = codec.byteLength();
 
 		expect(resultByteLength).toBe(byteLength);
 	});
@@ -100,7 +100,7 @@ describe("iterates uInt endianness and bits combinations", () => {
 				});
 
 				it(`returns byteLength of uInt${bits}${endianness}`, () => {
-					const resultByteLength = codec.byteLength(value);
+					const resultByteLength = codec.byteLength();
 
 					expect(resultByteLength).toBe(byteLength);
 				});

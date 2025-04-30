@@ -15,7 +15,7 @@ export class BytesFixedCodec extends AbstractCodec<Uint8Array> {
 		return value instanceof Uint8Array;
 	}
 
-	byteLength(_: Uint8Array): number {
+	byteLength(): number {
 		return this._byteLength;
 	}
 

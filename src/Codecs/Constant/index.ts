@@ -1,5 +1,4 @@
 import { isDeepStrictEqual } from "util";
-import { Context } from "../../utilities/Context";
 import { AbstractCodec } from "../Abstract";
 
 /**
@@ -29,15 +28,15 @@ export class ConstantCodec<const Value> extends AbstractCodec<Value> {
 		return value === this.value;
 	}
 
-	byteLength(_value: Value): number {
+	byteLength(): number {
 		return 0;
 	}
 
-	_encode(_value: Value, _buffer: Uint8Array, _c: Context): void {
+	_encode(): void {
 		return;
 	}
 
-	_decode(_buffer: Uint8Array, _c: Context): Value {
+	_decode(): Value {
 		return this.value;
 	}
 }

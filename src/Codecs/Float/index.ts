@@ -56,7 +56,7 @@ export class Float32BECodec extends AbstractCodec<number> {
 		return typeof value === "number";
 	}
 
-	byteLength(_: number): 4 {
+	byteLength(): 4 {
 		return 4;
 	}
 
@@ -108,7 +108,7 @@ export class Float64BECodec extends AbstractCodec<number> {
 		return typeof value === "number";
 	}
 
-	byteLength(_: number): 8 {
+	byteLength(): 8 {
 		return 8;
 	}
 
