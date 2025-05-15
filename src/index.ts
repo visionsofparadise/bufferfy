@@ -3,6 +3,7 @@ export { AnyCodec } from "./Codecs/Any";
 export { type ArrayCodec } from "./Codecs/Array";
 export { ArrayFixedCodec } from "./Codecs/Array/Fixed";
 export { ArrayVariableCodec } from "./Codecs/Array/Variable";
+export { BigUIntBECodec, BigUIntLECodec } from "./Codecs/BigUInt";
 export { BitFieldCodec } from "./Codecs/BitField";
 export { BooleanCodec } from "./Codecs/Boolean";
 export { type BytesCodec } from "./Codecs/Bytes";

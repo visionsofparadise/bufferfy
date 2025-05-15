@@ -30,7 +30,7 @@ describe("correctly performs bitfield codec methods", () => {
 	});
 
 	it("returns byteLength of bitfield", () => {
-		const resultByteLength = codec.byteLength(value);
+		const resultByteLength = codec.byteLength();
 
 		expect(resultByteLength).toBe(byteLength);
 	});

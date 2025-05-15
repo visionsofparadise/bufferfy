@@ -1,6 +1,7 @@
 import { AbstractCodec, CodecType } from "./Codecs/Abstract";
 import { createAnyCodec } from "./Codecs/Any";
 import { createArrayCodec } from "./Codecs/Array";
+import { createBigUIntCodec } from "./Codecs/BigUInt";
 import { createBitFieldCodec } from "./Codecs/BitField";
 import { createBooleanCodec } from "./Codecs/Boolean";
 import { createBytesCodec } from "./Codecs/Bytes";
@@ -27,6 +28,7 @@ export namespace Codec {
 export const Codec = {
 	Any: createAnyCodec,
 	Array: createArrayCodec,
+	BigUInt: createBigUIntCodec,
 	BitField: createBitFieldCodec,
 	Boolean: createBooleanCodec(),
 	Bytes: createBytesCodec,
