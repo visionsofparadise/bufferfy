@@ -1,6 +1,6 @@
 {
   "name": "bufferfy",
-  "version": "3.0.4",
+  "version": "3.0.5",
   "description": "Fast and efficient buffer serialization.",
   "keywords": [
     "protobuf",

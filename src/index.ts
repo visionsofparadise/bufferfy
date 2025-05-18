@@ -7,6 +7,7 @@ export { BigUIntBECodec, BigUIntLECodec } from "./Codecs/BigUInt";
 export { BitFieldCodec } from "./Codecs/BitField";
 export { BooleanCodec } from "./Codecs/Boolean";
 export { type BytesCodec } from "./Codecs/Bytes";
+export { BytesConstantCodec } from "./Codecs/Bytes/Constant";
 export { BytesFixedCodec } from "./Codecs/Bytes/Fixed";
 export { BytesVariableCodec } from "./Codecs/Bytes/Variable";
 export { ConstantCodec } from "./Codecs/Constant";

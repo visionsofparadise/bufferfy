@@ -3,7 +3,7 @@ import { BufferfyByteLengthError } from "../../utilities/Error";
 import { AbstractCodec } from "../Abstract";
 
 export class BytesFixedCodec extends AbstractCodec<Uint8Array> {
-	private _byteLength: number;
+	protected _byteLength: number;
 
 	constructor(byteLength: number) {
 		super();
