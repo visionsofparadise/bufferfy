@@ -13,6 +13,8 @@ export { BytesVariableCodec } from "./Codecs/Bytes/Variable";
 export { ConstantCodec } from "./Codecs/Constant";
 export { Float32BECodec, Float32LECodec, Float64BECodec, Float64LECodec, type FloatCodec } from "./Codecs/Float";
 export { Int16BECodec, Int16LECodec, Int24BECodec, Int24LECodec, Int32BECodec, Int32LECodec, Int40BECodec, Int40LECodec, Int48BECodec, Int48LECodec, Int8Codec, type IntCodec } from "./Codecs/Int";
+export { NumberFixedCodec } from "./Codecs/Number/Fixed";
+export { NumberVariableCodec } from "./Codecs/Number/Variable";
 export { ObjectCodec } from "./Codecs/Object";
 export { type RecordCodec } from "./Codecs/Record";
 export { RecordFixedCodec } from "./Codecs/Record/Fixed";

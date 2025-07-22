@@ -8,6 +8,7 @@ import { createBytesCodec } from "./Codecs/Bytes";
 import { createConstantCodec } from "./Codecs/Constant";
 import { createFloatCodec } from "./Codecs/Float";
 import { createIntCodec } from "./Codecs/Int";
+import { createNumberCodec } from "./Codecs/Number";
 import { createObjectCodec } from "./Codecs/Object";
 import { mergeObjectCodecs } from "./Codecs/Object/Merge";
 import { omitObjectCodec } from "./Codecs/Object/Omit";
@@ -44,6 +45,7 @@ export const Codec = {
 	Merge: mergeObjectCodecs,
 	Null: createConstantCodec(null),
 	Nullable: <Value>(codec: AbstractCodec<Value>) => createUnionCodec([codec, createConstantCodec(null)]),
+	Number: createNumberCodec,
 	Object: createObjectCodec,
 	Omit: omitObjectCodec,
 	Optional: <Value>(codec: AbstractCodec<Value>) => createUnionCodec([codec, createConstantCodec(undefined)]),
