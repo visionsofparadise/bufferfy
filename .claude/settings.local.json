@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm run unit:*)",
+      "Read(//c/Users/mttcv/Projects/Code/dices/code/.github/workflows/**)",
+      "Bash(npm run benchmark:*)",
+      "Bash(while read file)",
+      "Bash(do mv \"$file\" \"$file%.benchmark.test.ts.bench.ts\")",
+      "Bash(done)",
+      "Bash(powershell:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(findstr:*)",
+      "Bash(curl:*)",
+      "Bash(npx vitest bench:*)",
+      "Bash(rm:*)"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "outputStyle": "lain"
+}

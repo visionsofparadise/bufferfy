@@ -1,6 +1,8 @@
 import { Context } from "../../utilities/Context";
-import { DecodeTransformStream } from "./DecodeTransform";
+import { DecodeTransformStream, DecodeTransformStreamOptions } from "./DecodeTransform";
 import { EncodeTransformStream } from "./EncodeTransform";
+
+export type { DecodeTransformStreamOptions } from "./DecodeTransform";
 
 export type CodecType<T extends AbstractCodec<any>> = T extends AbstractCodec<infer S> ? S : never;
 
@@ -93,7 +95,7 @@ export abstract class AbstractCodec<Value = unknown> {
 		return this._decode(buffer, c);
 	}
 
-	Decoder(): TransformStream<Uint8Array, Value> {
-		return new DecodeTransformStream(this);
+	Decoder(options?: DecodeTransformStreamOptions): TransformStream<Uint8Array, Value> {
+		return new DecodeTransformStream(this, options);
 	}
 }

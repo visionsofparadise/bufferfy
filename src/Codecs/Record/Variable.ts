@@ -10,28 +10,40 @@ export class RecordVariableCodec<Key extends string, Value extends any> extends 
 	isValid(value: unknown): value is Record<Key, Value> {
 		if (value === null || typeof value !== "object") return false;
 
-		for (const [key, property] of Object.entries(value)) if (!this.keyCodec.isValid(key) || !this.valueCodec.isValid(property)) return false;
+		for (const key in value) {
+			const property = (value as Record<string, unknown>)[key];
+			if (!this.keyCodec.isValid(key) || !this.valueCodec.isValid(property)) return false;
+		}
 
 		return true;
 	}
 
 	byteLength(value: Record<Key, Value>): number {
-		const entries = Object.entries(value) as Array<[Key, Value]>;
+		let count = 0;
+		let byteLength = 0;
 
-		let byteLength = this.lengthCodec.byteLength(entries.length);
+		for (const key in value) {
+			count++;
+			const property = value[key];
+			byteLength += this.keyCodec.byteLength(key as Key) + this.valueCodec.byteLength(property);
+		}
 
-		for (const [key, property] of entries) byteLength += this.keyCodec.byteLength(key) + this.valueCodec.byteLength(property);
+		byteLength += this.lengthCodec.byteLength(count);
 
 		return byteLength;
 	}
 
 	_encode(value: Record<Key, Value>, buffer: Uint8Array, c: Context): void {
-		const entries = Object.entries(value) as Array<[Key, Value]>;
+		let count = 0;
 
-		this.lengthCodec._encode(entries.length, buffer, c);
+		// Count properties
+		for (const _ in value) count++;
 
-		for (const [key, property] of entries) {
-			this.keyCodec._encode(key, buffer, c);
+		this.lengthCodec._encode(count, buffer, c);
+
+		for (const key in value) {
+			const property = value[key];
+			this.keyCodec._encode(key as Key, buffer, c);
 			this.valueCodec._encode(property, buffer, c);
 		}
 	}

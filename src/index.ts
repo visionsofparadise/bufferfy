@@ -1,4 +1,4 @@
-export { AbstractCodec } from "./Codecs/Abstract";
+export { AbstractCodec, type DecodeTransformStreamOptions } from "./Codecs/Abstract";
 export { AnyCodec } from "./Codecs/Any";
 export { type ArrayCodec } from "./Codecs/Array";
 export { ArrayFixedCodec } from "./Codecs/Array/Fixed";

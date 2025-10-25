@@ -1,4 +1,3 @@
-import { endianness as osEndianness } from "os";
 import { Context } from "../../utilities/Context";
 import { BufferfyByteLengthError } from "../../utilities/Error";
 import { AbstractCodec } from "../Abstract";
@@ -28,12 +27,12 @@ export type UIntCodec = UInt8Codec | UInt16BECodec | UInt16LECodec | UInt24BECod
  * Serializes to ```[UINT]```
  *
  * @param	{8 | 16 | 24 | 32 | 40 | 48} [bits=48] - Bit type of integer.
- * @param	{'LE' | 'BE'} [endianness=os.endianness()] - Endianness
+ * @param	{'LE' | 'BE'} [endianness='BE'] - Endianness
  * @return	{UIntCodec} UIntCodec
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/UInt/index.ts|Source}
  */
-export const createUIntCodec = (bits: UIntBits = 48, endianness: Endianness = osEndianness()) => {
+export const createUIntCodec = (bits: UIntBits = 48, endianness: Endianness = 'BE') => {
 	if (bits === 8) return new UInt8Codec();
 
 	switch (endianness) {
@@ -92,7 +91,8 @@ export class UInt8Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		buffer[c.offset++] = value;
+		buffer[c.offset] = value;
+		c.offset++;
 	}
 
 	_decode(buffer: Uint8Array, c: Context): number {
@@ -112,8 +112,9 @@ export class UInt16BECodec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		buffer[c.offset++] = value >>> 8;
-		buffer[c.offset++] = value & 0xff;
+		buffer[c.offset] = value >>> 8;
+		buffer[c.offset + 1] = value;
+		c.offset += 2;
 	}
 
 	_decode(buffer: Uint8Array, c: Context): number {
@@ -125,8 +126,9 @@ export class UInt16BECodec extends AbstractCodec<number> {
 
 export class UInt16LECodec extends UInt16BECodec {
 	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		buffer[c.offset++] = value & 0xff;
-		buffer[c.offset++] = value >>> 8;
+		buffer[c.offset] = value;
+		buffer[c.offset + 1] = value >>> 8;
+		c.offset += 2;
 	}
 
 	_decode(buffer: Uint8Array, c: Context): number {
@@ -146,9 +148,11 @@ export class UInt24BECodec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		buffer[c.offset++] = value >>> 16;
-		buffer[c.offset++] = (value >>> 8) & 0xff;
-		buffer[c.offset++] = value & 0xff;
+		const offset = c.offset;
+		buffer[offset] = value >>> 16;
+		buffer[offset + 1] = value >>> 8;
+		buffer[offset + 2] = value;
+		c.offset += 3;
 	}
 
 	_decode(buffer: Uint8Array, c: Context): number {
@@ -160,9 +164,11 @@ export class UInt24BECodec extends AbstractCodec<number> {
 
 export class UInt24LECodec extends UInt24BECodec {
 	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		buffer[c.offset++] = value & 0xff;
-		buffer[c.offset++] = (value >>> 8) & 0xff;
-		buffer[c.offset++] = value >>> 16;
+		const offset = c.offset;
+		buffer[offset] = value;
+		buffer[offset + 1] = value >>> 8;
+		buffer[offset + 2] = value >>> 16;
+		c.offset += 3;
 	}
 
 	_decode(buffer: Uint8Array, c: Context): number {
@@ -182,10 +188,11 @@ export class UInt32BECodec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		buffer[c.offset++] = value >>> 24;
-		buffer[c.offset++] = (value >>> 16) & 0xff;
-		buffer[c.offset++] = (value >>> 8) & 0xff;
-		buffer[c.offset++] = value & 0xff;
+		buffer[c.offset] = value >>> 24;
+		buffer[c.offset + 1] = value >>> 16;
+		buffer[c.offset + 2] = value >>> 8;
+		buffer[c.offset + 3] = value;
+		c.offset += 4;
 	}
 
 	_decode(buffer: Uint8Array, c: Context): number {
@@ -197,16 +204,17 @@ export class UInt32BECodec extends AbstractCodec<number> {
 
 export class UInt32LECodec extends UInt32BECodec {
 	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		buffer[c.offset++] = value >>> 24;
-		buffer[c.offset++] = (value >>> 16) & 0xff;
-		buffer[c.offset++] = (value >>> 8) & 0xff;
-		buffer[c.offset++] = value & 0xff;
+		buffer[c.offset] = value;
+		buffer[c.offset + 1] = value >>> 8;
+		buffer[c.offset + 2] = value >>> 16;
+		buffer[c.offset + 3] = value >>> 24;
+		c.offset += 4;
 	}
 
 	_decode(buffer: Uint8Array, c: Context): number {
 		if (buffer.byteLength < c.offset + 4) throw new BufferfyByteLengthError();
 
-		return buffer[c.offset++] * 2 ** 24 + buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++];
+		return buffer[c.offset++] + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 24;
 	}
 }
 
@@ -220,11 +228,13 @@ export class UInt40BECodec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		buffer[c.offset++] = value / 2 ** 32;
-		buffer[c.offset++] = (value >>> 24) & 0xff;
-		buffer[c.offset++] = (value >>> 16) & 0xff;
-		buffer[c.offset++] = (value >>> 8) & 0xff;
-		buffer[c.offset++] = value & 0xff;
+		const offset = c.offset;
+		buffer[offset] = value / 0x100000000;
+		buffer[offset + 1] = value >>> 24;
+		buffer[offset + 2] = value >>> 16;
+		buffer[offset + 3] = value >>> 8;
+		buffer[offset + 4] = value;
+		c.offset += 5;
 	}
 
 	_decode(buffer: Uint8Array, c: Context): number {
@@ -236,11 +246,13 @@ export class UInt40BECodec extends AbstractCodec<number> {
 
 export class UInt40LECodec extends UInt40BECodec {
 	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		buffer[c.offset++] = value & 0xff;
-		buffer[c.offset++] = (value >>> 8) & 0xff;
-		buffer[c.offset++] = (value >>> 16) & 0xff;
-		buffer[c.offset++] = (value >>> 24) & 0xff;
-		buffer[c.offset++] = value / 2 ** 32;
+		const offset = c.offset;
+		buffer[offset] = value;
+		buffer[offset + 1] = value >>> 8;
+		buffer[offset + 2] = value >>> 16;
+		buffer[offset + 3] = value >>> 24;
+		buffer[offset + 4] = value / 0x100000000;
+		c.offset += 5;
 	}
 
 	_decode(buffer: Uint8Array, c: Context): number {
@@ -260,12 +272,14 @@ export class UInt48BECodec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		buffer[c.offset++] = value / 2 ** 40;
-		buffer[c.offset++] = (value / 2 ** 32) & 0xff;
-		buffer[c.offset++] = (value >>> 24) & 0xff;
-		buffer[c.offset++] = (value >>> 16) & 0xff;
-		buffer[c.offset++] = (value >>> 8) & 0xff;
-		buffer[c.offset++] = value & 0xff;
+		const offset = c.offset;
+		buffer[offset] = value / 0x10000000000;
+		buffer[offset + 1] = value / 0x100000000;
+		buffer[offset + 2] = value >>> 24;
+		buffer[offset + 3] = value >>> 16;
+		buffer[offset + 4] = value >>> 8;
+		buffer[offset + 5] = value;
+		c.offset += 6;
 	}
 
 	_decode(buffer: Uint8Array, c: Context): number {
@@ -277,12 +291,14 @@ export class UInt48BECodec extends AbstractCodec<number> {
 
 export class UInt48LECodec extends UInt48BECodec {
 	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		buffer[c.offset++] = value & 0xff;
-		buffer[c.offset++] = (value >>> 8) & 0xff;
-		buffer[c.offset++] = (value >>> 16) & 0xff;
-		buffer[c.offset++] = (value >>> 24) & 0xff;
-		buffer[c.offset++] = (value / 2 ** 32) & 0xff;
-		buffer[c.offset++] = value / 2 ** 40;
+		const offset = c.offset;
+		buffer[offset] = value;
+		buffer[offset + 1] = value >>> 8;
+		buffer[offset + 2] = value >>> 16;
+		buffer[offset + 3] = value >>> 24;
+		buffer[offset + 4] = value / 0x100000000;
+		buffer[offset + 5] = value / 0x10000000000;
+		c.offset += 6;
 	}
 
 	_decode(buffer: Uint8Array, c: Context): number {

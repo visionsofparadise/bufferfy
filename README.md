@@ -109,6 +109,20 @@ Returns the value type of the provided codec.
 - [Omit](https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Object/Omit/index.ts)
 - [Pick](https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Object/Pick/index.ts)
 
+## Union Codec Ordering
+
+`Codec.Union()` tests codecs sequentially. **First match wins.**
+
+Order specific → general. Put `Codec.Any()` last (matches everything).
+
+```ts
+// Correct
+Codec.Union([Codec.Constant("active"), Codec.String(), Codec.Any()])
+
+// Wrong - Any() shadows everything
+Codec.Union([Codec.Any(), Codec.String()])
+```
+
 ## Benchmarks
 
 Values used for benchmarks can be found [here](https://github.com/visionsofparadise/bufferfy/blob/main/src/utilities/TestValues.ignore.ts).

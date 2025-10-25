@@ -55,16 +55,6 @@ export class BitFieldCodec<Key extends string> extends AbstractCodec<Record<Key,
 
 			c.offset++;
 		}
-
-		// for (let i = 0; i < this.keys.length; i++) {
-		// 	if (i % 8 === 0) buffer[c.offset] = 0;
-
-		// 	if (value[this.keys[i]] === true) buffer[c.offset] |= BIT_MAP[i % 8];
-
-		// 	if (i % 8 === 7) c.offset++;
-		// }
-
-		// if (this.keys.length % 8 !== 0) c.offset++;
 	}
 
 	_decode(buffer: Uint8Array, c: Context): Record<Key, boolean> {
@@ -79,14 +69,6 @@ export class BitFieldCodec<Key extends string> extends AbstractCodec<Record<Key,
 
 			c.offset++;
 		}
-
-		// for (let i = 0; i < this.keys.length; i++) {
-		// 	value[this.keys[i]] = (buffer[c.offset] & BIT_MAP[i % 8]) > 0;
-
-		// 	if (i % 8 === 7) c.offset++;
-		// }
-
-		// if (this.keys.length % 8 !== 0) c.offset++;
 
 		return value as Record<Key, boolean>;
 	}

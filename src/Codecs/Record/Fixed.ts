@@ -9,11 +9,14 @@ export class RecordFixedCodec<Key extends string, Value extends any> extends Abs
 	isValid(value: unknown): value is Record<Key, Value> {
 		if (value === null || typeof value !== "object") return false;
 
-		const entries = Object.entries(value);
+		let count = 0;
+		for (const key in value) {
+			count++;
+			const property = (value as Record<string, unknown>)[key];
+			if (!this.keyCodec.isValid(key) || !this.valueCodec.isValid(property)) return false;
+		}
 
-		if (entries.length !== this.length) return false;
-
-		for (const [key, property] of entries) if (!this.keyCodec.isValid(key) || !this.valueCodec.isValid(property)) return false;
+		if (count !== this.length) return false;
 
 		return true;
 	}
@@ -21,14 +24,18 @@ export class RecordFixedCodec<Key extends string, Value extends any> extends Abs
 	byteLength(value: Record<Key, Value>): number {
 		let byteLength = 0;
 
-		for (const [key, property] of Object.entries(value) as Array<[Key, Value]>) byteLength += this.keyCodec.byteLength(key) + this.valueCodec.byteLength(property);
+		for (const key in value) {
+			const property = value[key];
+			byteLength += this.keyCodec.byteLength(key as Key) + this.valueCodec.byteLength(property);
+		}
 
 		return byteLength;
 	}
 
 	_encode(value: Record<Key, Value>, buffer: Uint8Array, c: Context): void {
-		for (const [key, property] of Object.entries(value) as Array<[Key, Value]>) {
-			this.keyCodec._encode(key, buffer, c);
+		for (const key in value) {
+			const property = value[key];
+			this.keyCodec._encode(key as Key, buffer, c);
 			this.valueCodec._encode(property, buffer, c);
 		}
 	}

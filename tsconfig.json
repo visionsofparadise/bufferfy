@@ -28,6 +28,7 @@
       "resolveJsonModule": true,
       "allowJs": true,
       "outDir": "dist",
+      "types": ["vitest/globals", "node"],
       "paths": {
          "*": ["./node_modules/*", "./src/d/*"]
       }

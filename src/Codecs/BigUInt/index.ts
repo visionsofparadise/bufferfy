@@ -1,4 +1,3 @@
-import { endianness as osEndianness } from "os";
 import { Context } from "../../utilities/Context";
 import { BufferfyByteLengthError } from "../../utilities/Error";
 import { AbstractCodec } from "../Abstract";
@@ -9,12 +8,12 @@ import { Endianness } from "../UInt";
  *
  * Serializes to ```[UINT64]```
  *
- * @param	{'LE' | 'BE'} [endianness=os.endianness()] - Endianness
+ * @param	{'LE' | 'BE'} [endianness='BE'] - Endianness
  * @return	{BigUIntCodec} BigUIntCodec
  *
  * {@link https://github.com/visionsofparadise/dataViewfy/blob/main/src/Codecs/BigUInt/index.ts|Source}
  */
-export const createBigUIntCodec = (endianness: Endianness = osEndianness()) => {
+export const createBigUIntCodec = (endianness: Endianness = 'BE') => {
 	switch (endianness) {
 		case "BE": {
 			return new BigUIntBECodec();

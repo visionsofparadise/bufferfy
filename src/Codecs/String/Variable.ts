@@ -1,18 +1,65 @@
 import { base32, base58, base64, base64url, hex } from "@scure/base";
 import { StringEncoding } from ".";
 import { Context } from "../../utilities/Context";
-import { BufferfyError } from "../../utilities/Error";
 import { AbstractCodec } from "../Abstract";
 import { BytesVariableCodec } from "../Bytes/Variable";
 import { VarInt60Codec } from "../VarInt/VarInt60";
 
+const textEncoder = new TextEncoder();
+const textDecoder = new TextDecoder();
+
 export class StringVariableCodec extends AbstractCodec<string> {
 	private _bufferCodec: BytesVariableCodec;
+	private _encoder: (value: string) => Uint8Array;
+	private _decoder: (buffer: Uint8Array) => string;
+	private _getByteLength: (value: string) => number;
 
 	constructor(public readonly encoding: StringEncoding = "utf8", public readonly lengthCodec: AbstractCodec<number> = new VarInt60Codec()) {
 		super();
 
 		this._bufferCodec = new BytesVariableCodec(this.lengthCodec);
+
+		switch (encoding) {
+			case "hex":
+				this._encoder = (value) => hex.decode(value);
+				this._decoder = (buffer) => hex.encode(buffer);
+				this._getByteLength = (value) => {
+					const byteLength = value.length / 2;
+					return this.lengthCodec.byteLength(byteLength) + byteLength;
+				};
+
+				break;
+			case "base32":
+				this._encoder = (value) => base32.decode(value);
+				this._decoder = (buffer) => base32.encode(buffer);
+				this._getByteLength = (value) => this._bufferCodec.byteLength(base32.decode(value));
+
+				break;
+			case "base58":
+				this._encoder = (value) => base58.decode(value);
+				this._decoder = (buffer) => base58.encode(buffer);
+				this._getByteLength = (value) => this._bufferCodec.byteLength(base58.decode(value));
+
+				break;
+			case "base64":
+				this._encoder = (value) => base64.decode(value);
+				this._decoder = (buffer) => base64.encode(buffer);
+				this._getByteLength = (value) => this._bufferCodec.byteLength(base64.decode(value));
+
+				break;
+			case "base64url":
+				this._encoder = (value) => base64url.decode(value);
+				this._decoder = (buffer) => base64url.encode(buffer);
+				this._getByteLength = (value) => this._bufferCodec.byteLength(base64url.decode(value));
+
+				break;
+			case "utf8":
+				this._encoder = (value) => textEncoder.encode(value);
+				this._decoder = (buffer) => textDecoder.decode(buffer);
+				this._getByteLength = (value) => this._bufferCodec.byteLength(textEncoder.encode(value));
+
+				break;
+		}
 	}
 
 	isValid(value: unknown): value is string {
@@ -20,83 +67,11 @@ export class StringVariableCodec extends AbstractCodec<string> {
 	}
 
 	byteLength(value: string): number {
-		let valueBuffer: Uint8Array | undefined;
-
-		switch (this.encoding) {
-			case "hex": {
-				const byteLength = value.length / 2;
-
-				return this.lengthCodec.byteLength(byteLength) + byteLength;
-			}
-			case "base32": {
-				valueBuffer = base32.decode(value);
-
-				break;
-			}
-			case "base58": {
-				valueBuffer = base58.decode(value);
-
-				break;
-			}
-			case "base64": {
-				valueBuffer = base64.decode(value);
-
-				break;
-			}
-			case "base64url": {
-				valueBuffer = base64url.decode(value);
-
-				break;
-			}
-			case "utf8": {
-				valueBuffer = new TextEncoder().encode(value);
-
-				break;
-			}
-		}
-
-		if (!valueBuffer) throw new BufferfyError("Invalid encoding");
-
-		return this._bufferCodec.byteLength(valueBuffer);
+		return this._getByteLength(value);
 	}
 
 	_encode(value: string, buffer: Uint8Array, c: Context): void {
-		let valueBuffer: Uint8Array | undefined;
-
-		switch (this.encoding) {
-			case "hex": {
-				valueBuffer = hex.decode(value);
-
-				break;
-			}
-			case "base32": {
-				valueBuffer = base32.decode(value);
-
-				break;
-			}
-			case "base58": {
-				valueBuffer = base58.decode(value);
-
-				break;
-			}
-			case "base64": {
-				valueBuffer = base64.decode(value);
-
-				break;
-			}
-			case "base64url": {
-				valueBuffer = base64url.decode(value);
-
-				break;
-			}
-			case "utf8": {
-				valueBuffer = new TextEncoder().encode(value);
-
-				break;
-			}
-		}
-
-		if (!valueBuffer) throw new BufferfyError("Invalid encoding");
+		const valueBuffer = this._encoder(value);
 
 		this._bufferCodec._encode(valueBuffer, buffer, c);
 	}
@@ -104,41 +79,6 @@ export class StringVariableCodec extends AbstractCodec<string> {
 	_decode(buffer: Uint8Array, c: Context): string {
 		const valueBuffer = this._bufferCodec._decode(buffer, c);
 
-		let value: string | undefined;
-
-		switch (this.encoding) {
-			case "hex": {
-				value = hex.encode(valueBuffer);
-
-				break;
-			}
-			case "base32": {
-				value = base32.encode(valueBuffer);
-
-				break;
-			}
-			case "base58": {
-				value = base58.encode(valueBuffer);
-
-				break;
-			}
-			case "base64": {
-				value = base64.encode(valueBuffer);
-
-				break;
-			}
-			case "base64url": {
-				value = base64url.encode(valueBuffer);
-
-				break;
-			}
-			case "utf8": {
-				value = new TextDecoder().decode(valueBuffer);
-
-				break;
-			}
-		}
-
-		return value;
+		return this._decoder(valueBuffer);
 	}
 }

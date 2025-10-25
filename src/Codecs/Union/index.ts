@@ -4,14 +4,22 @@ import { AbstractCodec, CodecType } from "../Abstract";
 import { VarInt60Codec } from "../VarInt/VarInt60";
 
 /**
- * Creates a codec for one of many types of value. Each codec type has a match method that returns true if the input value type matches the codec's type. The union codec iterates through codecs until a codec matches and then uses that codec. Some examples of when the union codec can be useful are:
- *
- * - Optional or nullable values.
- * - Overloaded values.
+ * Creates a codec for one of many types of value. Useful for optional/nullable values and discriminated unions.
  *
  * Nested union codecs are flattened to a single array of possible codecs.
  *
  * Serializes to ```[CODEC_INDEX][VALUE]```
+ *
+ * **Order matters:** Codecs are tested sequentially. First match wins. Place specific codecs before general ones, `AnyCodec` last.
+ *
+ * @example
+ * ```ts
+ * // Correct: specific → general
+ * Codec.Union([Codec.Constant("active"), Codec.String(), Codec.Any()])
+ *
+ * // Wrong: Any() matches everything, shadows rest
+ * Codec.Union([Codec.Any(), Codec.String()])
+ * ```
  *
  * @param	{Array<AbstractCodec>} codecs - An array of codecs for possible value types.
  * @param 	{AbstractCodec<number>} [indexCodec="VarInt60Codec()"] - Codec for the index value.

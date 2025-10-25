@@ -1,4 +1,3 @@
-import { endianness as osEndianness } from "os";
 import { Context } from "../../utilities/Context";
 import {
 	Endianness,
@@ -24,12 +23,12 @@ export type IntCodec = Int8Codec | Int16BECodec | Int16LECodec | Int24BECodec | 
  * Serializes to ```[INT]```
  *
  * @param	{8 | 16 | 24 | 32 | 40 | 48} [bits=48] - Bit type of integer.
- * @param	{'LE' | 'BE'} [endianness=os.endianness()] - Endianness
+ * @param	{'LE' | 'BE'} [endianness='BE'] - Endianness
  * @return	{IntCodec} IntCodec
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Int/index.ts|Source}
  */
-export const createIntCodec = (bits: UIntBits = 48, endianness: Endianness = osEndianness()) => {
+export const createIntCodec = (bits: UIntBits = 48, endianness: Endianness = 'BE') => {
 	if (bits === 8) return new Int8Codec();
 
 	switch (endianness) {
