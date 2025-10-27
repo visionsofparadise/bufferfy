@@ -1,4 +1,5 @@
-import { Context } from "../../utilities/Context";
+import { Reader } from "../../utilities/Reader";
+import { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 
 /**
@@ -34,12 +35,12 @@ export class RecursiveCodec<const Value> extends AbstractCodec<Value> {
 		return this.codec.byteLength(value);
 	}
 
-	_encode(value: Value, buffer: Uint8Array, c: Context): void {
-		return this.codec._encode(value, buffer, c);
+	_encode(value: Value, writer: Writer): void {
+		return this.codec._encode(value, writer);
 	}
 
-	_decode(buffer: Uint8Array, c: Context): Value {
-		return this.codec._decode(buffer, c);
+	_decode(reader: Reader): Value {
+		return this.codec._decode(reader);
 	}
 }
 
@@ -56,11 +57,11 @@ export class DeferredCodec<const Value> extends AbstractCodec<Value> {
 		return this.recursiveCodec.codec.byteLength(value);
 	}
 
-	_encode(value: Value, buffer: Uint8Array, c: Context): void {
-		return this.recursiveCodec.codec._encode(value, buffer, c);
+	_encode(value: Value, writer: Writer): void {
+		return this.recursiveCodec.codec._encode(value, writer);
 	}
 
-	_decode(buffer: Uint8Array, c: Context): Value {
-		return this.recursiveCodec.codec._decode(buffer, c);
+	_decode(reader: Reader): Value {
+		return this.recursiveCodec.codec._decode(reader);
 	}
 }

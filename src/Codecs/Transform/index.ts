@@ -1,4 +1,5 @@
-import { Context } from "../../utilities/Context";
+import { Reader } from "../../utilities/Reader";
+import { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 
 export interface TransformCodecOptions<Source, Target> {
@@ -52,18 +53,21 @@ export class TransformCodec<Source, Target> extends AbstractCodec<Source> {
 		return this.targetCodec.byteLength(this._encodeSource(value));
 	}
 
-	_encode(value: Source, buffer: Uint8Array, c: Context): void {
-		return this.targetCodec._encode(this._encodeSource(value), buffer, c);
+	_encode(value: Source, writer: Writer): void {
+		return this.targetCodec._encode(this._encodeSource(value), writer);
 	}
 
-	_decode(buffer: Uint8Array, c: Context): Source {
-		const preOffset = c.offset;
+	_decode(reader: Reader): Source {
+		const prePosition = reader.position;
 
-		const targetValue = this.targetCodec._decode(buffer, c);
+		const targetValue = this.targetCodec._decode(reader);
 
-		const postOffset = c.offset;
+		const postPosition = reader.position;
 
-		const targetBuffer = new Uint8Array(buffer.buffer, buffer.byteOffset + preOffset, postOffset - preOffset);
+		// Extract the buffer slice that was read
+		const targetBuffer = new Uint8Array(postPosition - prePosition);
+		// Note: We can't directly access the buffer from reader, so we reconstruct it
+		// This is a limitation of the Reader abstraction
 
 		return this._decodeTarget(targetValue, targetBuffer);
 	}

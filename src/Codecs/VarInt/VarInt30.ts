@@ -1,72 +1,64 @@
-import { Context } from "../../utilities/Context";
-import { BufferfyByteLengthError } from "../../utilities/Error";
+import { Reader } from "../../utilities/Reader";
+import { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
+
+const MAX_VARINT30 = 1073741824; // 2^30
+const VARINT30_THRESHOLDS = [64, 16384, 4194304];
 
 export class VarInt30Codec extends AbstractCodec<number> {
 	isValid(value: unknown): value is number {
-		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 1073741824;
+		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < MAX_VARINT30;
 	}
 
 	byteLength(value: number): 1 | 2 | 3 | 4 {
-		return value < 64 ? 1 : value < 16384 ? 2 : value < 4194304 ? 3 : 4;
+		for (let i = 0; i < VARINT30_THRESHOLDS.length; i++) {
+			if (value < VARINT30_THRESHOLDS[i]) return (i + 1) as 1 | 2 | 3 | 4;
+		}
+		return 4;
 	}
 
-	_encode(value: number, buffer: Uint8Array, c: Context): void {
+	_encode(value: number, writer: Writer): void {
 		const byteLength = this.byteLength(value);
 
-		switch (byteLength) {
-			case 1: {
-				buffer[c.offset++] = value;
+		if (byteLength === 1) {
+			writer.writeByte(value);
+			return;
+		}
 
-				return;
-			}
-			case 2: {
-				buffer[c.offset++] = (value >>> 8) | 0x40;
-				buffer[c.offset++] = value & 0xff;
+		// First byte: high 2 bits encode remaining byte count, low 6 bits store high value bits
+		const remainingBytes = byteLength - 1;
+		const lengthPrefix = remainingBytes << 6; // Shift to high 2 bits
+		const shiftBits = remainingBytes * 8;
+		const highBits = (value >>> shiftBits) & 0x3f;
 
-				return;
-			}
-			case 3: {
-				buffer[c.offset++] = (value >>> 16) | 0x80;
-				buffer[c.offset++] = (value >>> 8) & 0xff;
-				buffer[c.offset++] = value & 0xff;
+		writer.writeByte(lengthPrefix | highBits);
 
-				return;
-			}
-			case 4: {
-				buffer[c.offset++] = (value >>> 24) | 0xc0;
-				buffer[c.offset++] = (value >>> 16) & 0xff;
-				buffer[c.offset++] = (value >>> 8) & 0xff;
-				buffer[c.offset++] = value & 0xff;
-
-				return;
-			}
+		// Write remaining bytes from high to low
+		for (let i = remainingBytes - 1; i >= 0; i--) {
+			writer.writeByte((value >>> (i * 8)) & 0xff);
 		}
 	}
 
-	_decode(buffer: Uint8Array, c: Context): number {
-		if (buffer.byteLength < c.offset + 1) throw new BufferfyByteLengthError();
+	_decode(reader: Reader): number {
+		const firstByte = reader.readByte();
 
-		const byte0 = buffer[c.offset++];
-		const lengthBits = (0xc0 & byte0) as 0x00 | 0x40 | 0x80 | 0xc0;
+		// Extract length from high 2 bits
+		const lengthBits = firstByte & 0xc0;
+		const remainingBytes = lengthBits / 64;
 
-		const remainingByteLength = (lengthBits / 64) as 0 | 1 | 2 | 3;
-
-		if (buffer.byteLength < c.offset + remainingByteLength) throw new BufferfyByteLengthError();
-
-		switch (remainingByteLength) {
-			case 0: {
-				return byte0;
-			}
-			case 1: {
-				return (0x3f & byte0) * 2 ** 8 + buffer[c.offset++];
-			}
-			case 2: {
-				return (0x3f & byte0) * 2 ** 16 + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++];
-			}
-			case 3: {
-				return (0x3f & byte0) * 2 ** 24 + buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++];
-			}
+		if (remainingBytes === 0) {
+			return firstByte;
 		}
+
+		// Extract value from low 6 bits
+		let value = (firstByte & 0x3f) << (remainingBytes * 8);
+
+		// Read remaining bytes
+		for (let i = remainingBytes - 1; i >= 0; i--) {
+			const byte = reader.readByte();
+			value += byte << (i * 8);
+		}
+
+		return value;
 	}
 }

@@ -1,4 +1,5 @@
-import { Context } from "../../utilities/Context";
+import { Reader } from "../../utilities/Reader";
+import { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 
 /**
@@ -46,14 +47,14 @@ export class TupleCodec<Tuple extends [...any[]]> extends AbstractCodec<Tuple> {
 		return byteLength;
 	}
 
-	_encode(value: Tuple, buffer: Uint8Array, c: Context): void {
-		for (let i = 0; i < this.codecs.length; i++) this.codecs[i]._encode(value[i], buffer, c);
+	_encode(value: Tuple, writer: Writer): void {
+		for (let i = 0; i < this.codecs.length; i++) this.codecs[i]._encode(value[i], writer);
 	}
 
-	_decode(buffer: Uint8Array, c: Context): Tuple {
+	_decode(reader: Reader): Tuple {
 		const value: Array<AbstractCodec<Tuple[number]>> = new Array(this.codecs.length);
 
-		for (let i = 0; i < this.codecs.length; i++) value[i] = this.codecs[i]._decode(buffer, c);
+		for (let i = 0; i < this.codecs.length; i++) value[i] = this.codecs[i]._decode(reader);
 
 		return value as Tuple;
 	}

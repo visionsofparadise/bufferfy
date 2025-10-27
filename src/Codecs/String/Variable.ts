@@ -1,6 +1,7 @@
 import { base32, base58, base64, base64url, hex } from "@scure/base";
 import { StringEncoding } from ".";
-import { Context } from "../../utilities/Context";
+import { Reader } from "../../utilities/Reader";
+import { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 import { BytesVariableCodec } from "../Bytes/Variable";
 import { VarInt60Codec } from "../VarInt/VarInt60";
@@ -8,16 +9,22 @@ import { VarInt60Codec } from "../VarInt/VarInt60";
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
+const DEFAULT_MAX_STRING_BYTES = 10 * 1024 * 1024; // 10MB
+
 export class StringVariableCodec extends AbstractCodec<string> {
 	private _bufferCodec: BytesVariableCodec;
 	private _encoder: (value: string) => Uint8Array;
 	private _decoder: (buffer: Uint8Array) => string;
 	private _getByteLength: (value: string) => number;
 
-	constructor(public readonly encoding: StringEncoding = "utf8", public readonly lengthCodec: AbstractCodec<number> = new VarInt60Codec()) {
+	constructor(
+		public readonly encoding: StringEncoding = "utf8",
+		public readonly lengthCodec: AbstractCodec<number> = new VarInt60Codec(),
+		public readonly maxLength: number = DEFAULT_MAX_STRING_BYTES
+	) {
 		super();
 
-		this._bufferCodec = new BytesVariableCodec(this.lengthCodec);
+		this._bufferCodec = new BytesVariableCodec(this.lengthCodec, maxLength);
 
 		switch (encoding) {
 			case "hex":
@@ -70,14 +77,14 @@ export class StringVariableCodec extends AbstractCodec<string> {
 		return this._getByteLength(value);
 	}
 
-	_encode(value: string, buffer: Uint8Array, c: Context): void {
+	_encode(value: string, writer: Writer): void {
 		const valueBuffer = this._encoder(value);
 
-		this._bufferCodec._encode(valueBuffer, buffer, c);
+		this._bufferCodec._encode(valueBuffer, writer);
 	}
 
-	_decode(buffer: Uint8Array, c: Context): string {
-		const valueBuffer = this._bufferCodec._decode(buffer, c);
+	_decode(reader: Reader): string {
+		const valueBuffer = this._bufferCodec._decode(reader);
 
 		return this._decoder(valueBuffer);
 	}

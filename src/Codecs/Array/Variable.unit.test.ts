@@ -77,3 +77,37 @@ describe("correctly performs variable array codec methods", () => {
 		expect(result.value).toStrictEqual(value);
 	});
 });
+
+describe("correctly handles boundary values", () => {
+	const codec = new ArrayVariableCodec(new StringFixedCodec(16, "hex"));
+
+	it("encodes/decodes empty array", () => {
+		const value: CodecType<typeof codec> = [];
+		const buffer = codec.encode(value);
+		const result = codec.decode(buffer);
+
+		expect(result).toStrictEqual(value);
+		expect(result.length).toBe(0);
+	});
+
+	it("encodes/decodes single item array", () => {
+		const value: CodecType<typeof codec> = [randomBytes(16).toString("hex")];
+		const buffer = codec.encode(value);
+		const result = codec.decode(buffer);
+
+		expect(result).toStrictEqual(value);
+		expect(result.length).toBe(1);
+	});
+
+	it("validates empty array", () => {
+		const isValid = codec.isValid([]);
+
+		expect(isValid).toBe(true);
+	});
+
+	it("invalidates array with invalid items", () => {
+		const isValid = codec.isValid(["invalid", 123, null]);
+
+		expect(isValid).toBe(false);
+	});
+});

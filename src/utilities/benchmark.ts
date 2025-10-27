@@ -1,7 +1,8 @@
 import { pack, unpack } from "msgpackr";
 import { bench, describe, expect, it } from "vitest";
 import type { AbstractCodec } from "../Codecs/Abstract";
-import { Context } from "./Context";
+import { Writer } from "./Writer";
+import { Reader } from "./Reader";
 
 export const createBenchmark = (name: string, value: any, codec: AbstractCodec) => {
 	describe(name, () => {
@@ -9,23 +10,12 @@ export const createBenchmark = (name: string, value: any, codec: AbstractCodec) 
 		const msgpackEncoded = pack(value);
 		const jsonEncoded = new TextEncoder().encode(JSON.stringify(value));
 
-		const byteLength = codec.byteLength(value);
-		const encodeBuffer = new Uint8Array(byteLength);
-		const encodeContext = new Context();
-		const decodeContext = new Context();
-
 		describe("encode", () => {
-			bench(
-				"bufferfy",
-				() => {
-					codec._encode(value, encodeBuffer, encodeContext);
-				},
-				{
-					setup: () => {
-						encodeContext.offset = 0;
-					},
-				}
-			);
+			bench("bufferfy", () => {
+				const writer = new Writer();
+				codec._encode(value, writer);
+				writer.toBuffer();
+			});
 
 			bench("msgpack", () => {
 				pack(value);
@@ -37,17 +27,10 @@ export const createBenchmark = (name: string, value: any, codec: AbstractCodec) 
 		});
 
 		describe("decode", () => {
-			bench(
-				"bufferfy",
-				() => {
-					codec._decode(bufferfyEncoded, decodeContext);
-				},
-				{
-					setup: () => {
-						decodeContext.offset = 0;
-					},
-				}
-			);
+			bench("bufferfy", () => {
+				const reader = new Reader(bufferfyEncoded);
+				codec._decode(reader);
+			});
 
 			bench("msgpack", () => {
 				unpack(msgpackEncoded);

@@ -1,6 +1,7 @@
 import { base32, base58, base64, base64url, hex } from "@scure/base";
 import { StringEncoding } from ".";
-import { Context } from "../../utilities/Context";
+import { Reader } from "../../utilities/Reader";
+import { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 import { BytesFixedCodec } from "../Bytes/Fixed";
 
@@ -10,7 +11,7 @@ const textDecoder = new TextDecoder();
 export class StringFixedCodec extends AbstractCodec<string> {
 	private _byteLength: number;
 	private _bufferCodec: BytesFixedCodec;
-	private _encoder: (value: string, buffer: Uint8Array, c: Context) => void;
+	private _encoder: (value: string, writer: Writer) => void;
 	private _decoder: (buffer: Uint8Array) => string;
 
 	constructor(byteLength: number, public readonly encoding: StringEncoding = "utf8") {
@@ -20,9 +21,10 @@ export class StringFixedCodec extends AbstractCodec<string> {
 		this._bufferCodec = new BytesFixedCodec(byteLength);
 
 		if (encoding === "utf8") {
-			this._encoder = (value, buffer, c) => {
-				const result = textEncoder.encodeInto(value, new Uint8Array(buffer.buffer, buffer.byteOffset + c.offset, this._byteLength));
-				c.offset += result.written;
+			this._encoder = (value, writer) => {
+				const encoded = textEncoder.encode(value);
+
+				writer.writeBytes(encoded.subarray(0, this._byteLength));
 			};
 			this._decoder = (buffer) => textDecoder.decode(buffer);
 
@@ -65,9 +67,9 @@ export class StringFixedCodec extends AbstractCodec<string> {
 			}
 		}
 
-		this._encoder = (value, buffer, c) => {
+		this._encoder = (value, writer) => {
 			const valueBuffer = encoder(value);
-			this._bufferCodec._encode(valueBuffer, buffer, c);
+			this._bufferCodec._encode(valueBuffer, writer);
 		};
 		this._decoder = (buffer) => decoder(buffer);
 	}
@@ -80,12 +82,12 @@ export class StringFixedCodec extends AbstractCodec<string> {
 		return this._byteLength;
 	}
 
-	_encode(value: string, buffer: Uint8Array, c: Context): void {
-		this._encoder(value, buffer, c);
+	_encode(value: string, writer: Writer): void {
+		this._encoder(value, writer);
 	}
 
-	_decode(buffer: Uint8Array, c: Context): string {
-		const valueBuffer = this._bufferCodec._decode(buffer, c);
+	_decode(reader: Reader): string {
+		const valueBuffer = this._bufferCodec._decode(reader);
 
 		return this._decoder(valueBuffer);
 	}

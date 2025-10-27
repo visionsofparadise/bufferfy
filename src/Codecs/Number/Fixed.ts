@@ -1,4 +1,5 @@
-import { Context } from "../../utilities/Context";
+import { Reader } from "../../utilities/Reader";
+import { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 import { StringFixedCodec } from "../String/Fixed";
 
@@ -21,12 +22,12 @@ export class NumberFixedCodec extends AbstractCodec<bigint> {
 		return this._byteLength;
 	}
 
-	_encode(value: bigint, buffer: Uint8Array, c: Context): void {
-		this._hexCodec._encode(value.toString(16).padStart(this._byteLength * 2, "0"), buffer, c);
+	_encode(value: bigint, writer: Writer): void {
+		this._hexCodec._encode(value.toString(16).padStart(this._byteLength * 2, "0"), writer);
 	}
 
-	_decode(buffer: Uint8Array, c: Context): bigint {
-		const hex = this._hexCodec._decode(buffer, c);
+	_decode(reader: Reader): bigint {
+		const hex = this._hexCodec._decode(reader);
 
 		return BigInt("0x" + hex);
 	}

@@ -1,4 +1,5 @@
-import { Context } from "../../utilities/Context";
+import { Reader } from "../../utilities/Reader";
+import { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 import { StringVariableCodec } from "../String/Variable";
 import { VarInt60Codec } from "../VarInt/VarInt60";
@@ -20,12 +21,12 @@ export class NumberVariableCodec extends AbstractCodec<bigint> {
 		return this._hexCodec.byteLength(value.toString(16));
 	}
 
-	_encode(value: bigint, buffer: Uint8Array, c: Context): void {
-		this._hexCodec._encode(value.toString(16), buffer, c);
+	_encode(value: bigint, writer: Writer): void {
+		this._hexCodec._encode(value.toString(16), writer);
 	}
 
-	_decode(buffer: Uint8Array, c: Context): bigint {
-		const hex = this._hexCodec._decode(buffer, c);
+	_decode(reader: Reader): bigint {
+		const hex = this._hexCodec._decode(reader);
 
 		return BigInt("0x" + hex);
 	}

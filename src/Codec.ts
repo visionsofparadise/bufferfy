@@ -19,7 +19,7 @@ import { createStringCodec } from "./Codecs/String";
 import { createTransformCodec } from "./Codecs/Transform";
 import { createTupleCodec } from "./Codecs/Tuple";
 import { createUIntCodec } from "./Codecs/UInt";
-import { createUnionCodec } from "./Codecs/Union";
+import { createOptionalCodec, createUnionCodec } from "./Codecs/Union";
 import { createVarIntCodec } from "./Codecs/VarInt";
 
 export namespace Codec {
@@ -48,7 +48,7 @@ export const Codec = {
 	Number: createNumberCodec,
 	Object: createObjectCodec,
 	Omit: omitObjectCodec,
-	Optional: <Value>(codec: AbstractCodec<Value>) => createUnionCodec([codec, createConstantCodec(undefined)]),
+	Optional: createOptionalCodec,
 	Pick: pickObjectCodec,
 	Record: createRecordCodec,
 	Recursive: createRecursiveCodec,

@@ -1,5 +1,5 @@
-import { Context } from "../../utilities/Context";
-import { BufferfyByteLengthError } from "../../utilities/Error";
+import { Reader } from "../../utilities/Reader";
+import { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 import { Endianness } from "../UInt";
 
@@ -13,7 +13,7 @@ import { Endianness } from "../UInt";
  *
  * {@link https://github.com/visionsofparadise/dataViewfy/blob/main/src/Codecs/BigUInt/index.ts|Source}
  */
-export const createBigUIntCodec = (endianness: Endianness = 'BE') => {
+export const createBigUIntCodec = (endianness: Endianness = "BE") => {
 	switch (endianness) {
 		case "BE": {
 			return new BigUIntBECodec();
@@ -25,53 +25,31 @@ export const createBigUIntCodec = (endianness: Endianness = 'BE') => {
 };
 
 export class BigUIntBECodec extends AbstractCodec<bigint> {
+	static readonly BYTE_LENGTH = 8;
+
 	isValid(value: unknown): value is bigint {
 		return typeof value === "bigint";
 	}
 
 	byteLength(): 8 {
-		return 8;
+		return BigUIntBECodec.BYTE_LENGTH;
 	}
 
-	_encode(value: bigint, buffer: Uint8Array, c: Context): void {
-		const dataView = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-
-		dataView.setBigUint64(c.offset, value, false);
-
-		c.offset += 8;
+	_encode(value: bigint, writer: Writer): void {
+		writer.writeDataView(BigUIntBECodec.BYTE_LENGTH, (view, offset) => view.setBigUint64(offset, value, false));
 	}
 
-	_decode(buffer: Uint8Array, c: Context): bigint {
-		if (buffer.byteLength < c.offset + 8) throw new BufferfyByteLengthError();
-
-		const dataView = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-
-		const value = dataView.getBigUint64(c.offset, false);
-
-		c.offset += 8;
-
-		return value;
+	_decode(reader: Reader): bigint {
+		return reader.readDataView(BigUIntBECodec.BYTE_LENGTH, (view, offset) => view.getBigUint64(offset, false));
 	}
 }
 
 export class BigUIntLECodec extends BigUIntBECodec {
-	_encode(value: bigint, buffer: Uint8Array, c: Context): void {
-		const dataView = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-
-		dataView.setBigUint64(c.offset, value, true);
-
-		c.offset += 8;
+	_encode(value: bigint, writer: Writer): void {
+		writer.writeDataView(BigUIntBECodec.BYTE_LENGTH, (view, offset) => view.setBigUint64(offset, value, true));
 	}
 
-	_decode(buffer: Uint8Array, c: Context): bigint {
-		if (buffer.byteLength < c.offset + 8) throw new BufferfyByteLengthError();
-
-		const dataView = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-
-		const value = dataView.getBigUint64(c.offset, true);
-
-		c.offset += 8;
-
-		return value;
+	_decode(reader: Reader): bigint {
+		return reader.readDataView(BigUIntBECodec.BYTE_LENGTH, (view, offset) => view.getBigUint64(offset, true));
 	}
 }

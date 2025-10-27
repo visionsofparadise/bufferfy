@@ -78,3 +78,39 @@ describe("correctly performs variable record codec methods", () => {
 		expect(result.value).toStrictEqual(value);
 	});
 });
+
+describe("correctly handles boundary values", () => {
+	const codec = new RecordVariableCodec(new StringFixedCodec(4, "hex"), new StringFixedCodec(16, "hex"));
+
+	it("encodes/decodes empty record", () => {
+		const value: CodecType<typeof codec> = {};
+		const buffer = codec.encode(value);
+		const result = codec.decode(buffer);
+
+		expect(result).toStrictEqual(value);
+		expect(Object.keys(result).length).toBe(0);
+	});
+
+	it("encodes/decodes single entry record", () => {
+		const value: CodecType<typeof codec> = {
+			[randomBytes(4).toString("hex")]: randomBytes(16).toString("hex"),
+		};
+		const buffer = codec.encode(value);
+		const result = codec.decode(buffer);
+
+		expect(result).toStrictEqual(value);
+		expect(Object.keys(result).length).toBe(1);
+	});
+
+	it("validates empty record", () => {
+		const isValid = codec.isValid({});
+
+		expect(isValid).toBe(true);
+	});
+
+	it("invalidates record with invalid value", () => {
+		const isValid = codec.isValid({ [randomBytes(4).toString("hex")]: 123 });
+
+		expect(isValid).toBe(false);
+	});
+});

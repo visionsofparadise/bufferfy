@@ -1,4 +1,5 @@
-import { Context } from "../../utilities/Context";
+import { Reader } from "../../utilities/Reader";
+import { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 import { BytesVariableCodec } from "../Bytes/Variable";
 import { VarInt60Codec } from "../VarInt/VarInt60";
@@ -45,19 +46,19 @@ export class AnyCodec<Value = any> extends AbstractCodec<Value> {
 	}
 
 	byteLength(value: Value): number {
-		let byteLength = this._encodeValue(value).byteLength;
+		const byteLength = this._encodeValue(value).byteLength;
 
 		return this.lengthCodec.byteLength(byteLength) + byteLength;
 	}
 
-	_encode(value: Value, buffer: Uint8Array, c: Context): void {
+	_encode(value: Value, writer: Writer): void {
 		const valueBuffer = this._encodeValue(value);
 
-		return this._bytesCodec._encode(valueBuffer, buffer, c);
+		return this._bytesCodec._encode(valueBuffer, writer);
 	}
 
-	_decode(buffer: Uint8Array, c: Context): Value {
-		const valueBuffer = this._bytesCodec._decode(buffer, c);
+	_decode(reader: Reader): Value {
+		const valueBuffer = this._bytesCodec._decode(reader);
 
 		return this._decodeValue(valueBuffer);
 	}

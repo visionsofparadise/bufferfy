@@ -1,5 +1,5 @@
-import { Context } from "../../utilities/Context";
-import { BufferfyByteLengthError } from "../../utilities/Error";
+import { Reader } from "../../utilities/Reader";
+import { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 
 const BIT_MAP: Record<number, number> = {
@@ -45,29 +45,27 @@ export class BitFieldCodec<Key extends string> extends AbstractCodec<Record<Key,
 		return this._byteLength;
 	}
 
-	_encode(value: Record<Key, boolean>, buffer: Uint8Array, c: Context): void {
+	_encode(value: Record<Key, boolean>, writer: Writer): void {
 		for (let i = 0; i < this._byteLength; i++) {
-			buffer[c.offset] = 0;
+			let byte = 0;
 
 			for (let j = 0; j < Math.min(this.keys.length - i * 8, 8); j++) {
-				if (value[this.keys[i * 8 + j]] === true) buffer[c.offset] |= BIT_MAP[j % 8];
+				if (value[this.keys[i * 8 + j]] === true) byte |= BIT_MAP[j % 8];
 			}
 
-			c.offset++;
+			writer.writeByte(byte);
 		}
 	}
 
-	_decode(buffer: Uint8Array, c: Context): Record<Key, boolean> {
-		if (buffer.byteLength < c.offset + Math.ceil(this.keys.length / 8)) throw new BufferfyByteLengthError();
-
+	_decode(reader: Reader): Record<Key, boolean> {
 		const value: Partial<Record<Key, boolean>> = {};
 
 		for (let i = 0; i < this._byteLength; i++) {
-			for (let j = 0; j < Math.min(this.keys.length - i * 8, 8); j++) {
-				value[this.keys[i * 8 + j]] = (buffer[c.offset] & BIT_MAP[j % 8]) > 0;
-			}
+			const byte = reader.readByte();
 
-			c.offset++;
+			for (let j = 0; j < Math.min(this.keys.length - i * 8, 8); j++) {
+				value[this.keys[i * 8 + j]] = (byte & BIT_MAP[j % 8]) > 0;
+			}
 		}
 
 		return value as Record<Key, boolean>;

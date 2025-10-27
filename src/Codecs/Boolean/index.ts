@@ -1,5 +1,5 @@
-import { Context } from "../../utilities/Context";
-import { BufferfyByteLengthError } from "../../utilities/Error";
+import { Reader } from "../../utilities/Reader";
+import { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 
 /**
@@ -22,13 +22,11 @@ export class BooleanCodec extends AbstractCodec<boolean> {
 		return 1;
 	}
 
-	_encode(value: boolean, buffer: Uint8Array, c: Context): void {
-		buffer[c.offset++] = value ? 1 : 0;
+	_encode(value: boolean, writer: Writer): void {
+		writer.writeByte(value ? 1 : 0);
 	}
 
-	_decode(buffer: Uint8Array, c: Context): boolean {
-		if (buffer.byteLength < c.offset + 1) throw new BufferfyByteLengthError();
-
-		return buffer[c.offset++] === 1;
+	_decode(reader: Reader): boolean {
+		return reader.readByte() === 1;
 	}
 }

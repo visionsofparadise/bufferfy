@@ -1,26 +1,17 @@
-import { Context } from "../../utilities/Context";
-import {
-	Endianness,
-	UInt16BECodec,
-	UInt16LECodec,
-	UInt24BECodec,
-	UInt24LECodec,
-	UInt32BECodec,
-	UInt32LECodec,
-	UInt40BECodec,
-	UInt40LECodec,
-	UInt48BECodec,
-	UInt48LECodec,
-	UInt8Codec,
-	UIntBits,
-} from "../UInt";
+import { Reader } from "../../utilities/Reader";
+import { Writer } from "../../utilities/Writer";
+import { AbstractCodec } from "../Abstract";
+import { type Endianness, type UIntBits, createUIntCodec } from "../UInt";
 
-export type IntCodec = Int8Codec | Int16BECodec | Int16LECodec | Int24BECodec | Int24LECodec | Int32BECodec | Int32LECodec | Int40BECodec | Int40LECodec | Int48BECodec | Int48LECodec;
+export type IntCodec = Int8Codec | Int16Codec | Int24Codec | Int32Codec | Int40Codec | Int48Codec;
 
 /**
  * Creates a codec for a signed integer.
  *
  * Serializes to ```[INT]```
+ *
+ * Uses two's complement representation by wrapping unsigned integer codecs
+ * with an offset transformation.
  *
  * @param	{8 | 16 | 24 | 32 | 40 | 48} [bits=48] - Bit type of integer.
  * @param	{'LE' | 'BE'} [endianness='BE'] - Endianness
@@ -28,201 +19,199 @@ export type IntCodec = Int8Codec | Int16BECodec | Int16LECodec | Int24BECodec | 
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Int/index.ts|Source}
  */
-export const createIntCodec = (bits: UIntBits = 48, endianness: Endianness = 'BE') => {
-	if (bits === 8) return new Int8Codec();
-
-	switch (endianness) {
-		case "BE": {
-			switch (bits) {
-				case 16: {
-					return new Int16BECodec();
-				}
-				case 24: {
-					return new Int24BECodec();
-				}
-				case 32: {
-					return new Int32BECodec();
-				}
-				case 40: {
-					return new Int40BECodec();
-				}
-				case 48: {
-					return new Int48BECodec();
-				}
-			}
-		}
-		case "LE": {
-			switch (bits) {
-				case 16: {
-					return new Int16LECodec();
-				}
-				case 24: {
-					return new Int24LECodec();
-				}
-				case 32: {
-					return new Int32LECodec();
-				}
-				case 40: {
-					return new Int40LECodec();
-				}
-				case 48: {
-					return new Int48LECodec();
-				}
-			}
-		}
+export const createIntCodec = (bits: UIntBits = 48, endianness: Endianness = "BE"): IntCodec => {
+	switch (bits) {
+		case 8:
+			return new Int8Codec();
+		case 16:
+			return new Int16Codec(bits, endianness);
+		case 24:
+			return new Int24Codec(bits, endianness);
+		case 32:
+			return new Int32Codec(bits, endianness);
+		case 40:
+			return new Int40Codec(bits, endianness);
+		case 48:
+			return new Int48Codec(bits, endianness);
 	}
 };
 
-export class Int8Codec extends UInt8Codec {
-	isValid(value: any): value is number {
-		return typeof value === "number" && Number.isInteger(value) && value >= -127 && value <= 127;
+export class Int8Codec extends AbstractCodec<number> {
+	static readonly BYTE_LENGTH = 1;
+	static readonly OFFSET = 128;
+	static readonly MIN_VALUE = -128;
+	static readonly MAX_VALUE = 127;
+
+	private readonly uIntCodec = createUIntCodec(8);
+
+	isValid(value: unknown): value is number {
+		return typeof value === "number" && Number.isInteger(value) && value >= Int8Codec.MIN_VALUE && value <= Int8Codec.MAX_VALUE;
 	}
 
-	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		super._encode(value + 127, buffer, c);
+	byteLength(): 1 {
+		return Int8Codec.BYTE_LENGTH;
 	}
 
-	_decode(buffer: Uint8Array, c: Context): number {
-		return super._decode(buffer, c) - 127;
-	}
-}
-
-export class Int16BECodec extends UInt16BECodec {
-	isValid(value: any): value is number {
-		return typeof value === "number" && Number.isInteger(value) && value >= -32767 && value <= 32767;
+	_encode(value: number, writer: Writer): void {
+		this.uIntCodec._encode(value + Int8Codec.OFFSET, writer);
 	}
 
-	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		super._encode(value + 32767, buffer, c);
-	}
-
-	_decode(buffer: Uint8Array, c: Context): number {
-		return super._decode(buffer, c) - 32767;
+	_decode(reader: Reader): number {
+		return this.uIntCodec._decode(reader) - Int8Codec.OFFSET;
 	}
 }
 
-export class Int16LECodec extends UInt16LECodec {
-	isValid(value: any): value is number {
-		return typeof value === "number" && Number.isInteger(value) && value >= -32767 && value <= 32767;
+export class Int16Codec extends AbstractCodec<number> {
+	static readonly BYTE_LENGTH = 2;
+	static readonly OFFSET = 32768;
+	static readonly MIN_VALUE = -32768;
+	static readonly MAX_VALUE = 32767;
+
+	private readonly uIntCodec: AbstractCodec<number>;
+
+	constructor(bits: Extract<UIntBits, 16>, endianness: Endianness = "BE") {
+		super();
+
+		this.uIntCodec = createUIntCodec(bits, endianness);
 	}
 
-	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		super._encode(value + 32767, buffer, c);
+	isValid(value: unknown): value is number {
+		return typeof value === "number" && Number.isInteger(value) && value >= Int16Codec.MIN_VALUE && value <= Int16Codec.MAX_VALUE;
 	}
 
-	_decode(buffer: Uint8Array, c: Context): number {
-		return super._decode(buffer, c) - 32767;
-	}
-}
-
-export class Int24BECodec extends UInt24BECodec {
-	isValid(value: any): value is number {
-		return typeof value === "number" && Number.isInteger(value) && value >= -8388607 && value <= 8388607;
+	byteLength(): 2 {
+		return Int16Codec.BYTE_LENGTH;
 	}
 
-	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		super._encode(value + 8388607, buffer, c);
+	_encode(value: number, writer: Writer): void {
+		this.uIntCodec._encode(value + Int16Codec.OFFSET, writer);
 	}
 
-	_decode(buffer: Uint8Array, c: Context): number {
-		return super._decode(buffer, c) - 8388607;
-	}
-}
-
-export class Int24LECodec extends UInt24LECodec {
-	isValid(value: any): value is number {
-		return typeof value === "number" && Number.isInteger(value) && value >= -8388607 && value <= 8388607;
-	}
-
-	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		super._encode(value + 8388607, buffer, c);
-	}
-
-	_decode(buffer: Uint8Array, c: Context): number {
-		return super._decode(buffer, c) - 8388607;
+	_decode(reader: Reader): number {
+		return this.uIntCodec._decode(reader) - Int16Codec.OFFSET;
 	}
 }
 
-export class Int32BECodec extends UInt32BECodec {
-	isValid(value: any): value is number {
-		return typeof value === "number" && Number.isInteger(value) && value >= -2147483647 && value <= 2147483647;
+export class Int24Codec extends AbstractCodec<number> {
+	static readonly BYTE_LENGTH = 3;
+	static readonly OFFSET = 8388608;
+	static readonly MIN_VALUE = -8388608;
+	static readonly MAX_VALUE = 8388607;
+
+	private readonly uIntCodec: AbstractCodec<number>;
+
+	constructor(bits: Extract<UIntBits, 24>, endianness: Endianness = "BE") {
+		super();
+
+		this.uIntCodec = createUIntCodec(bits, endianness);
 	}
 
-	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		super._encode(value + 2147483647, buffer, c);
+	isValid(value: unknown): value is number {
+		return typeof value === "number" && Number.isInteger(value) && value >= Int24Codec.MIN_VALUE && value <= Int24Codec.MAX_VALUE;
 	}
 
-	_decode(buffer: Uint8Array, c: Context): number {
-		return super._decode(buffer, c) - 2147483647;
-	}
-}
-
-export class Int32LECodec extends UInt32LECodec {
-	isValid(value: any): value is number {
-		return typeof value === "number" && Number.isInteger(value) && value >= -2147483647 && value <= 2147483647;
+	byteLength(): 3 {
+		return Int24Codec.BYTE_LENGTH;
 	}
 
-	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		super._encode(value + 2147483647, buffer, c);
+	_encode(value: number, writer: Writer): void {
+		this.uIntCodec._encode(value + Int24Codec.OFFSET, writer);
 	}
 
-	_decode(buffer: Uint8Array, c: Context): number {
-		return super._decode(buffer, c) - 2147483647;
-	}
-}
-
-export class Int40BECodec extends UInt40BECodec {
-	isValid(value: any): value is number {
-		return typeof value === "number" && Number.isInteger(value) && value >= -549755813887 && value <= 549755813887;
-	}
-
-	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		super._encode(value + 549755813887, buffer, c);
-	}
-
-	_decode(buffer: Uint8Array, c: Context): number {
-		return super._decode(buffer, c) - 549755813887;
+	_decode(reader: Reader): number {
+		return this.uIntCodec._decode(reader) - Int24Codec.OFFSET;
 	}
 }
 
-export class Int40LECodec extends UInt40LECodec {
-	isValid(value: any): value is number {
-		return typeof value === "number" && Number.isInteger(value) && value >= -549755813887 && value <= 549755813887;
+export class Int32Codec extends AbstractCodec<number> {
+	static readonly BYTE_LENGTH = 4;
+	static readonly OFFSET = 2147483648;
+	static readonly MIN_VALUE = -2147483648;
+	static readonly MAX_VALUE = 2147483647;
+
+	private readonly uIntCodec: AbstractCodec<number>;
+
+	constructor(bits: Extract<UIntBits, 32>, endianness: Endianness = "BE") {
+		super();
+
+		this.uIntCodec = createUIntCodec(bits, endianness);
 	}
 
-	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		super._encode(value + 549755813887, buffer, c);
+	isValid(value: unknown): value is number {
+		return typeof value === "number" && Number.isInteger(value) && value >= Int32Codec.MIN_VALUE && value <= Int32Codec.MAX_VALUE;
 	}
 
-	_decode(buffer: Uint8Array, c: Context): number {
-		return super._decode(buffer, c) - 549755813887;
+	byteLength(): 4 {
+		return Int32Codec.BYTE_LENGTH;
+	}
+
+	_encode(value: number, writer: Writer): void {
+		this.uIntCodec._encode(value + Int32Codec.OFFSET, writer);
+	}
+
+	_decode(reader: Reader): number {
+		return this.uIntCodec._decode(reader) - Int32Codec.OFFSET;
 	}
 }
 
-export class Int48BECodec extends UInt48BECodec {
-	isValid(value: any): value is number {
-		return typeof value === "number" && Number.isInteger(value) && value >= -140737488355327 && value <= 140737488355327;
+export class Int40Codec extends AbstractCodec<number> {
+	static readonly BYTE_LENGTH = 5;
+	static readonly OFFSET = 549755813888;
+	static readonly MIN_VALUE = -549755813888;
+	static readonly MAX_VALUE = 549755813887;
+
+	private readonly uIntCodec: AbstractCodec<number>;
+
+	constructor(bits: Extract<UIntBits, 40>, endianness: Endianness = "BE") {
+		super();
+
+		this.uIntCodec = createUIntCodec(bits, endianness);
 	}
 
-	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		super._encode(value + 140737488355327, buffer, c);
+	isValid(value: unknown): value is number {
+		return typeof value === "number" && Number.isInteger(value) && value >= Int40Codec.MIN_VALUE && value <= Int40Codec.MAX_VALUE;
 	}
 
-	_decode(buffer: Uint8Array, c: Context): number {
-		return super._decode(buffer, c) - 140737488355327;
+	byteLength(): 5 {
+		return Int40Codec.BYTE_LENGTH;
+	}
+
+	_encode(value: number, writer: Writer): void {
+		this.uIntCodec._encode(value + Int40Codec.OFFSET, writer);
+	}
+
+	_decode(reader: Reader): number {
+		return this.uIntCodec._decode(reader) - Int40Codec.OFFSET;
 	}
 }
 
-export class Int48LECodec extends UInt48LECodec {
-	isValid(value: any): value is number {
-		return typeof value === "number" && Number.isInteger(value) && value >= -140737488355327 && value <= 140737488355327;
+export class Int48Codec extends AbstractCodec<number> {
+	static readonly BYTE_LENGTH = 6;
+	static readonly OFFSET = 140737488355328;
+	static readonly MIN_VALUE = -140737488355328;
+	static readonly MAX_VALUE = 140737488355327;
+
+	private readonly uIntCodec: AbstractCodec<number>;
+
+	constructor(bits: Extract<UIntBits, 48>, endianness: Endianness = "BE") {
+		super();
+
+		this.uIntCodec = createUIntCodec(bits, endianness);
 	}
 
-	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		super._encode(value + 140737488355327, buffer, c);
+	isValid(value: unknown): value is number {
+		return typeof value === "number" && Number.isInteger(value) && value >= Int48Codec.MIN_VALUE && value <= Int48Codec.MAX_VALUE;
 	}
 
-	_decode(buffer: Uint8Array, c: Context): number {
-		return super._decode(buffer, c) - 140737488355327;
+	byteLength(): 6 {
+		return Int48Codec.BYTE_LENGTH;
+	}
+
+	_encode(value: number, writer: Writer): void {
+		this.uIntCodec._encode(value + Int48Codec.OFFSET, writer);
+	}
+
+	_decode(reader: Reader): number {
+		return this.uIntCodec._decode(reader) - Int48Codec.OFFSET;
 	}
 }

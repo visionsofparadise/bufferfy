@@ -1,8 +1,7 @@
-import { Context } from "../../utilities/Context";
-import { DecodeTransformStream, DecodeTransformStreamOptions } from "./DecodeTransform";
+import { Reader } from "../../utilities/Reader";
+import { Writer } from "../../utilities/Writer";
+import { DecodeTransformStream } from "./DecodeTransform";
 import { EncodeTransformStream } from "./EncodeTransform";
-
-export type { DecodeTransformStreamOptions } from "./DecodeTransform";
 
 export type CodecType<T extends AbstractCodec<any>> = T extends AbstractCodec<infer S> ? S : never;
 
@@ -29,40 +28,37 @@ export abstract class AbstractCodec<Value = unknown> {
 	 * Used internally to recursively encode.
 	 *
 	 * @param	{Value} value - Value of this codec's type.
-	 * @param	{Uint8Array} buffer - Buffer being written into.
-	 * @param	{Context} c - Context for the current encode chain.
+	 * @param	{Writer} writer - Writer to encode into.
 	 * @return	{void}
 	 *
 	 */
-	abstract _encode(value: Value, buffer: Uint8Array, c: Context): void;
+	abstract _encode(value: Value, writer: Writer): void;
 
 	/**
 	 * Encodes a value of this codecs type into a buffer.
 	 *
+	 * **Note:** This method does NOT validate the value before encoding.
+	 * Call `isValid()` first if you need to verify the value is encodable.
+	 * Encoding invalid values may result in undefined behavior or runtime errors.
+	 *
 	 * @param	{Value} value - Value of this codec's type.
-	 * @param	{Uint8Array} [target] - A target buffer to write into.
+	 * @param	{Uint8Array} [target] - A target buffer to write into (uses byteLength for sizing).
 	 * @param	{number} [offset=0] - Offset at which to write into the target.
 	 * @return	{Uint8Array} Buffer encoding of value.
 	 *
 	 */
 	encode(value: Value, target?: Uint8Array, offset: number = 0): Uint8Array {
-		const c = new Context();
-
-		const byteLength = this.byteLength(value);
+		let buffer: Uint8Array | undefined;
 
 		if (target) {
-			const buffer = offset ? new Uint8Array(target.buffer, target.byteOffset + offset, byteLength) : target;
-
-			this._encode(value, buffer, c);
-
-			return buffer;
+			buffer = offset ? new Uint8Array(target.buffer, target.byteOffset + offset) : target;
 		}
 
-		const buffer = new Uint8Array(new ArrayBuffer(byteLength), 0, byteLength);
+		const writer = new Writer(buffer);
 
-		this._encode(value, buffer, c);
+		this._encode(value, writer);
 
-		return buffer;
+		return writer.toBuffer();
 	}
 
 	Encoder(): TransformStream<Value, Uint8Array> {
@@ -72,12 +68,11 @@ export abstract class AbstractCodec<Value = unknown> {
 	/**
 	 * Used internally to recursively decode
 	 *
-	 * @param	{Uint8Array} buffer - The buffer to be decoded.
-	 * @param	{Context} c - Context for the current decode chain
+	 * @param	{Reader} reader - Reader to decode from.
 	 * @return	{Value} Value decoded from the buffer
 	 *
 	 */
-	abstract _decode(buffer: Uint8Array, c: Context): Value;
+	abstract _decode(reader: Reader): Value;
 
 	/**
 	 * Decodes a buffer to a value of this codecs type.
@@ -88,14 +83,12 @@ export abstract class AbstractCodec<Value = unknown> {
 	 *
 	 */
 	decode(source: Uint8Array, offset: number = 0): Value {
-		const c = new Context();
+		const reader = new Reader(source, offset);
 
-		const buffer = new Uint8Array(source.buffer, source.byteOffset + offset, source.byteLength - offset);
-
-		return this._decode(buffer, c);
+		return this._decode(reader);
 	}
 
-	Decoder(options?: DecodeTransformStreamOptions): TransformStream<Uint8Array, Value> {
-		return new DecodeTransformStream(this, options);
+	Decoder(): TransformStream<Uint8Array, Value> {
+		return new DecodeTransformStream(this);
 	}
 }

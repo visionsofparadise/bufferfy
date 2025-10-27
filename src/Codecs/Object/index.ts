@@ -1,7 +1,7 @@
-import { Context } from "../../utilities/Context";
+import { Reader } from "../../utilities/Reader";
+import { Writer } from "../../utilities/Writer";
 import { AbstractCodec, CodecType } from "../Abstract";
-import { ConstantCodec } from "../Constant";
-import { UnionCodec } from "../Union";
+import { OptionalCodec } from "../Union";
 
 /**
  * Creates a codec for a fixed object.
@@ -15,26 +15,18 @@ import { UnionCodec } from "../Union";
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Object/index.ts|Source}
  */
-export function createObjectCodec<Properties extends Record<string, AbstractCodec>>(properties: Properties): ObjectCodec<Properties> {
+export const createObjectCodec = <Properties extends Record<string, AbstractCodec>>(properties: Properties): ObjectCodec<Properties> => {
 	return new ObjectCodec<Properties>(properties);
-}
-
-type RequiredKeys<T extends Record<string | number, AbstractCodec<any>>> = {
-	[K in keyof T]: T[K] extends UnionCodec<[AbstractCodec, ConstantCodec<undefined>]> ? undefined : K;
-}[keyof T];
-
-type OptionalKeys<T extends Record<string | number, AbstractCodec<any>>> = {
-	[K in keyof T]: T[K] extends UnionCodec<[AbstractCodec, ConstantCodec<undefined>]> ? K : undefined;
-}[keyof T];
-
-type _OutputObject<T extends Record<string | number, AbstractCodec<any>>> = {
-	[K in Exclude<RequiredKeys<T>, undefined>]: CodecType<T[K]>;
-} & {
-	[K in Exclude<OptionalKeys<T>, undefined>]?: CodecType<T[K]>;
 };
 
-type OutputObject<T extends Record<string | number, AbstractCodec<any>>> = {
-	[K in keyof _OutputObject<T>]: _OutputObject<T>[K];
+/**
+ * Infers the output object type from codec properties using a single unified type helper.
+ * Splits required and optional properties based on OptionalCodec usage.
+ */
+type OutputObject<T extends Record<string, AbstractCodec>> = {
+	[K in keyof T as T[K] extends OptionalCodec<any> ? never : K]: CodecType<T[K]>;
+} & {
+	[K in keyof T as T[K] extends OptionalCodec<any> ? K : never]?: T[K] extends OptionalCodec<infer V> ? V : never;
 };
 
 export class ObjectCodec<Properties extends Record<string, AbstractCodec>> extends AbstractCodec<OutputObject<Properties>> {
@@ -49,7 +41,17 @@ export class ObjectCodec<Properties extends Record<string, AbstractCodec>> exten
 	isValid(value: unknown): value is OutputObject<Properties> {
 		if (typeof value !== "object" || value === null) return false;
 
-		for (const [key, codec] of this.entries) if (!codec.isValid(value[key as keyof typeof value])) return false;
+		for (const key in this.properties) {
+			const k = key as keyof Properties;
+			const codec = this.properties[k];
+
+			// For optional properties, missing key is valid
+			if (codec instanceof OptionalCodec) {
+				if (!(k in value)) continue;
+			}
+
+			if (!codec.isValid(value[k as keyof typeof value])) return false;
+		}
 
 		return true;
 	}
@@ -57,19 +59,37 @@ export class ObjectCodec<Properties extends Record<string, AbstractCodec>> exten
 	byteLength(value: OutputObject<Properties>): number {
 		let byteLength = 0;
 
-		for (const [key, codec] of this.entries) byteLength += codec.byteLength(value[key as keyof OutputObject<Properties>]);
+		for (const key in this.properties) {
+			const k = key as keyof Properties;
+
+			byteLength += this.properties[k].byteLength((value as any)[k]);
+		}
 
 		return byteLength;
 	}
 
-	_encode(value: OutputObject<Properties>, buffer: Uint8Array, c: Context): void {
-		for (const [key, codec] of this.entries) codec._encode(value[key as keyof OutputObject<Properties>], buffer, c);
+	_encode(value: OutputObject<Properties>, writer: Writer): void {
+		for (const key in this.properties) {
+			const k = key as keyof Properties;
+
+			this.properties[k]._encode((value as any)[k], writer);
+		}
 	}
 
-	_decode(buffer: Uint8Array, c: Context): OutputObject<Properties> {
-		const value: Partial<Record<keyof OutputObject<Properties>, unknown>> = {};
+	_decode(reader: Reader): OutputObject<Properties> {
+		const value = {} as any;
 
-		for (const [key, codec] of this.entries) value[key as keyof OutputObject<Properties>] = codec._decode(buffer, c);
+		for (const key in this.properties) {
+			const k = key as keyof Properties;
+
+			const codec = this.properties[k];
+
+			const decoded = codec._decode(reader);
+
+			if (!(codec instanceof OptionalCodec && decoded === undefined)) {
+				value[k] = decoded;
+			}
+		}
 
 		return value as OutputObject<Properties>;
 	}

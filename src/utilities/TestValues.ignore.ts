@@ -104,5 +104,4 @@ export const commonValue: CommonValue = {
 	status: "pending",
 	createdAt: Date.now(),
 	updatedAt: Date.now(),
-	deletedAt: undefined,
 };

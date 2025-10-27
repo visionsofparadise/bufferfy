@@ -4,3 +4,5 @@ node_modules
 *.test.ts
 *.ignore.ts
 v1
+CLAUDE.md
+.claude

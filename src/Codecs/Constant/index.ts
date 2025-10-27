@@ -1,22 +1,7 @@
+import deepEqual from "fast-deep-equal";
+import { Reader } from "../../utilities/Reader";
+import { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
-
-const isDeepStrictEqual = (a: unknown, b: unknown): boolean => {
-	if (a === b) return true;
-	if (a === null || b === null) return false;
-	if (typeof a !== "object" || typeof b !== "object") return false;
-
-	const keysA = Object.keys(a);
-	const keysB = Object.keys(b);
-
-	if (keysA.length !== keysB.length) return false;
-
-	for (const key of keysA) {
-		if (!keysB.includes(key)) return false;
-		if (!isDeepStrictEqual((a as any)[key], (b as any)[key])) return false;
-	}
-
-	return true;
-};
 
 /**
  * Creates a codec for a constant.
@@ -49,11 +34,11 @@ export class ConstantCodec<const Value> extends AbstractCodec<Value> {
 		return 0;
 	}
 
-	_encode(): void {
-		return;
+	_encode(_value: Value, _writer: Writer): void {
+		// No bytes encoded for constants
 	}
 
-	_decode(): Value {
+	_decode(_reader: Reader): Value {
 		return this.value;
 	}
 }
@@ -64,6 +49,6 @@ export class DeepConstantCodec<Value> extends ConstantCodec<Value> {
 	}
 
 	isValid(value: unknown): value is Value {
-		return isDeepStrictEqual(value, this.value);
+		return deepEqual(value, this.value);
 	}
 }

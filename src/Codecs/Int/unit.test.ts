@@ -6,7 +6,7 @@ import { endiannessValues, UINT_BIT_BYTE_MAP, uIntBitValues } from "../UInt";
 describe("correctly performs int8 codec methods", () => {
 	const bits = 8;
 	const codec = new Int8Codec();
-	const value: CodecType<typeof codec> = 0 - (2 ** bits / 2 - 1);
+	const value: CodecType<typeof codec> = 0 - 2 ** bits / 2;
 	const byteLength = UINT_BIT_BYTE_MAP[bits];
 
 	it("valid for int8", () => {
@@ -61,7 +61,7 @@ describe("correctly performs int8 codec methods", () => {
 	});
 
 	it(`streams int8 from buffer`, async () => {
-		const buffer = Buffer.allocUnsafe(byteLength);
+		const buffer = new Uint8Array(byteLength);
 
 		buffer[0] = 0;
 
@@ -87,7 +87,7 @@ describe("iterates int endianness and bits combinations", () => {
 
 			describe(`correctly performs int${bits}${endianness} codec methods`, () => {
 				const codec = createIntCodec(bits, endianness);
-				const value = 0 - (2 ** bits / 2 - 1);
+				const value = 0 - 2 ** bits / 2;
 				const byteLength = UINT_BIT_BYTE_MAP[bits];
 
 				it(`valid for int${bits}${endianness}`, () => {
@@ -116,9 +116,7 @@ describe("iterates int endianness and bits combinations", () => {
 				});
 
 				it(`decodes int${bits}${endianness} from buffer`, async () => {
-					const buffer = Buffer.allocUnsafe(byteLength);
-
-					buffer[`writeUInt${endianness}`](0, 0, byteLength);
+					const buffer = codec.encode(value);
 
 					const result = codec.decode(buffer);
 
@@ -144,9 +142,7 @@ describe("iterates int endianness and bits combinations", () => {
 				});
 
 				it(`streams int${bits}${endianness} from buffer`, async () => {
-					const buffer = Buffer.allocUnsafe(byteLength);
-
-					buffer[`writeUInt${endianness}`](0, 0, byteLength);
+					const buffer = codec.encode(value);
 
 					const stream = new BytesReadableStream(buffer);
 

@@ -1,6 +1,7 @@
-import { Context } from "../../utilities/Context";
-import { BufferfyByteLengthError } from "../../utilities/Error";
+import { Reader } from "../../utilities/Reader";
+import { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
+import { type ByteOrderStrategy, BE_STRATEGY, LE_STRATEGY } from "./ByteOrderStrategy.js";
 
 export const endiannessValues = ["BE", "LE"] as const;
 
@@ -19,7 +20,7 @@ export const UINT_BIT_BYTE_MAP = {
 	48: 6,
 } as const;
 
-export type UIntCodec = UInt8Codec | UInt16BECodec | UInt16LECodec | UInt24BECodec | UInt24LECodec | UInt32BECodec | UInt32LECodec | UInt40BECodec | UInt40LECodec | UInt48BECodec | UInt48LECodec;
+export type UIntCodec = UInt8Codec | UInt16Codec | UInt24Codec | UInt32Codec | UInt40Codec | UInt48Codec;
 
 /**
  * Creates a codec for a unsigned integer.
@@ -32,278 +33,180 @@ export type UIntCodec = UInt8Codec | UInt16BECodec | UInt16LECodec | UInt24BECod
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/UInt/index.ts|Source}
  */
-export const createUIntCodec = (bits: UIntBits = 48, endianness: Endianness = 'BE') => {
-	if (bits === 8) return new UInt8Codec();
+export const createUIntCodec = (bits: UIntBits = 48, endianness: Endianness = "BE"): UIntCodec => {
+	const byteOrderStrategy = endianness === "BE" ? BE_STRATEGY : LE_STRATEGY;
 
-	switch (endianness) {
-		case "BE": {
-			switch (bits) {
-				case 16: {
-					return new UInt16BECodec();
-				}
-				case 24: {
-					return new UInt24BECodec();
-				}
-				case 32: {
-					return new UInt32BECodec();
-				}
-				case 40: {
-					return new UInt40BECodec();
-				}
-				case 48: {
-					return new UInt48BECodec();
-				}
-			}
-		}
-		case "LE": {
-			switch (bits) {
-				case 16: {
-					return new UInt16LECodec();
-				}
-				case 24: {
-					return new UInt24LECodec();
-				}
-				case 32: {
-					return new UInt32LECodec();
-				}
-				case 40: {
-					return new UInt40LECodec();
-				}
-				case 48: {
-					return new UInt48LECodec();
-				}
-			}
-		}
+	switch (bits) {
+		case 8:
+			return new UInt8Codec();
+		case 16:
+			return new UInt16Codec(byteOrderStrategy);
+		case 24:
+			return new UInt24Codec(byteOrderStrategy);
+		case 32:
+			return new UInt32Codec(byteOrderStrategy);
+		case 40:
+			return new UInt40Codec(byteOrderStrategy);
+		case 48:
+			return new UInt48Codec(byteOrderStrategy);
 	}
 };
 
 export class UInt8Codec extends AbstractCodec<number> {
-	constructor() {
-		super();
-	}
+	static readonly BYTE_LENGTH = 1;
 
 	isValid(value: unknown): value is number {
 		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 256;
 	}
 
 	byteLength(): 1 {
-		return 1;
+		return UInt8Codec.BYTE_LENGTH;
 	}
 
-	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		buffer[c.offset] = value;
-		c.offset++;
+	_encode(value: number, writer: Writer): void {
+		writer.writeByte(value);
 	}
 
-	_decode(buffer: Uint8Array, c: Context): number {
-		if (buffer.byteLength < c.offset + 1) throw new BufferfyByteLengthError();
-
-		return buffer[c.offset++];
+	_decode(reader: Reader): number {
+		return reader.readByte();
 	}
 }
 
-export class UInt16BECodec extends AbstractCodec<number> {
+export class UInt16Codec extends AbstractCodec<number> {
+	static readonly BYTE_LENGTH = 2;
+
+	constructor(private readonly byteOrderStrategy: ByteOrderStrategy) {
+		super();
+	}
+
 	isValid(value: unknown): value is number {
 		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 65536;
 	}
 
 	byteLength(): 2 {
-		return 2;
+		return UInt16Codec.BYTE_LENGTH;
 	}
 
-	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		buffer[c.offset] = value >>> 8;
-		buffer[c.offset + 1] = value;
-		c.offset += 2;
+	_encode(value: number, writer: Writer): void {
+		this.byteOrderStrategy.write(writer, UInt16Codec.BYTE_LENGTH, (index) => (value >>> ((1 - index) * 8)) & 0xff);
 	}
 
-	_decode(buffer: Uint8Array, c: Context): number {
-		if (buffer.byteLength < c.offset + 2) throw new BufferfyByteLengthError();
+	_decode(reader: Reader): number {
+		const bytes = this.byteOrderStrategy.read(reader, UInt16Codec.BYTE_LENGTH);
 
-		return buffer[c.offset++] * 2 ** 8 + buffer[c.offset++];
+		return (bytes[0] << 8) | bytes[1];
 	}
 }
 
-export class UInt16LECodec extends UInt16BECodec {
-	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		buffer[c.offset] = value;
-		buffer[c.offset + 1] = value >>> 8;
-		c.offset += 2;
+export class UInt24Codec extends AbstractCodec<number> {
+	static readonly BYTE_LENGTH = 3;
+
+	constructor(private readonly byteOrderStrategy: ByteOrderStrategy) {
+		super();
 	}
 
-	_decode(buffer: Uint8Array, c: Context): number {
-		if (buffer.byteLength < c.offset + 2) throw new BufferfyByteLengthError();
-
-		return buffer[c.offset++] + buffer[c.offset++] * 2 ** 8;
-	}
-}
-
-export class UInt24BECodec extends AbstractCodec<number> {
 	isValid(value: unknown): value is number {
 		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 16777216;
 	}
 
 	byteLength(): 3 {
-		return 3;
+		return UInt24Codec.BYTE_LENGTH;
 	}
 
-	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		const offset = c.offset;
-		buffer[offset] = value >>> 16;
-		buffer[offset + 1] = value >>> 8;
-		buffer[offset + 2] = value;
-		c.offset += 3;
+	_encode(value: number, writer: Writer): void {
+		this.byteOrderStrategy.write(writer, UInt24Codec.BYTE_LENGTH, (index) => (value >>> ((2 - index) * 8)) & 0xff);
 	}
 
-	_decode(buffer: Uint8Array, c: Context): number {
-		if (buffer.byteLength < c.offset + 3) throw new BufferfyByteLengthError();
+	_decode(reader: Reader): number {
+		const bytes = this.byteOrderStrategy.read(reader, UInt24Codec.BYTE_LENGTH);
 
-		return buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++];
+		return (bytes[0] << 16) | (bytes[1] << 8) | bytes[2];
 	}
 }
 
-export class UInt24LECodec extends UInt24BECodec {
-	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		const offset = c.offset;
-		buffer[offset] = value;
-		buffer[offset + 1] = value >>> 8;
-		buffer[offset + 2] = value >>> 16;
-		c.offset += 3;
+export class UInt32Codec extends AbstractCodec<number> {
+	static readonly BYTE_LENGTH = 4;
+
+	constructor(private readonly byteOrderStrategy: ByteOrderStrategy) {
+		super();
 	}
 
-	_decode(buffer: Uint8Array, c: Context): number {
-		if (buffer.byteLength < c.offset + 3) throw new BufferfyByteLengthError();
-
-		return buffer[c.offset++] + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++] * 2 ** 16;
-	}
-}
-
-export class UInt32BECodec extends AbstractCodec<number> {
 	isValid(value: unknown): value is number {
 		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 4294967296;
 	}
 
 	byteLength(): 4 {
-		return 4;
+		return UInt32Codec.BYTE_LENGTH;
 	}
 
-	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		buffer[c.offset] = value >>> 24;
-		buffer[c.offset + 1] = value >>> 16;
-		buffer[c.offset + 2] = value >>> 8;
-		buffer[c.offset + 3] = value;
-		c.offset += 4;
+	_encode(value: number, writer: Writer): void {
+		this.byteOrderStrategy.write(writer, UInt32Codec.BYTE_LENGTH, (index) => (value >>> ((3 - index) * 8)) & 0xff);
 	}
 
-	_decode(buffer: Uint8Array, c: Context): number {
-		if (buffer.byteLength < c.offset + 4) throw new BufferfyByteLengthError();
+	_decode(reader: Reader): number {
+		const bytes = this.byteOrderStrategy.read(reader, UInt32Codec.BYTE_LENGTH);
 
-		return buffer[c.offset++] * 2 ** 24 + buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++];
+		return bytes[0] * 0x1000000 + ((bytes[1] << 16) | (bytes[2] << 8) | bytes[3]);
 	}
 }
 
-export class UInt32LECodec extends UInt32BECodec {
-	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		buffer[c.offset] = value;
-		buffer[c.offset + 1] = value >>> 8;
-		buffer[c.offset + 2] = value >>> 16;
-		buffer[c.offset + 3] = value >>> 24;
-		c.offset += 4;
+export class UInt40Codec extends AbstractCodec<number> {
+	static readonly BYTE_LENGTH = 5;
+
+	constructor(private readonly byteOrderStrategy: ByteOrderStrategy) {
+		super();
 	}
 
-	_decode(buffer: Uint8Array, c: Context): number {
-		if (buffer.byteLength < c.offset + 4) throw new BufferfyByteLengthError();
-
-		return buffer[c.offset++] + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 24;
-	}
-}
-
-export class UInt40BECodec extends AbstractCodec<number> {
 	isValid(value: unknown): value is number {
 		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 1099511627776;
 	}
 
 	byteLength(): 5 {
-		return 5;
+		return UInt40Codec.BYTE_LENGTH;
 	}
 
-	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		const offset = c.offset;
-		buffer[offset] = value / 0x100000000;
-		buffer[offset + 1] = value >>> 24;
-		buffer[offset + 2] = value >>> 16;
-		buffer[offset + 3] = value >>> 8;
-		buffer[offset + 4] = value;
-		c.offset += 5;
+	_encode(value: number, writer: Writer): void {
+		this.byteOrderStrategy.write(writer, UInt40Codec.BYTE_LENGTH, (index) => {
+			if (index === 0) return Math.floor(value / 0x100000000) & 0xff;
+
+			return (value >>> ((4 - index) * 8)) & 0xff;
+		});
 	}
 
-	_decode(buffer: Uint8Array, c: Context): number {
-		if (buffer.byteLength < c.offset + 5) throw new BufferfyByteLengthError();
+	_decode(reader: Reader): number {
+		const bytes = this.byteOrderStrategy.read(reader, UInt40Codec.BYTE_LENGTH);
 
-		return buffer[c.offset++] * 2 ** 32 + buffer[c.offset++] * 2 ** 24 + buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++];
+		return bytes[0] * 0x100000000 + bytes[1] * 0x1000000 + ((bytes[2] << 16) | (bytes[3] << 8) | bytes[4]);
 	}
 }
 
-export class UInt40LECodec extends UInt40BECodec {
-	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		const offset = c.offset;
-		buffer[offset] = value;
-		buffer[offset + 1] = value >>> 8;
-		buffer[offset + 2] = value >>> 16;
-		buffer[offset + 3] = value >>> 24;
-		buffer[offset + 4] = value / 0x100000000;
-		c.offset += 5;
+export class UInt48Codec extends AbstractCodec<number> {
+	static readonly BYTE_LENGTH = 6;
+
+	constructor(private readonly byteOrderStrategy: ByteOrderStrategy) {
+		super();
 	}
 
-	_decode(buffer: Uint8Array, c: Context): number {
-		if (buffer.byteLength < c.offset + 5) throw new BufferfyByteLengthError();
-
-		return buffer[c.offset++] + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 24 + buffer[c.offset++] * 2 ** 32;
-	}
-}
-
-export class UInt48BECodec extends AbstractCodec<number> {
 	isValid(value: unknown): value is number {
 		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 281474976710656;
 	}
 
 	byteLength(): 6 {
-		return 6;
+		return UInt48Codec.BYTE_LENGTH;
 	}
 
-	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		const offset = c.offset;
-		buffer[offset] = value / 0x10000000000;
-		buffer[offset + 1] = value / 0x100000000;
-		buffer[offset + 2] = value >>> 24;
-		buffer[offset + 3] = value >>> 16;
-		buffer[offset + 4] = value >>> 8;
-		buffer[offset + 5] = value;
-		c.offset += 6;
+	_encode(value: number, writer: Writer): void {
+		this.byteOrderStrategy.write(writer, UInt48Codec.BYTE_LENGTH, (index) => {
+			if (index === 0) return Math.floor(value / 0x10000000000) & 0xff;
+			if (index === 1) return Math.floor(value / 0x100000000) & 0xff;
+
+			return (value >>> ((5 - index) * 8)) & 0xff;
+		});
 	}
 
-	_decode(buffer: Uint8Array, c: Context): number {
-		if (buffer.byteLength < c.offset + 6) throw new BufferfyByteLengthError();
+	_decode(reader: Reader): number {
+		const bytes = this.byteOrderStrategy.read(reader, UInt48Codec.BYTE_LENGTH);
 
-		return buffer[c.offset++] * 2 ** 40 + buffer[c.offset++] * 2 ** 32 + buffer[c.offset++] * 2 ** 24 + buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++];
-	}
-}
-
-export class UInt48LECodec extends UInt48BECodec {
-	_encode(value: number, buffer: Uint8Array, c: Context): void {
-		const offset = c.offset;
-		buffer[offset] = value;
-		buffer[offset + 1] = value >>> 8;
-		buffer[offset + 2] = value >>> 16;
-		buffer[offset + 3] = value >>> 24;
-		buffer[offset + 4] = value / 0x100000000;
-		buffer[offset + 5] = value / 0x10000000000;
-		c.offset += 6;
-	}
-
-	_decode(buffer: Uint8Array, c: Context): number {
-		if (buffer.byteLength < c.offset + 6) throw new BufferfyByteLengthError();
-
-		return buffer[c.offset++] + buffer[c.offset++] * 2 ** 8 + buffer[c.offset++] * 2 ** 16 + buffer[c.offset++] * 2 ** 24 + buffer[c.offset++] * 2 ** 32 + buffer[c.offset++] * 2 ** 40;
+		return bytes[0] * 0x10000000000 + bytes[1] * 0x100000000 + bytes[2] * 0x1000000 + ((bytes[3] << 16) | (bytes[4] << 8) | bytes[5]);
 	}
 }
