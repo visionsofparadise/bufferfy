@@ -64,10 +64,7 @@ export class TransformCodec<Source, Target> extends AbstractCodec<Source> {
 
 		const postPosition = reader.position;
 
-		// Extract the buffer slice that was read
-		const targetBuffer = new Uint8Array(postPosition - prePosition);
-		// Note: We can't directly access the buffer from reader, so we reconstruct it
-		// This is a limitation of the Reader abstraction
+		const targetBuffer = reader.peekBytes(prePosition, postPosition);
 
 		return this._decodeTarget(targetValue, targetBuffer);
 	}

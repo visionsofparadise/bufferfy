@@ -42,4 +42,8 @@ export class Reader {
 		this.offset += byteLength;
 		return value;
 	}
+
+	peekBytes(start: number, end: number): Uint8Array {
+		return this.buffer.subarray(start, end);
+	}
 }
