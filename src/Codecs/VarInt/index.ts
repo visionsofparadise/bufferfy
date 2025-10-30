@@ -1,3 +1,4 @@
+import { type ValidationMode } from "../UInt";
 import { VarInt15Codec } from "./VarInt15";
 import { VarInt30Codec } from "./VarInt30";
 import { VarInt60Codec } from "./VarInt60";
@@ -5,6 +6,12 @@ import { VarInt60Codec } from "./VarInt60";
 export const varIntBitValues = [15, 30, 60] as const;
 
 export type VarIntBits = (typeof varIntBitValues)[number];
+
+export interface VarIntCodecOptions {
+	minimum?: number;
+	maximum?: number;
+	validationMode?: ValidationMode;
+}
 
 export type VarIntCodec = VarInt15Codec | VarInt30Codec | VarInt60Codec;
 
@@ -36,20 +43,21 @@ export type VarIntCodec = VarInt15Codec | VarInt30Codec | VarInt60Codec;
  * - 35184372088831 <= 281474976710656: 7 byte
  *
  * @param	{15 | 30 | 60} [bits=60] - Bit type of integer.
+ * @param	{VarIntCodecOptions} [options] - Validation options (minimum, maximum)
  * @return	{VarIntCodec} VarUIntCodec
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/VarInt/index.ts|Source}
  */
-export const createVarIntCodec = (bits: VarIntBits = 60) => {
+export const createVarIntCodec = (bits: VarIntBits = 60, options?: VarIntCodecOptions) => {
 	switch (bits) {
 		case 15: {
-			return new VarInt15Codec();
+			return new VarInt15Codec(options);
 		}
 		case 30: {
-			return new VarInt30Codec();
+			return new VarInt30Codec(options);
 		}
 		case 60: {
-			return new VarInt60Codec();
+			return new VarInt60Codec(options);
 		}
 	}
 };

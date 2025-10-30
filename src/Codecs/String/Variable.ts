@@ -9,8 +9,6 @@ import { VarInt60Codec } from "../VarInt/VarInt60";
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
-const DEFAULT_MAX_STRING_BYTES = 10 * 1024 * 1024; // 10MB
-
 export class StringVariableCodec extends AbstractCodec<string> {
 	private _bufferCodec: BytesVariableCodec;
 	private _encoder: (value: string) => Uint8Array;
@@ -19,12 +17,11 @@ export class StringVariableCodec extends AbstractCodec<string> {
 
 	constructor(
 		public readonly encoding: StringEncoding = "utf8",
-		public readonly lengthCodec: AbstractCodec<number> = new VarInt60Codec(),
-		public readonly maxLength: number = DEFAULT_MAX_STRING_BYTES
+		public readonly lengthCodec: AbstractCodec<number> = new VarInt60Codec()
 	) {
 		super();
 
-		this._bufferCodec = new BytesVariableCodec(this.lengthCodec, maxLength);
+		this._bufferCodec = new BytesVariableCodec(this.lengthCodec);
 
 		switch (encoding) {
 			case "hex":
