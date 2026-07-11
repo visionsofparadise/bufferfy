@@ -4,11 +4,14 @@ import type { AbstractCodec } from "../Codecs/Abstract";
 import { Writer } from "./Writer";
 import { Reader } from "./Reader";
 
+// JSON.stringify throws on bigint; stringify bigints so bigint-bearing codecs (BigUInt, Number) can be benchmarked against JSON.
+const jsonReplacer = (_key: string, value: unknown) => (typeof value === "bigint" ? value.toString() : value);
+
 export const createBenchmark = (name: string, value: any, codec: AbstractCodec) => {
 	describe(name, () => {
 		const bufferfyEncoded = codec.encode(value);
 		const msgpackEncoded = pack(value);
-		const jsonEncoded = new TextEncoder().encode(JSON.stringify(value));
+		const jsonEncoded = new TextEncoder().encode(JSON.stringify(value, jsonReplacer));
 
 		describe("encode", () => {
 			bench("bufferfy", () => {
@@ -22,7 +25,7 @@ export const createBenchmark = (name: string, value: any, codec: AbstractCodec) 
 			});
 
 			bench("json", () => {
-				new TextEncoder().encode(JSON.stringify(value));
+				new TextEncoder().encode(JSON.stringify(value, jsonReplacer));
 			});
 		});
 
