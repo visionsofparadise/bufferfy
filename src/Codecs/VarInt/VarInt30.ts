@@ -1,15 +1,22 @@
-import { BufferfyRangeError } from "../../utilities/Error";
 import { Reader } from "../../utilities/Reader";
 import { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
+import { buildNumberValidators } from "../UInt";
 import { VarIntCodecOptions } from ".";
 
 const MAX_VARINT30 = 1073741824; // 2^30
 const VARINT30_THRESHOLDS = [64, 16384, 4194304];
 
 export class VarInt30Codec extends AbstractCodec<number> {
+	private readonly _validateEncode: ((value: number) => void) | null;
+	private readonly _validateDecode: ((value: number, position: number) => void) | null;
+
 	constructor(protected readonly options?: VarIntCodecOptions) {
 		super();
+
+		const validators = buildNumberValidators("VarInt30Codec", options);
+		this._validateEncode = validators.validateEncode;
+		this._validateDecode = validators.validateDecode;
 	}
 
 	isValid(value: unknown): value is number {
@@ -29,109 +36,55 @@ export class VarInt30Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		const validationMode = this.options?.validationMode ?? "both";
+		if (this._validateEncode !== null) this._validateEncode(value);
 
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} is less than minimum ${this.options.minimum}`,
-				"VarInt30Codec",
-				value,
-				this.options.minimum
-			);
+		let byteLength = 4;
+		for (let i = 0; i < VARINT30_THRESHOLDS.length; i++) {
+			if (value < VARINT30_THRESHOLDS[i]) {
+				byteLength = i + 1;
+				break;
+			}
 		}
 
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"VarInt30Codec",
-				value,
-				this.options.maximum
-			);
-		}
-
-		const byteLength = this.byteLength(value);
+		const offset = writer.reserve(byteLength);
+		const bytes = writer.bytes;
 
 		if (byteLength === 1) {
-			writer.writeByte(value);
+			bytes[offset] = value;
 			return;
 		}
 
 		// First byte: high 2 bits encode remaining byte count, low 6 bits store high value bits
 		const remainingBytes = byteLength - 1;
-		const lengthPrefix = remainingBytes << 6; // Shift to high 2 bits
-		const shiftBits = remainingBytes * 8;
-		const highBits = (value >>> shiftBits) & 0x3f;
-
-		writer.writeByte(lengthPrefix | highBits);
+		bytes[offset] = (remainingBytes << 6) | ((value >>> (remainingBytes * 8)) & 0x3f);
 
 		// Write remaining bytes from high to low
+		let position = offset + 1;
 		for (let i = remainingBytes - 1; i >= 0; i--) {
-			writer.writeByte((value >>> (i * 8)) & 0xff);
+			bytes[position++] = (value >>> (i * 8)) & 0xff;
 		}
 	}
 
 	_decode(reader: Reader): number {
 		const firstByte = reader.readByte();
-		const validationMode = this.options?.validationMode ?? "both";
 
 		// Extract length from high 2 bits
-		const lengthBits = firstByte & 0xc0;
-		const remainingBytes = lengthBits / 64;
+		const remainingBytes = (firstByte & 0xc0) / 64;
+
+		let value: number;
 
 		if (remainingBytes === 0) {
-			const value = firstByte;
+			value = firstByte;
+		} else {
+			// Extract value from low 6 bits, then read remaining bytes high to low
+			value = (firstByte & 0x3f) << (remainingBytes * 8);
 
-			if ((validationMode === "both" || validationMode === "decode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-				throw new BufferfyRangeError(
-					`Decoded value ${value} is less than minimum ${this.options.minimum}`,
-					"VarInt30Codec",
-					value,
-					this.options.minimum,
-					reader.position
-				);
+			for (let i = remainingBytes - 1; i >= 0; i--) {
+				value += reader.readByte() << (i * 8);
 			}
-
-			if ((validationMode === "both" || validationMode === "decode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-				throw new BufferfyRangeError(
-					`Decoded value ${value} exceeds maximum ${this.options.maximum}`,
-					"VarInt30Codec",
-					value,
-					this.options.maximum,
-					reader.position
-				);
-			}
-
-			return value;
 		}
 
-		// Extract value from low 6 bits
-		let value = (firstByte & 0x3f) << (remainingBytes * 8);
-
-		// Read remaining bytes
-		for (let i = remainingBytes - 1; i >= 0; i--) {
-			const byte = reader.readByte();
-			value += byte << (i * 8);
-		}
-
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} is less than minimum ${this.options.minimum}`,
-				"VarInt30Codec",
-				value,
-				this.options.minimum,
-				reader.position
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"VarInt30Codec",
-				value,
-				this.options.maximum,
-				reader.position
-			);
-		}
+		if (this._validateDecode !== null) this._validateDecode(value, reader.position);
 
 		return value;
 	}

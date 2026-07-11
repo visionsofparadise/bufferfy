@@ -1,4 +1,5 @@
 import { BytesReadableStream, BytesWritableStream } from "../../utilities/BytesStream.ignore";
+import { BufferfyByteLengthError } from "../../utilities/Error";
 import { CodecType } from "../Abstract";
 import { VarInt60Codec } from "./VarInt60";
 
@@ -628,6 +629,18 @@ describe("correctly performs varInt60 codec methods for 7 bytes max", () => {
 		await reader.cancel();
 
 		expect(result.value).toStrictEqual(value);
+	});
+});
+
+describe("throws BufferfyByteLengthError on truncated varInt60 buffer", () => {
+	const codec = new VarInt60Codec();
+
+	it("throws when a multi-byte value is one byte short", () => {
+		const value = 35184372088831; // 6-byte encoding
+		const buffer = codec.encode(value);
+		const truncated = buffer.subarray(0, buffer.byteLength - 1);
+
+		expect(() => codec.decode(truncated)).toThrow(BufferfyByteLengthError);
 	});
 });
 
