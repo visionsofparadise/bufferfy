@@ -5,6 +5,9 @@ import { EncodeTransformStream } from "./EncodeTransform";
 
 export type CodecType<T extends AbstractCodec<any>> = T extends AbstractCodec<infer S> ? S : never;
 
+const sharedWriter = new Writer();
+let sharedWriterInUse = false;
+
 export abstract class AbstractCodec<Value = unknown> {
 	/**
 	 * Returns true if the provided value is able to be encoded and decoded by this codec.
@@ -48,17 +51,35 @@ export abstract class AbstractCodec<Value = unknown> {
 	 *
 	 */
 	encode(value: Value, target?: Uint8Array, offset: number = 0): Uint8Array {
-		let buffer: Uint8Array | undefined;
-
 		if (target) {
-			buffer = offset ? new Uint8Array(target.buffer, target.byteOffset + offset) : target;
+			const buffer = offset ? new Uint8Array(target.buffer, target.byteOffset + offset) : target;
+			const writer = new Writer(buffer);
+
+			this._encode(value, writer);
+
+			return writer.toBuffer();
 		}
 
-		const writer = new Writer(buffer);
+		// Reentrancy (a Transform/Any callback calling encode mid-encode) would corrupt the shared writer, so fall back to a fresh one.
+		if (sharedWriterInUse) {
+			const writer = new Writer();
 
-		this._encode(value, writer);
+			this._encode(value, writer);
 
-		return writer.toBuffer();
+			return writer.toBuffer();
+		}
+
+		sharedWriterInUse = true;
+
+		try {
+			this._encode(value, sharedWriter);
+
+			// Copy out so the reused shared buffer never escapes to the caller (else the next encode clobbers this result).
+			return sharedWriter.toBuffer().slice();
+		} finally {
+			sharedWriter.reset();
+			sharedWriterInUse = false;
+		}
 	}
 
 	Encoder(): TransformStream<Value, Uint8Array> {

@@ -39,6 +39,10 @@ export class Writer {
 		return this.buffer.subarray(0, this.offset);
 	}
 
+	reset(): void {
+		this.offset = 0;
+	}
+
 	writeByte(value: number): void {
 		this.ensureCapacity(1);
 		this.buffer[this.offset++] = value;
