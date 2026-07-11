@@ -5,7 +5,7 @@ A serialization and deserialization library that space-efficiently packs data in
 - Supports all javascript data types.
 - Provides accurate typescript types.
 - Serializes to a significantly smaller buffer than message pack and JSON stringify.
-- Performs at the same speed as message pack and JSON stringify.
+- Encodes and decodes small structured messages faster than message pack and JSON stringify; trails both on large hex-heavy payloads.
 - Encode and decode transforms for streams.
 
 ## 3.0.0 Update
@@ -67,9 +67,9 @@ All codecs provide a standard set of methods.
 
 Returns the data serialized into a buffer. A buffer and offset can be provided, otherwise a new buffer will be created.
 
-#### `data = AnyCodec.decode(buffer, start?, end?)`
+#### `data = AnyCodec.decode(source, offset?)`
 
-Returns the unserialized data from a buffer.
+Returns the unserialized data from a buffer. Decoding begins at `offset` (default `0`).
 
 #### `number = AnyCodec.byteLength(data)`
 
@@ -125,14 +125,18 @@ Codec.Union([Codec.Any(), Codec.String()])
 
 ## Benchmarks
 
-Values used for benchmarks can be found [here](https://github.com/visionsofparadise/bufferfy/blob/main/src/utilities/TestValues.ignore.ts).
+Values used for benchmarks can be found [here](https://github.com/visionsofparadise/bufferfy/blob/main/src/utilities/TestValues.ignore.ts). Speed measured with `vitest bench` on 2026-07-11; run-to-run variance applies.
+
+### Size (bytes, smaller is better)
+
+The wire format is deterministic, so bufferfy's sizes are fixed.
 
 #### Spread of Types
 
 ```
 bufferfy.size                   50
-msgpack.size                    149
-JSON.size                       221
+msgpack.size                    193
+JSON.size                       282
 ```
 
 #### Common Types
@@ -140,4 +144,24 @@ JSON.size                       221
 bufferfy.size                   1050
 msgpack.size                    1706
 JSON.size                       1775
+```
+
+### Speed (ops/sec, higher is better)
+
+bufferfy leads both encode and decode on small structured messages (Spread), the workload it is built for. On the large hex-heavy payload (Common) message pack still leads, though the gap has narrowed to under 3x from over 12x.
+
+#### Spread of Types
+
+```
+              bufferfy     msgpack        JSON
+encode         367,836     313,489     160,359
+decode         332,671     255,548     299,255
+```
+
+#### Common Types
+
+```
+              bufferfy     msgpack        JSON
+encode          84,286     229,863      93,044
+decode         118,103     208,454     201,345
 ```
