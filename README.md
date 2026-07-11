@@ -123,9 +123,26 @@ Codec.Union([Codec.Constant("active"), Codec.String(), Codec.Any()])
 Codec.Union([Codec.Any(), Codec.String()])
 ```
 
+### Encoding does not validate
+
+`encode()` does not validate its input — call `isValid()` first if the value might not conform. For unions this has a specific consequence. On encode, a branch is picked by a shallow type check (`typeof`, `Array.isArray`, `value instanceof Uint8Array`, `value === constant`); the branch's deep `isValid` check is skipped whenever no later branch could accept a value that passes that shallow test. Selecting this way is what keeps union encode fast.
+
+For a **valid** union value the selected branch and the resulting bytes are identical to a fully-validated selection, so the wire format is unchanged. For an **invalid** value that happens to pass a branch's shallow test, that branch is encoded instead of throwing `"Value does not match any codec"`, producing garbage bytes (garbage in, garbage out). `isValid()` still returns `false` for such values.
+
+```ts
+const codec = Codec.Union([Codec.Object({ a: Codec.UInt(8) }), Codec.Null]);
+
+codec.encode({ a: 5 }); // valid   -> bytes unchanged
+codec.encode({});       // invalid -> passes the object type check, encodes [0, 0], does not throw
+codec.isValid({});      // false
+
+// Guard first when the value may not conform:
+if (codec.isValid(value)) codec.encode(value);
+```
+
 ## Benchmarks
 
-Values used for benchmarks can be found [here](https://github.com/visionsofparadise/bufferfy/blob/main/src/utilities/TestValues.ignore.ts). Speed measured with `vitest bench` on 2026-07-11; run-to-run variance applies.
+Values used for benchmarks can be found [here](https://github.com/visionsofparadise/bufferfy/blob/main/src/utilities/TestValues.ignore.ts). Speed measured with `vitest bench` on 2026-07-11, median of three runs; run-to-run variance applies.
 
 ### Size (bytes, smaller is better)
 
@@ -148,20 +165,20 @@ JSON.size                       1775
 
 ### Speed (ops/sec, higher is better)
 
-bufferfy leads both encode and decode on small structured messages (Spread), the workload it is built for. On the large hex-heavy payload (Common) message pack still leads, though the gap has narrowed to under 3x from over 12x.
+On small structured messages (Spread), the workload it is built for, bufferfy leads decode and edges out msgpack on encode. On the large hex-heavy payload (Common) msgpack still leads, though the gap has narrowed to under 3x from over 12x.
 
 #### Spread of Types
 
 ```
               bufferfy     msgpack        JSON
-encode         367,836     313,489     160,359
-decode         332,671     255,548     299,255
+encode         395,751     387,482     173,038
+decode         343,837     266,447     300,674
 ```
 
 #### Common Types
 
 ```
               bufferfy     msgpack        JSON
-encode          84,286     229,863      93,044
-decode         118,103     208,454     201,345
+encode          91,713     240,229     101,259
+decode         120,341     205,428     202,047
 ```
