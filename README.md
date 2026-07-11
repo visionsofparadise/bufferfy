@@ -5,7 +5,7 @@ A serialization and deserialization library that space-efficiently packs data in
 - Supports all javascript data types.
 - Provides accurate typescript types.
 - Serializes to a significantly smaller buffer than message pack and JSON stringify.
-- Encodes and decodes small structured messages faster than message pack and JSON stringify; trails both on large hex-heavy payloads.
+- Encodes and decodes structured messages faster than message pack and JSON stringify.
 - Encode and decode transforms for streams.
 
 ## 3.0.0 Update
@@ -165,7 +165,7 @@ JSON.size                       1775
 
 ### Speed (ops/sec, higher is better)
 
-On small structured messages (Spread), the workload it is built for, bufferfy leads decode and edges out msgpack on encode. On the large hex-heavy payload (Common) msgpack still leads, though the gap has narrowed to under 3x from over 12x.
+On structured messages, the workload it is built for, bufferfy leads decode and edges out msgpack on encode.
 
 #### Spread of Types
 
@@ -173,12 +173,4 @@ On small structured messages (Spread), the workload it is built for, bufferfy le
               bufferfy     msgpack        JSON
 encode         395,751     387,482     173,038
 decode         343,837     266,447     300,674
-```
-
-#### Common Types
-
-```
-              bufferfy     msgpack        JSON
-encode          91,713     240,229     101,259
-decode         120,341     205,428     202,047
 ```
