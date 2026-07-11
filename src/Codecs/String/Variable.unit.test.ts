@@ -1,3 +1,4 @@
+import { base64 } from "@scure/base";
 import { randomBytes } from "crypto";
 import { BytesReadableStream, BytesWritableStream } from "../../utilities/BytesStream.ignore";
 import { CodecType } from "../Abstract";
@@ -76,5 +77,57 @@ describe("correctly performs variable string codec methods", () => {
 		expect(result1.value).toStrictEqual(value);
 		expect(result2.value).toStrictEqual(value);
 		expect(result3.value).toStrictEqual(value);
+	});
+});
+
+const utf8Cases = [
+	{ name: "ascii", value: "hi", decoded: "hi" },
+	{ name: "2-byte", value: "é", decoded: "é" },
+	{ name: "3-byte", value: "€", decoded: "€" },
+	{ name: "4-byte emoji", value: "😀", decoded: "😀" },
+	{ name: "lone surrogate", value: "\uD800", decoded: "�" },
+];
+
+describe("variable string utf8 exact-byte and byteLength guards", () => {
+	for (const { name, value, decoded } of utf8Cases) {
+		it(`variable utf8 ${name} matches TextEncoder bytes, byteLength, and round-trips`, () => {
+			const codec = new StringVariableCodec("utf8");
+			const utf8 = new TextEncoder().encode(value);
+			const expected = Uint8Array.from([...codec.lengthCodec.encode(utf8.byteLength), ...utf8]);
+
+			const encoded = codec.encode(value);
+
+			expect(encoded).toEqual(expected);
+			expect(codec.byteLength(value)).toBe(encoded.byteLength);
+			expect(codec.decode(encoded)).toBe(decoded);
+		});
+	}
+});
+
+describe("variable string base64 exact-byte guards", () => {
+	it("variable base64 matches decoded bytes and round-trips", () => {
+		const codec = new StringVariableCodec("base64");
+		const raw = Uint8Array.from(randomBytes(15));
+		const value = base64.encode(raw);
+		const expected = Uint8Array.from([...codec.lengthCodec.encode(raw.byteLength), ...raw]);
+
+		const encoded = codec.encode(value);
+
+		expect(encoded).toEqual(expected);
+		expect(codec.decode(encoded)).toBe(value);
+	});
+});
+
+describe("variable string hex invalid input guards", () => {
+	it("variable hex throws on odd-length input", () => {
+		const codec = new StringVariableCodec("hex");
+
+		expect(() => codec.encode("abc")).toThrow();
+	});
+
+	it("variable hex throws on non-hex characters", () => {
+		const codec = new StringVariableCodec("hex");
+
+		expect(() => codec.encode("zz")).toThrow();
 	});
 });

@@ -83,3 +83,49 @@ describe("correctly performs bitfield codec methods", () => {
 		expect(result.value).toStrictEqual(value);
 	});
 });
+
+describe("bitfield multi-byte and partial final byte exact-byte guards", () => {
+	const keys = ["k0", "k1", "k2", "k3", "k4", "k5", "k6", "k7", "k8", "k9"];
+
+	it("packs 10 keys into 2 bytes with a partial final byte", () => {
+		const codec = new BitFieldCodec(keys);
+
+		expect(codec.byteLength()).toBe(2);
+
+		const value = {
+			k0: true,
+			k1: false,
+			k2: false,
+			k3: true,
+			k4: false,
+			k5: false,
+			k6: false,
+			k7: true,
+			k8: true,
+			k9: false,
+		};
+
+		expect(codec.encode(value)).toEqual(Uint8Array.from([0x91, 0x80]));
+		expect(codec.decode(codec.encode(value))).toStrictEqual(value);
+	});
+
+	it("encodes the last flag of a partial final byte in its own bit position", () => {
+		const codec = new BitFieldCodec(keys);
+
+		const value = {
+			k0: false,
+			k1: false,
+			k2: false,
+			k3: false,
+			k4: false,
+			k5: false,
+			k6: false,
+			k7: false,
+			k8: false,
+			k9: true,
+		};
+
+		expect(codec.encode(value)).toEqual(Uint8Array.from([0x00, 0x40]));
+		expect(codec.decode(codec.encode(value))).toStrictEqual(value);
+	});
+});

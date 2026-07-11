@@ -1,7 +1,7 @@
 import { createIntCodec, Int8Codec } from ".";
 import { BytesReadableStream, BytesWritableStream } from "../../utilities/BytesStream.ignore";
 import { CodecType } from "../Abstract";
-import { endiannessValues, UINT_BIT_BYTE_MAP, uIntBitValues } from "../UInt";
+import { endiannessValues, type Endianness, UINT_BIT_BYTE_MAP, uIntBitValues } from "../UInt";
 
 describe("correctly performs int8 codec methods", () => {
 	const bits = 8;
@@ -157,6 +157,46 @@ describe("iterates int endianness and bits combinations", () => {
 
 					expect(result.value).toStrictEqual(value);
 				});
+			});
+		}
+	}
+});
+
+describe("int exact-byte wire format guards", () => {
+	const wire = (logical: Array<number>, endianness: Endianness): Uint8Array => Uint8Array.from(endianness === "LE" ? [...logical].reverse() : logical);
+
+	for (const endianness of endiannessValues) {
+		for (const bits of uIntBitValues) {
+			const byteLength = UINT_BIT_BYTE_MAP[bits];
+			const codec = createIntCodec(bits, endianness);
+			const offset = 2 ** (bits - 1);
+
+			const minValue = -offset;
+			const maxValue = offset - 1;
+
+			const zeroLogical = new Array(byteLength).fill(0);
+			const offsetLogical = [0x80, ...new Array(byteLength - 1).fill(0)];
+			const maxLogical = new Array(byteLength).fill(0xff);
+
+			it(`encodes int${bits}${endianness} minimum to exact bytes`, () => {
+				const expected = wire(zeroLogical, endianness);
+
+				expect(codec.encode(minValue)).toEqual(expected);
+				expect(codec.decode(expected)).toBe(minValue);
+			});
+
+			it(`encodes int${bits}${endianness} zero to exact bytes`, () => {
+				const expected = wire(offsetLogical, endianness);
+
+				expect(codec.encode(0)).toEqual(expected);
+				expect(codec.decode(expected)).toBe(0);
+			});
+
+			it(`encodes int${bits}${endianness} maximum to exact bytes`, () => {
+				const expected = wire(maxLogical, endianness);
+
+				expect(codec.encode(maxValue)).toEqual(expected);
+				expect(codec.decode(expected)).toBe(maxValue);
 			});
 		}
 	}

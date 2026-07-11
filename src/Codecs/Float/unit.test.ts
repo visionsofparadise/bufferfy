@@ -93,3 +93,41 @@ describe("iterates float endianness and bits combinations", () => {
 		}
 	}
 });
+
+describe("float special values and exact-byte guards", () => {
+	for (const endianness of endiannessValues) {
+		for (const bits of floatBitValues) {
+			const codec = createFloatCodec(bits, endianness);
+			const littleEndian = endianness === "LE";
+			const byteLength = FLOAT_BIT_BYTE_MAP[bits];
+
+			it(`float${bits}${endianness} round-trips NaN`, () => {
+				expect(Number.isNaN(codec.decode(codec.encode(NaN)))).toBe(true);
+			});
+
+			it(`float${bits}${endianness} round-trips Infinity`, () => {
+				expect(codec.decode(codec.encode(Infinity))).toBe(Infinity);
+			});
+
+			it(`float${bits}${endianness} round-trips -Infinity`, () => {
+				expect(codec.decode(codec.encode(-Infinity))).toBe(-Infinity);
+			});
+
+			it(`float${bits}${endianness} round-trips -0 preserving sign`, () => {
+				expect(Object.is(codec.decode(codec.encode(-0)), -0)).toBe(true);
+			});
+
+			it(`float${bits}${endianness} encodes 1.5 to exact bytes`, () => {
+				const value = 1.5;
+				const expected = new Uint8Array(byteLength);
+				const view = new DataView(expected.buffer);
+
+				if (bits === 32) view.setFloat32(0, value, littleEndian);
+				else view.setFloat64(0, value, littleEndian);
+
+				expect(codec.encode(value)).toEqual(expected);
+				expect(codec.decode(expected)).toBe(value);
+			});
+		}
+	}
+});
