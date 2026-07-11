@@ -22,28 +22,55 @@ import { VarInt15Codec } from "../VarInt/VarInt15";
 import { VarInt30Codec } from "../VarInt/VarInt30";
 import { VarInt60Codec } from "../VarInt/VarInt60";
 
+type DomainTag = "boolean" | "string" | "number" | "bigint" | "bytes" | "array" | "object" | "any";
+
 interface UnionMatcher {
 	test: (value: unknown) => boolean;
 	exact: boolean;
+	// The domain the `test` predicate accepts. Used to compute `sufficient`, and read as a later branch's
+	// accept-domain (identical to the test domain for every non-constant codec class; constant branches are
+	// checked directly by value, so their `testTag` is unused).
+	testTag: DomainTag;
+	// True when passing `test` is enough to select this branch among VALID values: no later branch overlaps
+	// this branch's test domain, so skipping `isValid` cannot misroute a value that belongs to a later branch.
+	// Computed in the UnionCodec constructor; only ever true for non-exact matchers.
+	sufficient: boolean;
 }
+
+// testTag → the accept-domains that overlap it. The object relations are symmetric: a `typeof === "object"`
+// test passes for arrays and Uint8Arrays, and the object-accepting codecs (Object/Record — their `isValid`
+// gates only on `typeof === "object" && !== null`, e.g. `Record(String, String).isValid(["x"])` is true) accept
+// arrays and Uint8Arrays too. `any` overlaps every domain (handled directly in `conflictsWithLater`).
+const ACCEPT_OVERLAP: Record<DomainTag, ReadonlyArray<DomainTag>> = {
+	boolean: ["boolean"],
+	string: ["string"],
+	number: ["number"],
+	bigint: ["bigint"],
+	bytes: ["bytes", "object"],
+	array: ["array", "object"],
+	object: ["object", "array", "bytes"],
+	any: ["boolean", "string", "number", "bigint", "bytes", "array", "object", "any"],
+};
 
 /**
  * Derives a pre-filter for a union branch from its codec class. The predicate is a NECESSARY condition
  * for that codec's `isValid`, so a failed pre-filter only skips an `isValid` that would have returned false;
  * selection outcomes are unchanged. `exact: true` means the predicate is the whole of `isValid`, so the
- * `isValid` call is skipped entirely on a match. DeepConstantCodec (extends ConstantCodec, uses deepEqual)
- * is deliberately excluded from the exact `===` matcher and gets no pre-filter.
+ * `isValid` call is skipped entirely on a match. `testTag` records the predicate's domain (see `UnionMatcher`).
+ * DeepConstantCodec (extends ConstantCodec, uses deepEqual) is deliberately excluded from the exact `===`
+ * matcher and gets the fallback (`testTag: "any"`, no pre-filter); only its *value* is consulted, when
+ * checking whether it conflicts with an earlier branch's sufficiency.
  */
 const buildUnionMatcher = (codec: AbstractCodec<any>): UnionMatcher => {
 	if (codec.constructor === ConstantCodec) {
 		const constant = (codec as ConstantCodec<unknown>).value;
 
-		return { test: (value) => value === constant, exact: true };
+		return { test: (value) => value === constant, exact: true, testTag: "any", sufficient: false };
 	}
 
-	if (codec instanceof BooleanCodec) return { test: (value) => typeof value === "boolean", exact: true };
+	if (codec instanceof BooleanCodec) return { test: (value) => typeof value === "boolean", exact: true, testTag: "boolean", sufficient: false };
 
-	if (codec instanceof StringFixedCodec || codec instanceof StringVariableCodec) return { test: (value) => typeof value === "string", exact: true };
+	if (codec instanceof StringFixedCodec || codec instanceof StringVariableCodec) return { test: (value) => typeof value === "string", exact: true, testTag: "string", sufficient: false };
 
 	if (
 		codec instanceof UInt8Codec ||
@@ -64,17 +91,29 @@ const buildUnionMatcher = (codec: AbstractCodec<any>): UnionMatcher => {
 		codec instanceof VarInt30Codec ||
 		codec instanceof VarInt60Codec
 	)
-		return { test: (value) => typeof value === "number", exact: false };
+		return { test: (value) => typeof value === "number", exact: false, testTag: "number", sufficient: false };
 
-	if (codec instanceof BigUIntBECodec) return { test: (value) => typeof value === "bigint", exact: false };
+	if (codec instanceof BigUIntBECodec) return { test: (value) => typeof value === "bigint", exact: false, testTag: "bigint", sufficient: false };
 
-	if (codec instanceof BytesFixedCodec || codec instanceof BytesVariableCodec) return { test: (value) => value instanceof Uint8Array, exact: false };
+	if (codec instanceof BytesFixedCodec || codec instanceof BytesVariableCodec) return { test: (value) => value instanceof Uint8Array, exact: false, testTag: "bytes", sufficient: false };
 
-	if (codec instanceof ArrayFixedCodec || codec instanceof ArrayVariableCodec || codec instanceof TupleCodec) return { test: (value) => Array.isArray(value), exact: false };
+	if (codec instanceof ArrayFixedCodec || codec instanceof ArrayVariableCodec || codec instanceof TupleCodec) return { test: (value) => Array.isArray(value), exact: false, testTag: "array", sufficient: false };
 
-	if (codec instanceof ObjectCodec || codec instanceof RecordFixedCodec || codec instanceof RecordVariableCodec) return { test: (value) => typeof value === "object" && value !== null, exact: false };
+	if (codec instanceof ObjectCodec || codec instanceof RecordFixedCodec || codec instanceof RecordVariableCodec) return { test: (value) => typeof value === "object" && value !== null, exact: false, testTag: "object", sufficient: false };
 
-	return { test: () => true, exact: false };
+	return { test: () => true, exact: false, testTag: "any", sufficient: false };
+};
+
+/**
+ * Whether `laterCodec` (appearing after the branch with matcher `earlier`) can accept any value that passes
+ * `earlier.test`. If so, `earlier` cannot skip its `isValid` — a value in `earlier`'s test domain might
+ * legitimately belong to `laterCodec`. Constant branches are checked directly against their value (so an
+ * object test does not conflict with `Null`, but does with `DeepConstant({...})`); all others by domain overlap.
+ */
+const conflictsWithLater = (earlier: UnionMatcher, laterCodec: AbstractCodec<any>, laterMatcher: UnionMatcher): boolean => {
+	if (laterCodec instanceof ConstantCodec) return earlier.test((laterCodec as ConstantCodec<unknown>).value);
+
+	return laterMatcher.testTag === "any" || ACCEPT_OVERLAP[earlier.testTag].includes(laterMatcher.testTag);
 };
 
 /**
@@ -125,6 +164,28 @@ export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends 
 		super();
 		this.codecs = codecs;
 		this._matchers = codecs.map(buildUnionMatcher);
+
+		// A non-exact matcher may skip its `isValid` in encode/byteLength selection iff no later branch can accept
+		// any value passing its `test`. Then, among valid values, the shallow test uniquely selects this branch;
+		// an invalid value passing it is invalid for the whole union (garbage-in-garbage-out per encode()'s contract).
+		for (let i = 0; i < this._matchers.length; i++) {
+			const matcher = this._matchers[i];
+
+			// Exact matchers already skip `isValid`; the fallback (testTag "any") overlaps every later branch. Neither can be sufficient.
+			if (matcher.exact || matcher.testTag === "any") continue;
+
+			let sufficient = true;
+
+			for (let j = i + 1; j < this.codecs.length; j++) {
+				if (conflictsWithLater(matcher, this.codecs[j], this._matchers[j])) {
+					sufficient = false;
+
+					break;
+				}
+			}
+
+			matcher.sufficient = sufficient;
+		}
 	}
 
 	/**
@@ -179,7 +240,7 @@ export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends 
 		for (let i = 0; i < this.codecs.length; i++) {
 			const matcher = this._matchers[i];
 
-			if (matcher.test(value) && (matcher.exact || this.codecs[i].isValid(value))) return this.indexCodec.byteLength(i) + this.codecs[i].byteLength(value);
+			if (matcher.test(value) && (matcher.exact || matcher.sufficient || this.codecs[i].isValid(value))) return this.indexCodec.byteLength(i) + this.codecs[i].byteLength(value);
 		}
 
 		throw new BufferfyError("Value does not match any codec");
@@ -198,7 +259,7 @@ export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends 
 		for (let i = 0; i < this.codecs.length; i++) {
 			const matcher = this._matchers[i];
 
-			if (matcher.test(value) && (matcher.exact || this.codecs[i].isValid(value))) {
+			if (matcher.test(value) && (matcher.exact || matcher.sufficient || this.codecs[i].isValid(value))) {
 				this.indexCodec._encode(i, writer);
 				this.codecs[i]._encode(value, writer);
 
