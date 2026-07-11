@@ -1,3 +1,4 @@
+import { createTupleCodec } from "../Tuple";
 import { TransformCodec } from "../Transform";
 import { createUIntCodec } from "../UInt";
 
@@ -46,5 +47,41 @@ describe("encode shared-writer reentrancy and copy-out", () => {
 
 		expect(retained[0]).toBe(0x01);
 		expect(later[0]).toBe(0xff);
+	});
+
+	it("resets the shared writer after an encode throws, leaving no stale tail on the next encode", () => {
+		const codec = createTupleCodec([createUIntCodec(8), createUIntCodec(8, "BE", { maximum: 10 })] as const);
+
+		expect(() => codec.encode([0xab, 255])).toThrow();
+
+		const result = codec.encode([0x11, 5]);
+
+		expect(Array.from(result)).toEqual([0x11, 5]);
+	});
+
+	it("preserves the outer offset when a reentrant encode fires mid-stream", () => {
+		const innerCodec = createUIntCodec(8);
+
+		let innerResult: Uint8Array | undefined;
+
+		const reentrantCodec = new TransformCodec<number, number>(createUIntCodec(8), {
+			encode: (value) => {
+				innerResult = innerCodec.encode(0x99);
+
+				return value;
+			},
+			decode: (value) => value,
+		});
+
+		const codec = createTupleCodec([createUIntCodec(8), reentrantCodec, createUIntCodec(8)] as const);
+
+		const outerResult = codec.encode([0x11, 0x22, 0x33]);
+
+		expect(Array.from(outerResult)).toEqual([0x11, 0x22, 0x33]);
+		expect(Array.from(innerResult!)).toEqual([0x99]);
+
+		innerResult![0] = 0x00;
+
+		expect(outerResult[0]).toBe(0x11);
 	});
 });
