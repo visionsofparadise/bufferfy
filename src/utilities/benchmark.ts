@@ -1,7 +1,6 @@
 import { pack, unpack } from "msgpackr";
 import { bench, describe, expect, it } from "vitest";
 import type { AbstractCodec } from "../Codecs/Abstract";
-import { Writer } from "./Writer";
 import { Reader } from "./Reader";
 
 // JSON.stringify throws on bigint; stringify bigints so bigint-bearing codecs (BigUInt, Number) can be benchmarked against JSON.
@@ -15,9 +14,7 @@ export const createBenchmark = (name: string, value: any, codec: AbstractCodec) 
 
 		describe("encode", () => {
 			bench("bufferfy", () => {
-				const writer = new Writer();
-				codec._encode(value, writer);
-				writer.toBuffer();
+				codec.encode(value);
 			});
 
 			bench("msgpack", () => {
