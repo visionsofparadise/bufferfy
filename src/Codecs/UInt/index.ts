@@ -2,7 +2,6 @@ import { BufferfyRangeError } from "../../utilities/Error";
 import { Reader } from "../../utilities/Reader";
 import { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
-import { type ByteOrderStrategy, BE_STRATEGY, LE_STRATEGY } from "./ByteOrderStrategy.js";
 
 export const endiannessValues = ["BE", "LE"] as const;
 
@@ -29,6 +28,45 @@ export interface UIntCodecOptions {
 	validationMode?: ValidationMode;
 }
 
+export interface NumberValidationOptions {
+	minimum?: number;
+	maximum?: number;
+	validationMode?: ValidationMode;
+}
+
+export interface NumberValidators {
+	validateEncode: ((value: number) => void) | null;
+	validateDecode: ((value: number, position: number) => void) | null;
+}
+
+export const buildNumberValidators = (codecName: string, options?: NumberValidationOptions): NumberValidators => {
+	const minimum = options?.minimum;
+	const maximum = options?.maximum;
+	const mode = options?.validationMode ?? "both";
+	const hasRange = minimum !== undefined || maximum !== undefined;
+
+	return {
+		validateEncode:
+			hasRange && (mode === "both" || mode === "encode")
+				? (value: number): void => {
+						if (minimum !== undefined && value < minimum)
+							throw new BufferfyRangeError(`Encoded value ${value} is less than minimum ${minimum}`, codecName, value, minimum);
+						if (maximum !== undefined && value > maximum)
+							throw new BufferfyRangeError(`Encoded value ${value} exceeds maximum ${maximum}`, codecName, value, maximum);
+					}
+				: null,
+		validateDecode:
+			hasRange && (mode === "both" || mode === "decode")
+				? (value: number, position: number): void => {
+						if (minimum !== undefined && value < minimum)
+							throw new BufferfyRangeError(`Decoded value ${value} is less than minimum ${minimum}`, codecName, value, minimum, position);
+						if (maximum !== undefined && value > maximum)
+							throw new BufferfyRangeError(`Decoded value ${value} exceeds maximum ${maximum}`, codecName, value, maximum, position);
+					}
+				: null,
+	};
+};
+
 export type UIntCodec = UInt8Codec | UInt16Codec | UInt24Codec | UInt32Codec | UInt40Codec | UInt48Codec;
 
 /**
@@ -44,29 +82,34 @@ export type UIntCodec = UInt8Codec | UInt16Codec | UInt24Codec | UInt32Codec | U
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/UInt/index.ts|Source}
  */
 export const createUIntCodec = (bits: UIntBits = 48, endianness: Endianness = "BE", options?: UIntCodecOptions): UIntCodec => {
-	const byteOrderStrategy = endianness === "BE" ? BE_STRATEGY : LE_STRATEGY;
-
 	switch (bits) {
 		case 8:
 			return new UInt8Codec(options);
 		case 16:
-			return new UInt16Codec(byteOrderStrategy, options);
+			return new UInt16Codec(endianness, options);
 		case 24:
-			return new UInt24Codec(byteOrderStrategy, options);
+			return new UInt24Codec(endianness, options);
 		case 32:
-			return new UInt32Codec(byteOrderStrategy, options);
+			return new UInt32Codec(endianness, options);
 		case 40:
-			return new UInt40Codec(byteOrderStrategy, options);
+			return new UInt40Codec(endianness, options);
 		case 48:
-			return new UInt48Codec(byteOrderStrategy, options);
+			return new UInt48Codec(endianness, options);
 	}
 };
 
 export class UInt8Codec extends AbstractCodec<number> {
 	static readonly BYTE_LENGTH = 1;
 
+	private readonly _validateEncode: ((value: number) => void) | null;
+	private readonly _validateDecode: ((value: number, position: number) => void) | null;
+
 	constructor(private readonly options?: UIntCodecOptions) {
 		super();
+
+		const validators = buildNumberValidators("UInt8Codec", options);
+		this._validateEncode = validators.validateEncode;
+		this._validateDecode = validators.validateDecode;
 	}
 
 	isValid(value: unknown): value is number {
@@ -83,52 +126,15 @@ export class UInt8Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		const validationMode = this.options?.validationMode ?? "both";
-
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} is less than minimum ${this.options.minimum}`,
-				"UInt8Codec",
-				value,
-				this.options.minimum
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"UInt8Codec",
-				value,
-				this.options.maximum
-			);
-		}
+		if (this._validateEncode !== null) this._validateEncode(value);
 
 		writer.writeByte(value);
 	}
 
 	_decode(reader: Reader): number {
 		const value = reader.readByte();
-		const validationMode = this.options?.validationMode ?? "both";
 
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} is less than minimum ${this.options.minimum}`,
-				"UInt8Codec",
-				value,
-				this.options.minimum,
-				reader.position
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"UInt8Codec",
-				value,
-				this.options.maximum,
-				reader.position
-			);
-		}
+		if (this._validateDecode !== null) this._validateDecode(value, reader.position);
 
 		return value;
 	}
@@ -137,8 +143,18 @@ export class UInt8Codec extends AbstractCodec<number> {
 export class UInt16Codec extends AbstractCodec<number> {
 	static readonly BYTE_LENGTH = 2;
 
-	constructor(private readonly byteOrderStrategy: ByteOrderStrategy, private readonly options?: UIntCodecOptions) {
+	private readonly _littleEndian: boolean;
+	private readonly _validateEncode: ((value: number) => void) | null;
+	private readonly _validateDecode: ((value: number, position: number) => void) | null;
+
+	constructor(endianness: Endianness = "BE", private readonly options?: UIntCodecOptions) {
 		super();
+
+		this._littleEndian = endianness === "LE";
+
+		const validators = buildNumberValidators("UInt16Codec", options);
+		this._validateEncode = validators.validateEncode;
+		this._validateDecode = validators.validateDecode;
 	}
 
 	isValid(value: unknown): value is number {
@@ -155,53 +171,15 @@ export class UInt16Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		const validationMode = this.options?.validationMode ?? "both";
+		if (this._validateEncode !== null) this._validateEncode(value);
 
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} is less than minimum ${this.options.minimum}`,
-				"UInt16Codec",
-				value,
-				this.options.minimum
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"UInt16Codec",
-				value,
-				this.options.maximum
-			);
-		}
-
-		this.byteOrderStrategy.write(writer, UInt16Codec.BYTE_LENGTH, (index) => (value >>> ((1 - index) * 8)) & 0xff);
+		writer.writeUint16(value, this._littleEndian);
 	}
 
 	_decode(reader: Reader): number {
-		const bytes = this.byteOrderStrategy.read(reader, UInt16Codec.BYTE_LENGTH);
-		const value = (bytes[0] << 8) | bytes[1];
-		const validationMode = this.options?.validationMode ?? "both";
+		const value = reader.readUint16(this._littleEndian);
 
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} is less than minimum ${this.options.minimum}`,
-				"UInt16Codec",
-				value,
-				this.options.minimum,
-				reader.position
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"UInt16Codec",
-				value,
-				this.options.maximum,
-				reader.position
-			);
-		}
+		if (this._validateDecode !== null) this._validateDecode(value, reader.position);
 
 		return value;
 	}
@@ -210,8 +188,18 @@ export class UInt16Codec extends AbstractCodec<number> {
 export class UInt24Codec extends AbstractCodec<number> {
 	static readonly BYTE_LENGTH = 3;
 
-	constructor(private readonly byteOrderStrategy: ByteOrderStrategy, private readonly options?: UIntCodecOptions) {
+	private readonly _littleEndian: boolean;
+	private readonly _validateEncode: ((value: number) => void) | null;
+	private readonly _validateDecode: ((value: number, position: number) => void) | null;
+
+	constructor(endianness: Endianness = "BE", private readonly options?: UIntCodecOptions) {
 		super();
+
+		this._littleEndian = endianness === "LE";
+
+		const validators = buildNumberValidators("UInt24Codec", options);
+		this._validateEncode = validators.validateEncode;
+		this._validateDecode = validators.validateDecode;
 	}
 
 	isValid(value: unknown): value is number {
@@ -228,53 +216,15 @@ export class UInt24Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		const validationMode = this.options?.validationMode ?? "both";
+		if (this._validateEncode !== null) this._validateEncode(value);
 
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} is less than minimum ${this.options.minimum}`,
-				"UInt24Codec",
-				value,
-				this.options.minimum
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"UInt24Codec",
-				value,
-				this.options.maximum
-			);
-		}
-
-		this.byteOrderStrategy.write(writer, UInt24Codec.BYTE_LENGTH, (index) => (value >>> ((2 - index) * 8)) & 0xff);
+		writer.writeUint24(value, this._littleEndian);
 	}
 
 	_decode(reader: Reader): number {
-		const bytes = this.byteOrderStrategy.read(reader, UInt24Codec.BYTE_LENGTH);
-		const value = (bytes[0] << 16) | (bytes[1] << 8) | bytes[2];
-		const validationMode = this.options?.validationMode ?? "both";
+		const value = reader.readUint24(this._littleEndian);
 
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} is less than minimum ${this.options.minimum}`,
-				"UInt24Codec",
-				value,
-				this.options.minimum,
-				reader.position
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"UInt24Codec",
-				value,
-				this.options.maximum,
-				reader.position
-			);
-		}
+		if (this._validateDecode !== null) this._validateDecode(value, reader.position);
 
 		return value;
 	}
@@ -283,8 +233,18 @@ export class UInt24Codec extends AbstractCodec<number> {
 export class UInt32Codec extends AbstractCodec<number> {
 	static readonly BYTE_LENGTH = 4;
 
-	constructor(private readonly byteOrderStrategy: ByteOrderStrategy, private readonly options?: UIntCodecOptions) {
+	private readonly _littleEndian: boolean;
+	private readonly _validateEncode: ((value: number) => void) | null;
+	private readonly _validateDecode: ((value: number, position: number) => void) | null;
+
+	constructor(endianness: Endianness = "BE", private readonly options?: UIntCodecOptions) {
 		super();
+
+		this._littleEndian = endianness === "LE";
+
+		const validators = buildNumberValidators("UInt32Codec", options);
+		this._validateEncode = validators.validateEncode;
+		this._validateDecode = validators.validateDecode;
 	}
 
 	isValid(value: unknown): value is number {
@@ -301,53 +261,15 @@ export class UInt32Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		const validationMode = this.options?.validationMode ?? "both";
+		if (this._validateEncode !== null) this._validateEncode(value);
 
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} is less than minimum ${this.options.minimum}`,
-				"UInt32Codec",
-				value,
-				this.options.minimum
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"UInt32Codec",
-				value,
-				this.options.maximum
-			);
-		}
-
-		this.byteOrderStrategy.write(writer, UInt32Codec.BYTE_LENGTH, (index) => (value >>> ((3 - index) * 8)) & 0xff);
+		writer.writeUint32(value, this._littleEndian);
 	}
 
 	_decode(reader: Reader): number {
-		const bytes = this.byteOrderStrategy.read(reader, UInt32Codec.BYTE_LENGTH);
-		const value = bytes[0] * 0x1000000 + ((bytes[1] << 16) | (bytes[2] << 8) | bytes[3]);
-		const validationMode = this.options?.validationMode ?? "both";
+		const value = reader.readUint32(this._littleEndian);
 
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} is less than minimum ${this.options.minimum}`,
-				"UInt32Codec",
-				value,
-				this.options.minimum,
-				reader.position
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"UInt32Codec",
-				value,
-				this.options.maximum,
-				reader.position
-			);
-		}
+		if (this._validateDecode !== null) this._validateDecode(value, reader.position);
 
 		return value;
 	}
@@ -356,8 +278,18 @@ export class UInt32Codec extends AbstractCodec<number> {
 export class UInt40Codec extends AbstractCodec<number> {
 	static readonly BYTE_LENGTH = 5;
 
-	constructor(private readonly byteOrderStrategy: ByteOrderStrategy, private readonly options?: UIntCodecOptions) {
+	private readonly _littleEndian: boolean;
+	private readonly _validateEncode: ((value: number) => void) | null;
+	private readonly _validateDecode: ((value: number, position: number) => void) | null;
+
+	constructor(endianness: Endianness = "BE", private readonly options?: UIntCodecOptions) {
 		super();
+
+		this._littleEndian = endianness === "LE";
+
+		const validators = buildNumberValidators("UInt40Codec", options);
+		this._validateEncode = validators.validateEncode;
+		this._validateDecode = validators.validateDecode;
 	}
 
 	isValid(value: unknown): value is number {
@@ -374,57 +306,15 @@ export class UInt40Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		const validationMode = this.options?.validationMode ?? "both";
+		if (this._validateEncode !== null) this._validateEncode(value);
 
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} is less than minimum ${this.options.minimum}`,
-				"UInt40Codec",
-				value,
-				this.options.minimum
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"UInt40Codec",
-				value,
-				this.options.maximum
-			);
-		}
-
-		this.byteOrderStrategy.write(writer, UInt40Codec.BYTE_LENGTH, (index) => {
-			if (index === 0) return Math.floor(value / 0x100000000) & 0xff;
-
-			return (value >>> ((4 - index) * 8)) & 0xff;
-		});
+		writer.writeUint40(value, this._littleEndian);
 	}
 
 	_decode(reader: Reader): number {
-		const bytes = this.byteOrderStrategy.read(reader, UInt40Codec.BYTE_LENGTH);
-		const value = bytes[0] * 0x100000000 + bytes[1] * 0x1000000 + ((bytes[2] << 16) | (bytes[3] << 8) | bytes[4]);
-		const validationMode = this.options?.validationMode ?? "both";
+		const value = reader.readUint40(this._littleEndian);
 
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} is less than minimum ${this.options.minimum}`,
-				"UInt40Codec",
-				value,
-				this.options.minimum,
-				reader.position
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"UInt40Codec",
-				value,
-				this.options.maximum,
-				reader.position
-			);
-		}
+		if (this._validateDecode !== null) this._validateDecode(value, reader.position);
 
 		return value;
 	}
@@ -433,8 +323,18 @@ export class UInt40Codec extends AbstractCodec<number> {
 export class UInt48Codec extends AbstractCodec<number> {
 	static readonly BYTE_LENGTH = 6;
 
-	constructor(private readonly byteOrderStrategy: ByteOrderStrategy, private readonly options?: UIntCodecOptions) {
+	private readonly _littleEndian: boolean;
+	private readonly _validateEncode: ((value: number) => void) | null;
+	private readonly _validateDecode: ((value: number, position: number) => void) | null;
+
+	constructor(endianness: Endianness = "BE", private readonly options?: UIntCodecOptions) {
 		super();
+
+		this._littleEndian = endianness === "LE";
+
+		const validators = buildNumberValidators("UInt48Codec", options);
+		this._validateEncode = validators.validateEncode;
+		this._validateDecode = validators.validateDecode;
 	}
 
 	isValid(value: unknown): value is number {
@@ -451,58 +351,15 @@ export class UInt48Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		const validationMode = this.options?.validationMode ?? "both";
+		if (this._validateEncode !== null) this._validateEncode(value);
 
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} is less than minimum ${this.options.minimum}`,
-				"UInt48Codec",
-				value,
-				this.options.minimum
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"UInt48Codec",
-				value,
-				this.options.maximum
-			);
-		}
-
-		this.byteOrderStrategy.write(writer, UInt48Codec.BYTE_LENGTH, (index) => {
-			if (index === 0) return Math.floor(value / 0x10000000000) & 0xff;
-			if (index === 1) return Math.floor(value / 0x100000000) & 0xff;
-
-			return (value >>> ((5 - index) * 8)) & 0xff;
-		});
+		writer.writeUint48(value, this._littleEndian);
 	}
 
 	_decode(reader: Reader): number {
-		const bytes = this.byteOrderStrategy.read(reader, UInt48Codec.BYTE_LENGTH);
-		const value = bytes[0] * 0x10000000000 + bytes[1] * 0x100000000 + bytes[2] * 0x1000000 + ((bytes[3] << 16) | (bytes[4] << 8) | bytes[5]);
-		const validationMode = this.options?.validationMode ?? "both";
+		const value = reader.readUint48(this._littleEndian);
 
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} is less than minimum ${this.options.minimum}`,
-				"UInt48Codec",
-				value,
-				this.options.minimum,
-				reader.position
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"UInt48Codec",
-				value,
-				this.options.maximum,
-				reader.position
-			);
-		}
+		if (this._validateDecode !== null) this._validateDecode(value, reader.position);
 
 		return value;
 	}

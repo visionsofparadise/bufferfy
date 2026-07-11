@@ -10,6 +10,39 @@ export interface BigUIntCodecOptions {
 	validationMode?: ValidationMode;
 }
 
+interface BigUIntValidators {
+	validateEncode: ((value: bigint) => void) | null;
+	validateDecode: ((value: bigint, position: number) => void) | null;
+}
+
+const buildBigUIntValidators = (codecName: string, options?: BigUIntCodecOptions): BigUIntValidators => {
+	const minimum = options?.minimum;
+	const maximum = options?.maximum;
+	const mode = options?.validationMode ?? "both";
+	const hasRange = minimum !== undefined || maximum !== undefined;
+
+	return {
+		validateEncode:
+			hasRange && (mode === "both" || mode === "encode")
+				? (value: bigint): void => {
+						if (minimum !== undefined && value < minimum)
+							throw new BufferfyRangeError(`Encoded value ${value} is less than minimum ${minimum}`, codecName, value, undefined);
+						if (maximum !== undefined && value > maximum)
+							throw new BufferfyRangeError(`Encoded value ${value} exceeds maximum ${maximum}`, codecName, value, undefined);
+					}
+				: null,
+		validateDecode:
+			hasRange && (mode === "both" || mode === "decode")
+				? (value: bigint, position: number): void => {
+						if (minimum !== undefined && value < minimum)
+							throw new BufferfyRangeError(`Decoded value ${value} is less than minimum ${minimum}`, codecName, value, undefined, position);
+						if (maximum !== undefined && value > maximum)
+							throw new BufferfyRangeError(`Decoded value ${value} exceeds maximum ${maximum}`, codecName, value, undefined, position);
+					}
+				: null,
+	};
+};
+
 /**
  * Creates a codec for a bigint.
  *
@@ -35,8 +68,15 @@ export const createBigUIntCodec = (endianness: Endianness = "BE", options?: BigU
 export class BigUIntBECodec extends AbstractCodec<bigint> {
 	static readonly BYTE_LENGTH = 8;
 
+	protected readonly _validateEncode: ((value: bigint) => void) | null;
+	protected readonly _validateDecode: ((value: bigint, position: number) => void) | null;
+
 	constructor(protected readonly options?: BigUIntCodecOptions) {
 		super();
+
+		const validators = buildBigUIntValidators(this.constructor.name, options);
+		this._validateEncode = validators.validateEncode;
+		this._validateDecode = validators.validateDecode;
 	}
 
 	isValid(value: unknown): value is bigint {
@@ -53,52 +93,15 @@ export class BigUIntBECodec extends AbstractCodec<bigint> {
 	}
 
 	_encode(value: bigint, writer: Writer): void {
-		const validationMode = this.options?.validationMode ?? "both";
+		if (this._validateEncode !== null) this._validateEncode(value);
 
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} is less than minimum ${this.options.minimum}`,
-				"BigUIntBECodec",
-				value,
-				undefined
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"BigUIntBECodec",
-				value,
-				undefined
-			);
-		}
-
-		writer.writeDataView(BigUIntBECodec.BYTE_LENGTH, (view, offset) => view.setBigUint64(offset, value, false));
+		writer.writeBigUint64(value, false);
 	}
 
 	_decode(reader: Reader): bigint {
-		const value = reader.readDataView(BigUIntBECodec.BYTE_LENGTH, (view, offset) => view.getBigUint64(offset, false));
-		const validationMode = this.options?.validationMode ?? "both";
+		const value = reader.readBigUint64(false);
 
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} is less than minimum ${this.options.minimum}`,
-				"BigUIntBECodec",
-				value,
-				undefined,
-				reader.position
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"BigUIntBECodec",
-				value,
-				undefined,
-				reader.position
-			);
-		}
+		if (this._validateDecode !== null) this._validateDecode(value, reader.position);
 
 		return value;
 	}
@@ -106,52 +109,15 @@ export class BigUIntBECodec extends AbstractCodec<bigint> {
 
 export class BigUIntLECodec extends BigUIntBECodec {
 	_encode(value: bigint, writer: Writer): void {
-		const validationMode = this.options?.validationMode ?? "both";
+		if (this._validateEncode !== null) this._validateEncode(value);
 
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} is less than minimum ${this.options.minimum}`,
-				"BigUIntLECodec",
-				value,
-				undefined
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"BigUIntLECodec",
-				value,
-				undefined
-			);
-		}
-
-		writer.writeDataView(BigUIntBECodec.BYTE_LENGTH, (view, offset) => view.setBigUint64(offset, value, true));
+		writer.writeBigUint64(value, true);
 	}
 
 	_decode(reader: Reader): bigint {
-		const value = reader.readDataView(BigUIntBECodec.BYTE_LENGTH, (view, offset) => view.getBigUint64(offset, true));
-		const validationMode = this.options?.validationMode ?? "both";
+		const value = reader.readBigUint64(true);
 
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} is less than minimum ${this.options.minimum}`,
-				"BigUIntLECodec",
-				value,
-				undefined,
-				reader.position
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"BigUIntLECodec",
-				value,
-				undefined,
-				reader.position
-			);
-		}
+		if (this._validateDecode !== null) this._validateDecode(value, reader.position);
 
 		return value;
 	}

@@ -1,8 +1,7 @@
-import { BufferfyRangeError } from "../../utilities/Error";
 import { Reader } from "../../utilities/Reader";
 import { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
-import { type Endianness, type UIntBits, type ValidationMode, createUIntCodec } from "../UInt";
+import { type Endianness, type UIntBits, type ValidationMode, buildNumberValidators } from "../UInt";
 
 export interface IntCodecOptions {
 	minimum?: number;
@@ -50,10 +49,15 @@ export class Int8Codec extends AbstractCodec<number> {
 	static readonly MIN_VALUE = -128;
 	static readonly MAX_VALUE = 127;
 
-	private readonly uIntCodec = createUIntCodec(8);
+	private readonly _validateEncode: ((value: number) => void) | null;
+	private readonly _validateDecode: ((value: number, position: number) => void) | null;
 
 	constructor(private readonly options?: IntCodecOptions) {
 		super();
+
+		const validators = buildNumberValidators("Int8Codec", options);
+		this._validateEncode = validators.validateEncode;
+		this._validateDecode = validators.validateDecode;
 	}
 
 	isValid(value: unknown): value is number {
@@ -70,52 +74,15 @@ export class Int8Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		const validationMode = this.options?.validationMode ?? "both";
+		if (this._validateEncode !== null) this._validateEncode(value);
 
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} is less than minimum ${this.options.minimum}`,
-				"Int8Codec",
-				value,
-				this.options.minimum
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"Int8Codec",
-				value,
-				this.options.maximum
-			);
-		}
-
-		this.uIntCodec._encode(value + Int8Codec.OFFSET, writer);
+		writer.writeByte(value + Int8Codec.OFFSET);
 	}
 
 	_decode(reader: Reader): number {
-		const value = this.uIntCodec._decode(reader) - Int8Codec.OFFSET;
-		const validationMode = this.options?.validationMode ?? "both";
+		const value = reader.readByte() - Int8Codec.OFFSET;
 
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} is less than minimum ${this.options.minimum}`,
-				"Int8Codec",
-				value,
-				this.options.minimum,
-				reader.position
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"Int8Codec",
-				value,
-				this.options.maximum,
-				reader.position
-			);
-		}
+		if (this._validateDecode !== null) this._validateDecode(value, reader.position);
 
 		return value;
 	}
@@ -127,12 +94,18 @@ export class Int16Codec extends AbstractCodec<number> {
 	static readonly MIN_VALUE = -32768;
 	static readonly MAX_VALUE = 32767;
 
-	private readonly uIntCodec: AbstractCodec<number>;
+	private readonly _littleEndian: boolean;
+	private readonly _validateEncode: ((value: number) => void) | null;
+	private readonly _validateDecode: ((value: number, position: number) => void) | null;
 
-	constructor(bits: Extract<UIntBits, 16>, endianness: Endianness = "BE", private readonly options?: IntCodecOptions) {
+	constructor(_bits: Extract<UIntBits, 16>, endianness: Endianness = "BE", private readonly options?: IntCodecOptions) {
 		super();
 
-		this.uIntCodec = createUIntCodec(bits, endianness);
+		this._littleEndian = endianness === "LE";
+
+		const validators = buildNumberValidators("Int16Codec", options);
+		this._validateEncode = validators.validateEncode;
+		this._validateDecode = validators.validateDecode;
 	}
 
 	isValid(value: unknown): value is number {
@@ -149,52 +122,15 @@ export class Int16Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		const validationMode = this.options?.validationMode ?? "both";
+		if (this._validateEncode !== null) this._validateEncode(value);
 
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} is less than minimum ${this.options.minimum}`,
-				"Int16Codec",
-				value,
-				this.options.minimum
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"Int16Codec",
-				value,
-				this.options.maximum
-			);
-		}
-
-		this.uIntCodec._encode(value + Int16Codec.OFFSET, writer);
+		writer.writeUint16(value + Int16Codec.OFFSET, this._littleEndian);
 	}
 
 	_decode(reader: Reader): number {
-		const value = this.uIntCodec._decode(reader) - Int16Codec.OFFSET;
-		const validationMode = this.options?.validationMode ?? "both";
+		const value = reader.readUint16(this._littleEndian) - Int16Codec.OFFSET;
 
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} is less than minimum ${this.options.minimum}`,
-				"Int16Codec",
-				value,
-				this.options.minimum,
-				reader.position
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"Int16Codec",
-				value,
-				this.options.maximum,
-				reader.position
-			);
-		}
+		if (this._validateDecode !== null) this._validateDecode(value, reader.position);
 
 		return value;
 	}
@@ -206,12 +142,18 @@ export class Int24Codec extends AbstractCodec<number> {
 	static readonly MIN_VALUE = -8388608;
 	static readonly MAX_VALUE = 8388607;
 
-	private readonly uIntCodec: AbstractCodec<number>;
+	private readonly _littleEndian: boolean;
+	private readonly _validateEncode: ((value: number) => void) | null;
+	private readonly _validateDecode: ((value: number, position: number) => void) | null;
 
-	constructor(bits: Extract<UIntBits, 24>, endianness: Endianness = "BE", private readonly options?: IntCodecOptions) {
+	constructor(_bits: Extract<UIntBits, 24>, endianness: Endianness = "BE", private readonly options?: IntCodecOptions) {
 		super();
 
-		this.uIntCodec = createUIntCodec(bits, endianness);
+		this._littleEndian = endianness === "LE";
+
+		const validators = buildNumberValidators("Int24Codec", options);
+		this._validateEncode = validators.validateEncode;
+		this._validateDecode = validators.validateDecode;
 	}
 
 	isValid(value: unknown): value is number {
@@ -228,52 +170,15 @@ export class Int24Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		const validationMode = this.options?.validationMode ?? "both";
+		if (this._validateEncode !== null) this._validateEncode(value);
 
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} is less than minimum ${this.options.minimum}`,
-				"Int24Codec",
-				value,
-				this.options.minimum
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"Int24Codec",
-				value,
-				this.options.maximum
-			);
-		}
-
-		this.uIntCodec._encode(value + Int24Codec.OFFSET, writer);
+		writer.writeUint24(value + Int24Codec.OFFSET, this._littleEndian);
 	}
 
 	_decode(reader: Reader): number {
-		const value = this.uIntCodec._decode(reader) - Int24Codec.OFFSET;
-		const validationMode = this.options?.validationMode ?? "both";
+		const value = reader.readUint24(this._littleEndian) - Int24Codec.OFFSET;
 
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} is less than minimum ${this.options.minimum}`,
-				"Int24Codec",
-				value,
-				this.options.minimum,
-				reader.position
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"Int24Codec",
-				value,
-				this.options.maximum,
-				reader.position
-			);
-		}
+		if (this._validateDecode !== null) this._validateDecode(value, reader.position);
 
 		return value;
 	}
@@ -285,12 +190,18 @@ export class Int32Codec extends AbstractCodec<number> {
 	static readonly MIN_VALUE = -2147483648;
 	static readonly MAX_VALUE = 2147483647;
 
-	private readonly uIntCodec: AbstractCodec<number>;
+	private readonly _littleEndian: boolean;
+	private readonly _validateEncode: ((value: number) => void) | null;
+	private readonly _validateDecode: ((value: number, position: number) => void) | null;
 
-	constructor(bits: Extract<UIntBits, 32>, endianness: Endianness = "BE", private readonly options?: IntCodecOptions) {
+	constructor(_bits: Extract<UIntBits, 32>, endianness: Endianness = "BE", private readonly options?: IntCodecOptions) {
 		super();
 
-		this.uIntCodec = createUIntCodec(bits, endianness);
+		this._littleEndian = endianness === "LE";
+
+		const validators = buildNumberValidators("Int32Codec", options);
+		this._validateEncode = validators.validateEncode;
+		this._validateDecode = validators.validateDecode;
 	}
 
 	isValid(value: unknown): value is number {
@@ -307,52 +218,15 @@ export class Int32Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		const validationMode = this.options?.validationMode ?? "both";
+		if (this._validateEncode !== null) this._validateEncode(value);
 
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} is less than minimum ${this.options.minimum}`,
-				"Int32Codec",
-				value,
-				this.options.minimum
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"Int32Codec",
-				value,
-				this.options.maximum
-			);
-		}
-
-		this.uIntCodec._encode(value + Int32Codec.OFFSET, writer);
+		writer.writeUint32(value + Int32Codec.OFFSET, this._littleEndian);
 	}
 
 	_decode(reader: Reader): number {
-		const value = this.uIntCodec._decode(reader) - Int32Codec.OFFSET;
-		const validationMode = this.options?.validationMode ?? "both";
+		const value = reader.readUint32(this._littleEndian) - Int32Codec.OFFSET;
 
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} is less than minimum ${this.options.minimum}`,
-				"Int32Codec",
-				value,
-				this.options.minimum,
-				reader.position
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"Int32Codec",
-				value,
-				this.options.maximum,
-				reader.position
-			);
-		}
+		if (this._validateDecode !== null) this._validateDecode(value, reader.position);
 
 		return value;
 	}
@@ -364,12 +238,18 @@ export class Int40Codec extends AbstractCodec<number> {
 	static readonly MIN_VALUE = -549755813888;
 	static readonly MAX_VALUE = 549755813887;
 
-	private readonly uIntCodec: AbstractCodec<number>;
+	private readonly _littleEndian: boolean;
+	private readonly _validateEncode: ((value: number) => void) | null;
+	private readonly _validateDecode: ((value: number, position: number) => void) | null;
 
-	constructor(bits: Extract<UIntBits, 40>, endianness: Endianness = "BE", private readonly options?: IntCodecOptions) {
+	constructor(_bits: Extract<UIntBits, 40>, endianness: Endianness = "BE", private readonly options?: IntCodecOptions) {
 		super();
 
-		this.uIntCodec = createUIntCodec(bits, endianness);
+		this._littleEndian = endianness === "LE";
+
+		const validators = buildNumberValidators("Int40Codec", options);
+		this._validateEncode = validators.validateEncode;
+		this._validateDecode = validators.validateDecode;
 	}
 
 	isValid(value: unknown): value is number {
@@ -386,52 +266,15 @@ export class Int40Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		const validationMode = this.options?.validationMode ?? "both";
+		if (this._validateEncode !== null) this._validateEncode(value);
 
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} is less than minimum ${this.options.minimum}`,
-				"Int40Codec",
-				value,
-				this.options.minimum
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"Int40Codec",
-				value,
-				this.options.maximum
-			);
-		}
-
-		this.uIntCodec._encode(value + Int40Codec.OFFSET, writer);
+		writer.writeUint40(value + Int40Codec.OFFSET, this._littleEndian);
 	}
 
 	_decode(reader: Reader): number {
-		const value = this.uIntCodec._decode(reader) - Int40Codec.OFFSET;
-		const validationMode = this.options?.validationMode ?? "both";
+		const value = reader.readUint40(this._littleEndian) - Int40Codec.OFFSET;
 
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} is less than minimum ${this.options.minimum}`,
-				"Int40Codec",
-				value,
-				this.options.minimum,
-				reader.position
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"Int40Codec",
-				value,
-				this.options.maximum,
-				reader.position
-			);
-		}
+		if (this._validateDecode !== null) this._validateDecode(value, reader.position);
 
 		return value;
 	}
@@ -443,12 +286,18 @@ export class Int48Codec extends AbstractCodec<number> {
 	static readonly MIN_VALUE = -140737488355328;
 	static readonly MAX_VALUE = 140737488355327;
 
-	private readonly uIntCodec: AbstractCodec<number>;
+	private readonly _littleEndian: boolean;
+	private readonly _validateEncode: ((value: number) => void) | null;
+	private readonly _validateDecode: ((value: number, position: number) => void) | null;
 
-	constructor(bits: Extract<UIntBits, 48>, endianness: Endianness = "BE", private readonly options?: IntCodecOptions) {
+	constructor(_bits: Extract<UIntBits, 48>, endianness: Endianness = "BE", private readonly options?: IntCodecOptions) {
 		super();
 
-		this.uIntCodec = createUIntCodec(bits, endianness);
+		this._littleEndian = endianness === "LE";
+
+		const validators = buildNumberValidators("Int48Codec", options);
+		this._validateEncode = validators.validateEncode;
+		this._validateDecode = validators.validateDecode;
 	}
 
 	isValid(value: unknown): value is number {
@@ -465,52 +314,15 @@ export class Int48Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		const validationMode = this.options?.validationMode ?? "both";
+		if (this._validateEncode !== null) this._validateEncode(value);
 
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} is less than minimum ${this.options.minimum}`,
-				"Int48Codec",
-				value,
-				this.options.minimum
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "encode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Encoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"Int48Codec",
-				value,
-				this.options.maximum
-			);
-		}
-
-		this.uIntCodec._encode(value + Int48Codec.OFFSET, writer);
+		writer.writeUint48(value + Int48Codec.OFFSET, this._littleEndian);
 	}
 
 	_decode(reader: Reader): number {
-		const value = this.uIntCodec._decode(reader) - Int48Codec.OFFSET;
-		const validationMode = this.options?.validationMode ?? "both";
+		const value = reader.readUint48(this._littleEndian) - Int48Codec.OFFSET;
 
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.minimum !== undefined && value < this.options.minimum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} is less than minimum ${this.options.minimum}`,
-				"Int48Codec",
-				value,
-				this.options.minimum,
-				reader.position
-			);
-		}
-
-		if ((validationMode === "both" || validationMode === "decode") && this.options?.maximum !== undefined && value > this.options.maximum) {
-			throw new BufferfyRangeError(
-				`Decoded value ${value} exceeds maximum ${this.options.maximum}`,
-				"Int48Codec",
-				value,
-				this.options.maximum,
-				reader.position
-			);
-		}
+		if (this._validateDecode !== null) this._validateDecode(value, reader.position);
 
 		return value;
 	}
