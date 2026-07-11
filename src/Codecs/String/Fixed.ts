@@ -1,5 +1,6 @@
-import { base32, base58, base64, base64url, hex } from "@scure/base";
+import { base32, base58, base64, base64url } from "@scure/base";
 import { StringEncoding } from ".";
+import { decodeHex, encodeHex } from "../../utilities/hex";
 import { Reader } from "../../utilities/Reader";
 import { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
@@ -36,8 +37,8 @@ export class StringFixedCodec extends AbstractCodec<string> {
 
 		switch (encoding) {
 			case "hex": {
-				encoder = hex.decode;
-				decoder = hex.encode;
+				encoder = decodeHex;
+				decoder = encodeHex;
 
 				break;
 			}

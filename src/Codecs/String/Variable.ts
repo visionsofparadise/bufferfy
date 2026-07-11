@@ -1,5 +1,6 @@
-import { base32, base58, base64, base64url, hex } from "@scure/base";
+import { base32, base58, base64, base64url } from "@scure/base";
 import { StringEncoding } from ".";
+import { decodeHex, encodeHex, hexByteLength } from "../../utilities/hex";
 import { Reader } from "../../utilities/Reader";
 import { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
@@ -25,10 +26,10 @@ export class StringVariableCodec extends AbstractCodec<string> {
 
 		switch (encoding) {
 			case "hex":
-				this._encoder = (value) => hex.decode(value);
-				this._decoder = (buffer) => hex.encode(buffer);
+				this._encoder = (value) => decodeHex(value);
+				this._decoder = (buffer) => encodeHex(buffer);
 				this._getByteLength = (value) => {
-					const byteLength = value.length / 2;
+					const byteLength = hexByteLength(value);
 					return this.lengthCodec.byteLength(byteLength) + byteLength;
 				};
 
