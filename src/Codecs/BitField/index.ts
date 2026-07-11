@@ -2,16 +2,7 @@ import { Reader } from "../../utilities/Reader";
 import { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 
-const BIT_MAP: Record<number, number> = {
-	0: 0x80,
-	1: 0x40,
-	2: 0x20,
-	3: 0x10,
-	4: 0x08,
-	5: 0x04,
-	6: 0x02,
-	7: 0x01,
-};
+const BIT_MAP = [0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01];
 
 /**
  * Creates a codec for boolean flags packed into bits of a byte.
@@ -49,8 +40,11 @@ export class BitFieldCodec<Key extends string> extends AbstractCodec<Record<Key,
 		for (let i = 0; i < this._byteLength; i++) {
 			let byte = 0;
 
-			for (let j = 0; j < Math.min(this.keys.length - i * 8, 8); j++) {
-				if (value[this.keys[i * 8 + j]] === true) byte |= BIT_MAP[j % 8];
+			const offset = i * 8;
+			const bits = Math.min(this.keys.length - offset, 8);
+
+			for (let j = 0; j < bits; j++) {
+				if (value[this.keys[offset + j]] === true) byte |= BIT_MAP[j];
 			}
 
 			writer.writeByte(byte);
@@ -63,8 +57,11 @@ export class BitFieldCodec<Key extends string> extends AbstractCodec<Record<Key,
 		for (let i = 0; i < this._byteLength; i++) {
 			const byte = reader.readByte();
 
-			for (let j = 0; j < Math.min(this.keys.length - i * 8, 8); j++) {
-				value[this.keys[i * 8 + j]] = (byte & BIT_MAP[j % 8]) > 0;
+			const offset = i * 8;
+			const bits = Math.min(this.keys.length - offset, 8);
+
+			for (let j = 0; j < bits; j++) {
+				value[this.keys[offset + j]] = (byte & BIT_MAP[j]) > 0;
 			}
 		}
 

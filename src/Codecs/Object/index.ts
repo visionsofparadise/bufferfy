@@ -32,25 +32,26 @@ type OutputObject<T extends Record<string, AbstractCodec>> = {
 export class ObjectCodec<Properties extends Record<string, AbstractCodec>> extends AbstractCodec<OutputObject<Properties>> {
 	entries: Array<[keyof Properties, AbstractCodec]>;
 
+	private readonly _plan: Array<{ key: keyof Properties; codec: AbstractCodec; isOptional: boolean }>;
+
 	constructor(public readonly properties: Properties) {
 		super();
 
 		this.entries = Object.entries(properties);
+
+		this._plan = this.entries.map(([key, codec]) => ({ key, codec, isOptional: codec instanceof OptionalCodec }));
 	}
 
 	isValid(value: unknown): value is OutputObject<Properties> {
 		if (typeof value !== "object" || value === null) return false;
 
-		for (const key in this.properties) {
-			const k = key as keyof Properties;
-			const codec = this.properties[k];
+		for (let i = 0; i < this._plan.length; i++) {
+			const { key, codec, isOptional } = this._plan[i];
 
 			// For optional properties, missing key is valid
-			if (codec instanceof OptionalCodec) {
-				if (!(k in value)) continue;
-			}
+			if (isOptional && !(key in value)) continue;
 
-			if (!codec.isValid(value[k as keyof typeof value])) return false;
+			if (!codec.isValid((value as any)[key])) return false;
 		}
 
 		return true;
@@ -59,35 +60,33 @@ export class ObjectCodec<Properties extends Record<string, AbstractCodec>> exten
 	byteLength(value: OutputObject<Properties>): number {
 		let byteLength = 0;
 
-		for (const key in this.properties) {
-			const k = key as keyof Properties;
+		for (let i = 0; i < this._plan.length; i++) {
+			const { key, codec } = this._plan[i];
 
-			byteLength += this.properties[k].byteLength((value as any)[k]);
+			byteLength += codec.byteLength((value as any)[key]);
 		}
 
 		return byteLength;
 	}
 
 	_encode(value: OutputObject<Properties>, writer: Writer): void {
-		for (const key in this.properties) {
-			const k = key as keyof Properties;
+		for (let i = 0; i < this._plan.length; i++) {
+			const { key, codec } = this._plan[i];
 
-			this.properties[k]._encode((value as any)[k], writer);
+			codec._encode((value as any)[key], writer);
 		}
 	}
 
 	_decode(reader: Reader): OutputObject<Properties> {
 		const value = {} as any;
 
-		for (const key in this.properties) {
-			const k = key as keyof Properties;
-
-			const codec = this.properties[k];
+		for (let i = 0; i < this._plan.length; i++) {
+			const { key, codec, isOptional } = this._plan[i];
 
 			const decoded = codec._decode(reader);
 
-			if (!(codec instanceof OptionalCodec && decoded === undefined)) {
-				value[k] = decoded;
+			if (!(isOptional && decoded === undefined)) {
+				value[key] = decoded;
 			}
 		}
 

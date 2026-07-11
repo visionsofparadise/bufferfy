@@ -11,7 +11,7 @@ export class ArrayVariableCodec<Item> extends AbstractCodec<Array<Item>> {
 	isValid(value: unknown): value is Array<Item> {
 		if (!Array.isArray(value)) return false;
 
-		for (const item of value) if (!this.itemCodec.isValid(item)) return false;
+		for (let i = 0; i < value.length; i++) if (!this.itemCodec.isValid(value[i])) return false;
 
 		return true;
 	}
@@ -19,7 +19,7 @@ export class ArrayVariableCodec<Item> extends AbstractCodec<Array<Item>> {
 	byteLength(value: Array<Item>): number {
 		let byteLength = this.lengthCodec.byteLength(value.length);
 
-		for (const item of value) byteLength += this.itemCodec.byteLength(item);
+		for (let i = 0; i < value.length; i++) byteLength += this.itemCodec.byteLength(value[i]);
 
 		return byteLength;
 	}
@@ -27,7 +27,7 @@ export class ArrayVariableCodec<Item> extends AbstractCodec<Array<Item>> {
 	_encode(value: Array<Item>, writer: Writer): void {
 		this.lengthCodec._encode(value.length, writer);
 
-		for (const item of value) this.itemCodec._encode(item, writer);
+		for (let i = 0; i < value.length; i++) this.itemCodec._encode(value[i], writer);
 	}
 
 	_decode(reader: Reader): Array<Item> {

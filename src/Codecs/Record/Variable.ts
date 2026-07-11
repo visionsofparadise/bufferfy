@@ -39,16 +39,17 @@ export class RecordVariableCodec<Key extends string, Value extends any> extends 
 	}
 
 	_encode(value: Record<Key, Value>, writer: Writer): void {
-		let count = 0;
+		// for...in (not Object.keys) so inherited enumerable keys stay part of the encoded output
+		const keys: Array<Key> = [];
 
-		// Count properties
-		for (const _ in value) count++;
+		for (const key in value) keys.push(key as Key);
 
-		this.lengthCodec._encode(count, writer);
+		this.lengthCodec._encode(keys.length, writer);
 
-		for (const key in value) {
+		for (let i = 0; i < keys.length; i++) {
+			const key = keys[i];
 			const property = value[key];
-			this.keyCodec._encode(key as Key, writer);
+			this.keyCodec._encode(key, writer);
 			this.valueCodec._encode(property, writer);
 		}
 	}
