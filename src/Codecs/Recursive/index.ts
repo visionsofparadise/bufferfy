@@ -1,5 +1,5 @@
-import { Reader } from "../../utilities/Reader";
-import { Writer } from "../../utilities/Writer";
+import type { Reader } from "../../utilities/Reader";
+import type { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 
 /**
@@ -14,9 +14,7 @@ import { AbstractCodec } from "../Abstract";
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Recursive/index.ts|Source}
  */
-export const createRecursiveCodec = <const Value>(recursion: (self: DeferredCodec<Value>) => AbstractCodec<Value>) => {
-	return new RecursiveCodec(recursion);
-};
+export const createRecursiveCodec = <const Value>(recursion: (self: DeferredCodec<Value>) => AbstractCodec<Value>) => new RecursiveCodec(recursion);
 
 export class RecursiveCodec<const Value> extends AbstractCodec<Value> {
 	public readonly codec: AbstractCodec<Value>;
@@ -36,7 +34,7 @@ export class RecursiveCodec<const Value> extends AbstractCodec<Value> {
 	}
 
 	_encode(value: Value, writer: Writer): void {
-		return this.codec._encode(value, writer);
+		this.codec._encode(value, writer);
 	}
 
 	_decode(reader: Reader): Value {
@@ -58,7 +56,7 @@ export class DeferredCodec<const Value> extends AbstractCodec<Value> {
 	}
 
 	_encode(value: Value, writer: Writer): void {
-		return this.recursiveCodec.codec._encode(value, writer);
+		this.recursiveCodec.codec._encode(value, writer);
 	}
 
 	_decode(reader: Reader): Value {

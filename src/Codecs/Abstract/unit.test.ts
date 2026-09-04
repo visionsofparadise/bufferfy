@@ -1,3 +1,4 @@
+import { StringVariableCodec } from "../String/Variable";
 import { createTupleCodec } from "../Tuple";
 import { TransformCodec } from "../Transform";
 import { createUIntCodec } from "../UInt";
@@ -50,13 +51,13 @@ describe("encode shared-writer reentrancy and copy-out", () => {
 	});
 
 	it("resets the shared writer after an encode throws, leaving no stale tail on the next encode", () => {
-		const codec = createTupleCodec([createUIntCodec(8), createUIntCodec(8, "BE", { maximum: 10 })] as const);
+		const codec = createTupleCodec([createUIntCodec(8), new StringVariableCodec("hex")] as const);
 
-		expect(() => codec.encode([0xab, 255])).toThrow();
+		expect(() => codec.encode([0xab, "zz"])).toThrow();
 
-		const result = codec.encode([0x11, 5]);
+		const result = codec.encode([0x11, "05"]);
 
-		expect(Array.from(result)).toEqual([0x11, 5]);
+		expect(Array.from(result)).toEqual([0x11, 0x01, 0x05]);
 	});
 
 	it("preserves the outer offset when a reentrant encode fires mid-stream", () => {

@@ -2,6 +2,8 @@ import { base64, hex } from "@scure/base";
 import { randomBytes } from "crypto";
 import { BytesReadableStream, BytesWritableStream } from "../../utilities/BytesStream.ignore";
 import { CodecType } from "../Abstract";
+import { TupleCodec } from "../Tuple";
+import { UInt8Codec } from "../UInt";
 import { StringFixedCodec } from "./Fixed";
 
 describe("correctly performs fixed string codec methods", () => {
@@ -109,6 +111,40 @@ describe("fixed string utf8 exact-byte guards", () => {
 
 		expect(codec.encode("a€")).toEqual(expected);
 		expect(codec.encode("a€").byteLength).toBe(2);
+	});
+});
+
+describe("fixed string utf8 short-value padding", () => {
+	it("zero-pads a short value to byteLength and round-trips", () => {
+		const codec = new StringFixedCodec(8, "utf8");
+		const encoded = codec.encode("hi");
+
+		expect(encoded).toEqual(Uint8Array.from([0x68, 0x69, 0, 0, 0, 0, 0, 0]));
+		expect(codec.decode(encoded)).toBe("hi");
+	});
+
+	it("round-trips the empty string", () => {
+		const codec = new StringFixedCodec(4, "utf8");
+
+		expect(codec.encode("")).toEqual(new Uint8Array(4));
+		expect(codec.decode(codec.encode(""))).toBe("");
+	});
+
+	it("does not corrupt a following field in a composite", () => {
+		const codec = new TupleCodec([new StringFixedCodec(8, "utf8"), new UInt8Codec()]);
+		const value: CodecType<typeof codec> = ["hi", 42];
+
+		const buffer = codec.encode(value);
+
+		expect(buffer.byteLength).toBe(9);
+		expect(codec.decode(buffer)).toEqual(value);
+	});
+
+	it("preserves interior NULs but strips trailing NULs", () => {
+		const codec = new StringFixedCodec(6, "utf8");
+
+		expect(codec.decode(codec.encode("a\0b"))).toBe("a\0b");
+		expect(codec.decode(codec.encode("ab\0"))).toBe("ab");
 	});
 });
 

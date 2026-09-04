@@ -1,4 +1,4 @@
-import { AbstractCodec } from "../Abstract";
+import type { AbstractCodec } from "../Abstract";
 import { VarInt60Codec } from "../VarInt/VarInt60";
 import { BytesConstantCodec } from "./Constant";
 import { BytesFixedCodec } from "./Fixed";
@@ -34,6 +34,8 @@ export function createBytesCodec(length: number): BytesFixedCodec;
  * Creates a codec for a constant buffer.
  *
  * Serializes to ```[BUFFER]```
+ *
+ * Decode skips the constant's bytes without verifying them and returns the known constant value.
  *
  * @param	{Uint8Array} bytes - Constant bytes value.
  * @return	{BytesCodec} BytesCodec

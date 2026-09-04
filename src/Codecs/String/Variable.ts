@@ -1,9 +1,10 @@
 import { base32, base58, base64, base64url } from "@scure/base";
-import { StringEncoding } from ".";
+import type { StringEncoding } from ".";
 import { decodeHex, encodeHex, hexByteLength } from "../../utilities/hex";
-import { Reader } from "../../utilities/Reader";
+import { STRING_MATCHER, type CodecMatcher } from "../../utilities/matcher";
+import type { Reader } from "../../utilities/Reader";
 import { decodeUtf8, encodeUtf8Into, utf8ByteLength } from "../../utilities/utf8";
-import { Writer } from "../../utilities/Writer";
+import type { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 import { BytesVariableCodec } from "../Bytes/Variable";
 import { VarInt60Codec } from "../VarInt/VarInt60";
@@ -30,14 +31,16 @@ export class StringVariableCodec extends AbstractCodec<string> {
 
 				const offset = writer.reserve(byteLength);
 
-				encodeUtf8Into(value, writer.bytes, offset);
+				encodeUtf8Into(value, writer.currentBytes, offset);
 			};
+
 			this._decoder = (reader) => {
 				const byteLength = this.lengthCodec._decode(reader);
 				const start = reader.skipBytes(byteLength);
 
 				return decodeUtf8(reader.bytes, start, start + byteLength);
 			};
+
 			this._getByteLength = (value) => {
 				const byteLength = utf8ByteLength(value);
 
@@ -56,6 +59,7 @@ export class StringVariableCodec extends AbstractCodec<string> {
 				decoder = encodeHex;
 				this._getByteLength = (value) => {
 					const byteLength = hexByteLength(value);
+
 					return this.lengthCodec.byteLength(byteLength) + byteLength;
 				};
 
@@ -92,6 +96,10 @@ export class StringVariableCodec extends AbstractCodec<string> {
 
 	isValid(value: unknown): value is string {
 		return typeof value === "string";
+	}
+
+	override get matcher(): CodecMatcher {
+		return STRING_MATCHER;
 	}
 
 	byteLength(value: string): number {

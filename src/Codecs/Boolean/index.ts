@@ -1,5 +1,6 @@
-import { Reader } from "../../utilities/Reader";
-import { Writer } from "../../utilities/Writer";
+import { BOOLEAN_MATCHER, type CodecMatcher } from "../../utilities/matcher";
+import type { Reader } from "../../utilities/Reader";
+import type { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 
 /**
@@ -16,6 +17,10 @@ export const createBooleanCodec = () => new BooleanCodec();
 export class BooleanCodec extends AbstractCodec<boolean> {
 	isValid(value: unknown): value is boolean {
 		return typeof value === "boolean";
+	}
+
+	override get matcher(): CodecMatcher {
+		return BOOLEAN_MATCHER;
 	}
 
 	byteLength(): 1 {

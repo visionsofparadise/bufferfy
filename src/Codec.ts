@@ -1,4 +1,4 @@
-import { AbstractCodec, CodecType } from "./Codecs/Abstract";
+import type { AbstractCodec, CodecType } from "./Codecs/Abstract";
 import { createAnyCodec } from "./Codecs/Any";
 import { createArrayCodec } from "./Codecs/Array";
 import { createBigUIntCodec } from "./Codecs/BigUInt";

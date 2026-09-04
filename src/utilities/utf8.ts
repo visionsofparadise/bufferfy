@@ -1,9 +1,7 @@
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
-// Above this string length (UTF-16 code units) native encodeInto beats the manual loop; below it the loop avoids TextEncoder's fixed per-call overhead. Tuned from Codec.bench short-string fields.
 export const SHORT_STRING_THRESHOLD = 48;
-// Above this span length native TextDecoder beats the fromCharCode ASCII accumulation.
 const DECODE_THRESHOLD = 48;
 
 export function utf8ByteLength(value: string): number {

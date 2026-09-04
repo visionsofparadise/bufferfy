@@ -216,3 +216,18 @@ describe("union encode-selection sufficiency", () => {
 		expect(codec.encode(value)[0]).toBe(1);
 	});
 });
+
+describe("shared matcher constants do not cross-contaminate per-union sufficiency", () => {
+	it("keeps each union's sufficiency independent for a reused codec instance", () => {
+		const shared = new ObjectCodec({ a: new UInt8Codec() });
+		const value = {} as any;
+
+		const sufficientUnion = new UnionCodec([shared, new ConstantCodec(null)]);
+		expect(sufficientUnion.encode(value)[0]).toBe(0);
+
+		const insufficientUnion = new UnionCodec([shared, new AnyCodec()]);
+		expect(insufficientUnion.encode(value)[0]).toBe(1);
+
+		expect(sufficientUnion.encode(value)[0]).toBe(0);
+	});
+});

@@ -1,5 +1,5 @@
 import { ObjectCodec } from "..";
-import { AbstractCodec } from "../../Abstract";
+import type { AbstractCodec } from "../../Abstract";
 
 export type UnionToIntersection<Union> = (Union extends unknown ? (distributedUnion: Union) => void : never) extends (mergedIntersection: infer Intersection) => void ? Intersection & Union : never;
 
@@ -16,5 +16,5 @@ export const mergeObjectCodecs = <const ObjectCodecs extends Array<ObjectCodec<a
 
 	for (const objectCodec of objectCodecs) for (const [key, codec] of objectCodec.entries) properties[key as keyof ObjectCodecs[number]["properties"]] = codec;
 
-	return new ObjectCodec(properties as ObjectCodecs[number]["properties"]);
+	return new ObjectCodec(properties);
 };

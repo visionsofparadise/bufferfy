@@ -1,5 +1,6 @@
-import { Reader } from "../../utilities/Reader";
-import { Writer } from "../../utilities/Writer";
+import { BIGINT_MATCHER, type CodecMatcher } from "../../utilities/matcher";
+import type { Reader } from "../../utilities/Reader";
+import type { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 import { StringVariableCodec } from "../String/Variable";
 import { VarInt60Codec } from "../VarInt/VarInt60";
@@ -15,6 +16,10 @@ export class NumberVariableCodec extends AbstractCodec<bigint> {
 
 	isValid(value: unknown): value is bigint {
 		return typeof value === "bigint";
+	}
+
+	override get matcher(): CodecMatcher {
+		return BIGINT_MATCHER;
 	}
 
 	byteLength(value: bigint): number {

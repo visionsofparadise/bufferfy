@@ -1,6 +1,7 @@
-import { Reader } from "../../utilities/Reader";
-import { Writer } from "../../utilities/Writer";
-import { AbstractCodec, CodecType } from "../Abstract";
+import { OBJECT_MATCHER, type CodecMatcher } from "../../utilities/matcher";
+import type { Reader } from "../../utilities/Reader";
+import type { Writer } from "../../utilities/Writer";
+import { AbstractCodec, type CodecType } from "../Abstract";
 import { OptionalCodec } from "../Union";
 
 /**
@@ -15,14 +16,8 @@ import { OptionalCodec } from "../Union";
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Object/index.ts|Source}
  */
-export const createObjectCodec = <Properties extends Record<string, AbstractCodec>>(properties: Properties): ObjectCodec<Properties> => {
-	return new ObjectCodec<Properties>(properties);
-};
+export const createObjectCodec = <Properties extends Record<string, AbstractCodec>>(properties: Properties): ObjectCodec<Properties> => new ObjectCodec<Properties>(properties);
 
-/**
- * Infers the output object type from codec properties using a single unified type helper.
- * Splits required and optional properties based on OptionalCodec usage.
- */
 type OutputObject<T extends Record<string, AbstractCodec>> = {
 	[K in keyof T as T[K] extends OptionalCodec<any> ? never : K]: CodecType<T[K]>;
 } & {
@@ -45,10 +40,9 @@ export class ObjectCodec<Properties extends Record<string, AbstractCodec>> exten
 	isValid(value: unknown): value is OutputObject<Properties> {
 		if (typeof value !== "object" || value === null) return false;
 
-		for (let i = 0; i < this._plan.length; i++) {
-			const { key, codec, isOptional } = this._plan[i];
+		for (let index = 0; index < this._plan.length; index++) {
+			const { key, codec, isOptional } = this._plan[index];
 
-			// For optional properties, missing key is valid
 			if (isOptional && !(key in value)) continue;
 
 			if (!codec.isValid((value as any)[key])) return false;
@@ -57,11 +51,15 @@ export class ObjectCodec<Properties extends Record<string, AbstractCodec>> exten
 		return true;
 	}
 
+	override get matcher(): CodecMatcher {
+		return OBJECT_MATCHER;
+	}
+
 	byteLength(value: OutputObject<Properties>): number {
 		let byteLength = 0;
 
-		for (let i = 0; i < this._plan.length; i++) {
-			const { key, codec } = this._plan[i];
+		for (let index = 0; index < this._plan.length; index++) {
+			const { key, codec } = this._plan[index];
 
 			byteLength += codec.byteLength((value as any)[key]);
 		}
@@ -70,8 +68,8 @@ export class ObjectCodec<Properties extends Record<string, AbstractCodec>> exten
 	}
 
 	_encode(value: OutputObject<Properties>, writer: Writer): void {
-		for (let i = 0; i < this._plan.length; i++) {
-			const { key, codec } = this._plan[i];
+		for (let index = 0; index < this._plan.length; index++) {
+			const { key, codec } = this._plan[index];
 
 			codec._encode((value as any)[key], writer);
 		}
@@ -80,8 +78,8 @@ export class ObjectCodec<Properties extends Record<string, AbstractCodec>> exten
 	_decode(reader: Reader): OutputObject<Properties> {
 		const value = {} as any;
 
-		for (let i = 0; i < this._plan.length; i++) {
-			const { key, codec, isOptional } = this._plan[i];
+		for (let index = 0; index < this._plan.length; index++) {
+			const { key, codec, isOptional } = this._plan[index];
 
 			const decoded = codec._decode(reader);
 

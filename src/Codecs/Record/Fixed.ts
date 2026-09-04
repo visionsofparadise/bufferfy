@@ -1,8 +1,9 @@
-import { Reader } from "../../utilities/Reader";
-import { Writer } from "../../utilities/Writer";
+import { OBJECT_MATCHER, type CodecMatcher } from "../../utilities/matcher";
+import type { Reader } from "../../utilities/Reader";
+import type { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 
-export class RecordFixedCodec<Key extends string, Value extends any> extends AbstractCodec<Record<Key, Value>> {
+export class RecordFixedCodec<Key extends string, Value> extends AbstractCodec<Record<Key, Value>> {
 	constructor(public readonly length: number, public readonly keyCodec: AbstractCodec<Key>, public readonly valueCodec: AbstractCodec<Value>) {
 		super();
 	}
@@ -11,9 +12,11 @@ export class RecordFixedCodec<Key extends string, Value extends any> extends Abs
 		if (value === null || typeof value !== "object") return false;
 
 		let count = 0;
+
 		for (const key in value) {
 			count++;
 			const property = (value as Record<string, unknown>)[key];
+
 			if (!this.keyCodec.isValid(key) || !this.valueCodec.isValid(property)) return false;
 		}
 
@@ -22,12 +25,17 @@ export class RecordFixedCodec<Key extends string, Value extends any> extends Abs
 		return true;
 	}
 
+	override get matcher(): CodecMatcher {
+		return OBJECT_MATCHER;
+	}
+
 	byteLength(value: Record<Key, Value>): number {
 		let byteLength = 0;
 
 		for (const key in value) {
 			const property = value[key];
-			byteLength += this.keyCodec.byteLength(key as Key) + this.valueCodec.byteLength(property);
+
+			byteLength += this.keyCodec.byteLength(key) + this.valueCodec.byteLength(property);
 		}
 
 		return byteLength;
@@ -36,7 +44,8 @@ export class RecordFixedCodec<Key extends string, Value extends any> extends Abs
 	_encode(value: Record<Key, Value>, writer: Writer): void {
 		for (const key in value) {
 			const property = value[key];
-			this.keyCodec._encode(key as Key, writer);
+
+			this.keyCodec._encode(key, writer);
 			this.valueCodec._encode(property, writer);
 		}
 	}

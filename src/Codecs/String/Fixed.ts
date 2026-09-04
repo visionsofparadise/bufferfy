@@ -1,9 +1,10 @@
 import { base32, base58, base64, base64url } from "@scure/base";
-import { StringEncoding } from ".";
+import type { StringEncoding } from ".";
 import { decodeHex, encodeHex } from "../../utilities/hex";
-import { Reader } from "../../utilities/Reader";
+import { STRING_MATCHER, type CodecMatcher } from "../../utilities/matcher";
+import type { Reader } from "../../utilities/Reader";
 import { decodeUtf8, encodeUtf8Into, SHORT_STRING_THRESHOLD, utf8ByteLength } from "../../utilities/utf8";
-import { Writer } from "../../utilities/Writer";
+import type { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 import { BytesFixedCodec } from "../Bytes/Fixed";
 
@@ -15,7 +16,10 @@ export class StringFixedCodec extends AbstractCodec<string> {
 	private _encoder: (value: string, writer: Writer) => void;
 	private _decoder: (reader: Reader) => string;
 
-	constructor(byteLength: number, public readonly encoding: StringEncoding = "utf8") {
+	constructor(
+		byteLength: number,
+		public readonly encoding: StringEncoding = "utf8",
+	) {
 		super();
 
 		this._byteLength = byteLength;
@@ -23,32 +27,42 @@ export class StringFixedCodec extends AbstractCodec<string> {
 
 		if (encoding === "utf8") {
 			this._encoder = (value, writer) => {
-				// Only short strings take the manual path: their byteLength scan is cheap, and it wins by writing straight into the reserved region. For long strings the scan would not pay off, and an over-length value would waste it entirely, so use the incumbent encode.
+				const offset = writer.reserve(this._byteLength);
+				const target = writer.currentBytes;
+
 				if (value.length <= SHORT_STRING_THRESHOLD) {
 					const byteLength = utf8ByteLength(value);
 
 					if (byteLength <= this._byteLength) {
-						const offset = writer.reserve(byteLength);
-
-						encodeUtf8Into(value, writer.bytes, offset);
+						encodeUtf8Into(value, target, offset);
+						target.fill(0, offset + byteLength, offset + this._byteLength);
 
 						return;
 					}
 				}
 
-				// Over-length truncates mid-character: the incumbent subarray cut writes exactly _byteLength bytes, whereas encodeInto stops at a character boundary and would change the wire format. A fitting long value writes its full encoding (subarray is a no-op).
-				writer.writeBytes(textEncoder.encode(value).subarray(0, this._byteLength));
+				const encoded = textEncoder.encode(value);
+				const copyLength = Math.min(encoded.byteLength, this._byteLength);
+
+				target.set(encoded.subarray(0, copyLength), offset);
+				target.fill(0, offset + copyLength, offset + this._byteLength);
 			};
+
 			this._decoder = (reader) => {
 				const start = reader.skipBytes(this._byteLength);
+				const bytes = reader.bytes;
 
-				return decodeUtf8(reader.bytes, start, start + this._byteLength);
+				let end = start + this._byteLength;
+
+				while (end > start && bytes[end - 1] === 0) end--;
+
+				return decodeUtf8(bytes, start, end);
 			};
 
 			return;
 		}
 
-		let encoder: (str: string) => Uint8Array;
+		let encoder: (value: string) => Uint8Array;
 		let decoder: (data: Uint8Array) => string;
 
 		switch (encoding) {
@@ -58,24 +72,28 @@ export class StringFixedCodec extends AbstractCodec<string> {
 
 				break;
 			}
+
 			case "base32": {
 				encoder = base32.decode;
 				decoder = base32.encode;
 
 				break;
 			}
+
 			case "base58": {
 				encoder = base58.decode;
 				decoder = base58.encode;
 
 				break;
 			}
+
 			case "base64": {
 				encoder = base64.decode;
 				decoder = base64.encode;
 
 				break;
 			}
+
 			case "base64url": {
 				encoder = base64url.decode;
 				decoder = base64url.encode;
@@ -86,13 +104,19 @@ export class StringFixedCodec extends AbstractCodec<string> {
 
 		this._encoder = (value, writer) => {
 			const valueBuffer = encoder(value);
+
 			this._bufferCodec._encode(valueBuffer, writer);
 		};
+
 		this._decoder = (reader) => decoder(this._bufferCodec._decode(reader));
 	}
 
 	isValid(value: unknown): value is string {
 		return typeof value === "string";
+	}
+
+	override get matcher(): CodecMatcher {
+		return STRING_MATCHER;
 	}
 
 	byteLength(): number {

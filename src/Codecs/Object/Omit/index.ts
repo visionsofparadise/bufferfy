@@ -1,5 +1,5 @@
 import { ObjectCodec } from "..";
-import { AbstractCodec } from "../../Abstract";
+import type { AbstractCodec } from "../../Abstract";
 
 /**
  * Creates a new object codec omitted selected keys.

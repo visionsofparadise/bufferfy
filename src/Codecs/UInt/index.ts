@@ -1,6 +1,6 @@
-import { BufferfyRangeError } from "../../utilities/Error";
-import { Reader } from "../../utilities/Reader";
-import { Writer } from "../../utilities/Writer";
+import { NUMBER_MATCHER, type CodecMatcher } from "../../utilities/matcher";
+import type { Reader } from "../../utilities/Reader";
+import type { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 
 export const endiannessValues = ["BE", "LE"] as const;
@@ -20,53 +20,6 @@ export const UINT_BIT_BYTE_MAP = {
 	48: 6,
 } as const;
 
-export type ValidationMode = "both" | "encode" | "decode" | "none";
-
-export interface UIntCodecOptions {
-	minimum?: number;
-	maximum?: number;
-	validationMode?: ValidationMode;
-}
-
-export interface NumberValidationOptions {
-	minimum?: number;
-	maximum?: number;
-	validationMode?: ValidationMode;
-}
-
-export interface NumberValidators {
-	validateEncode: ((value: number) => void) | null;
-	validateDecode: ((value: number, position: number) => void) | null;
-}
-
-export const buildNumberValidators = (codecName: string, options?: NumberValidationOptions): NumberValidators => {
-	const minimum = options?.minimum;
-	const maximum = options?.maximum;
-	const mode = options?.validationMode ?? "both";
-	const hasRange = minimum !== undefined || maximum !== undefined;
-
-	return {
-		validateEncode:
-			hasRange && (mode === "both" || mode === "encode")
-				? (value: number): void => {
-						if (minimum !== undefined && value < minimum)
-							throw new BufferfyRangeError(`Encoded value ${value} is less than minimum ${minimum}`, codecName, value, minimum);
-						if (maximum !== undefined && value > maximum)
-							throw new BufferfyRangeError(`Encoded value ${value} exceeds maximum ${maximum}`, codecName, value, maximum);
-					}
-				: null,
-		validateDecode:
-			hasRange && (mode === "both" || mode === "decode")
-				? (value: number, position: number): void => {
-						if (minimum !== undefined && value < minimum)
-							throw new BufferfyRangeError(`Decoded value ${value} is less than minimum ${minimum}`, codecName, value, minimum, position);
-						if (maximum !== undefined && value > maximum)
-							throw new BufferfyRangeError(`Decoded value ${value} exceeds maximum ${maximum}`, codecName, value, maximum, position);
-					}
-				: null,
-	};
-};
-
 export type UIntCodec = UInt8Codec | UInt16Codec | UInt24Codec | UInt32Codec | UInt40Codec | UInt48Codec;
 
 /**
@@ -76,49 +29,36 @@ export type UIntCodec = UInt8Codec | UInt16Codec | UInt24Codec | UInt32Codec | U
  *
  * @param	{8 | 16 | 24 | 32 | 40 | 48} [bits=48] - Bit type of integer.
  * @param	{'LE' | 'BE'} [endianness='BE'] - Endianness
- * @param	{UIntCodecOptions} [options] - Validation options (minimum, maximum)
  * @return	{UIntCodec} UIntCodec
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/UInt/index.ts|Source}
  */
-export const createUIntCodec = (bits: UIntBits = 48, endianness: Endianness = "BE", options?: UIntCodecOptions): UIntCodec => {
+export const createUIntCodec = (bits: UIntBits = 48, endianness: Endianness = "BE"): UIntCodec => {
 	switch (bits) {
 		case 8:
-			return new UInt8Codec(options);
+			return new UInt8Codec();
 		case 16:
-			return new UInt16Codec(endianness, options);
+			return new UInt16Codec(endianness);
 		case 24:
-			return new UInt24Codec(endianness, options);
+			return new UInt24Codec(endianness);
 		case 32:
-			return new UInt32Codec(endianness, options);
+			return new UInt32Codec(endianness);
 		case 40:
-			return new UInt40Codec(endianness, options);
+			return new UInt40Codec(endianness);
 		case 48:
-			return new UInt48Codec(endianness, options);
+			return new UInt48Codec(endianness);
 	}
 };
 
 export class UInt8Codec extends AbstractCodec<number> {
 	static readonly BYTE_LENGTH = 1;
 
-	private readonly _validateEncode: ((value: number) => void) | null;
-	private readonly _validateDecode: ((value: number, position: number) => void) | null;
-
-	constructor(private readonly options?: UIntCodecOptions) {
-		super();
-
-		const validators = buildNumberValidators("UInt8Codec", options);
-		this._validateEncode = validators.validateEncode;
-		this._validateDecode = validators.validateDecode;
+	isValid(value: unknown): value is number {
+		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 256;
 	}
 
-	isValid(value: unknown): value is number {
-		if (typeof value !== "number" || !Number.isInteger(value) || value < 0 || value >= 256) return false;
-
-		if (this.options?.minimum !== undefined && value < this.options.minimum) return false;
-		if (this.options?.maximum !== undefined && value > this.options.maximum) return false;
-
-		return true;
+	override get matcher(): CodecMatcher {
+		return NUMBER_MATCHER;
 	}
 
 	byteLength(): 1 {
@@ -126,17 +66,11 @@ export class UInt8Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		if (this._validateEncode !== null) this._validateEncode(value);
-
 		writer.writeByte(value);
 	}
 
 	_decode(reader: Reader): number {
-		const value = reader.readByte();
-
-		if (this._validateDecode !== null) this._validateDecode(value, reader.position);
-
-		return value;
+		return reader.readByte();
 	}
 }
 
@@ -144,26 +78,19 @@ export class UInt16Codec extends AbstractCodec<number> {
 	static readonly BYTE_LENGTH = 2;
 
 	private readonly _littleEndian: boolean;
-	private readonly _validateEncode: ((value: number) => void) | null;
-	private readonly _validateDecode: ((value: number, position: number) => void) | null;
 
-	constructor(endianness: Endianness = "BE", private readonly options?: UIntCodecOptions) {
+	constructor(endianness: Endianness = "BE") {
 		super();
 
 		this._littleEndian = endianness === "LE";
-
-		const validators = buildNumberValidators("UInt16Codec", options);
-		this._validateEncode = validators.validateEncode;
-		this._validateDecode = validators.validateDecode;
 	}
 
 	isValid(value: unknown): value is number {
-		if (typeof value !== "number" || !Number.isInteger(value) || value < 0 || value >= 65536) return false;
+		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 65536;
+	}
 
-		if (this.options?.minimum !== undefined && value < this.options.minimum) return false;
-		if (this.options?.maximum !== undefined && value > this.options.maximum) return false;
-
-		return true;
+	override get matcher(): CodecMatcher {
+		return NUMBER_MATCHER;
 	}
 
 	byteLength(): 2 {
@@ -171,17 +98,15 @@ export class UInt16Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		if (this._validateEncode !== null) this._validateEncode(value);
+		const offset = writer.reserve(2);
 
-		writer.writeUint16(value, this._littleEndian);
+		writer.currentView.setUint16(offset, value, this._littleEndian);
 	}
 
 	_decode(reader: Reader): number {
-		const value = reader.readUint16(this._littleEndian);
+		const offset = reader.skipBytes(2);
 
-		if (this._validateDecode !== null) this._validateDecode(value, reader.position);
-
-		return value;
+		return reader.view.getUint16(offset, this._littleEndian);
 	}
 }
 
@@ -189,26 +114,19 @@ export class UInt24Codec extends AbstractCodec<number> {
 	static readonly BYTE_LENGTH = 3;
 
 	private readonly _littleEndian: boolean;
-	private readonly _validateEncode: ((value: number) => void) | null;
-	private readonly _validateDecode: ((value: number, position: number) => void) | null;
 
-	constructor(endianness: Endianness = "BE", private readonly options?: UIntCodecOptions) {
+	constructor(endianness: Endianness = "BE") {
 		super();
 
 		this._littleEndian = endianness === "LE";
-
-		const validators = buildNumberValidators("UInt24Codec", options);
-		this._validateEncode = validators.validateEncode;
-		this._validateDecode = validators.validateDecode;
 	}
 
 	isValid(value: unknown): value is number {
-		if (typeof value !== "number" || !Number.isInteger(value) || value < 0 || value >= 16777216) return false;
+		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 16777216;
+	}
 
-		if (this.options?.minimum !== undefined && value < this.options.minimum) return false;
-		if (this.options?.maximum !== undefined && value > this.options.maximum) return false;
-
-		return true;
+	override get matcher(): CodecMatcher {
+		return NUMBER_MATCHER;
 	}
 
 	byteLength(): 3 {
@@ -216,17 +134,37 @@ export class UInt24Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		if (this._validateEncode !== null) this._validateEncode(value);
+		const offset = writer.reserve(3);
+		const view = writer.currentView;
 
-		writer.writeUint24(value, this._littleEndian);
+		const high = value >>> 8;
+		const low = value & 0xff;
+
+		if (this._littleEndian) {
+			view.setUint8(offset, low);
+			view.setUint16(offset + 1, high, true);
+		} else {
+			view.setUint16(offset, high, false);
+			view.setUint8(offset + 2, low);
+		}
 	}
 
 	_decode(reader: Reader): number {
-		const value = reader.readUint24(this._littleEndian);
+		const offset = reader.skipBytes(3);
+		const view = reader.view;
 
-		if (this._validateDecode !== null) this._validateDecode(value, reader.position);
+		let high: number;
+		let low: number;
 
-		return value;
+		if (this._littleEndian) {
+			low = view.getUint8(offset);
+			high = view.getUint16(offset + 1, true);
+		} else {
+			high = view.getUint16(offset, false);
+			low = view.getUint8(offset + 2);
+		}
+
+		return (high << 8) | low;
 	}
 }
 
@@ -234,26 +172,19 @@ export class UInt32Codec extends AbstractCodec<number> {
 	static readonly BYTE_LENGTH = 4;
 
 	private readonly _littleEndian: boolean;
-	private readonly _validateEncode: ((value: number) => void) | null;
-	private readonly _validateDecode: ((value: number, position: number) => void) | null;
 
-	constructor(endianness: Endianness = "BE", private readonly options?: UIntCodecOptions) {
+	constructor(endianness: Endianness = "BE") {
 		super();
 
 		this._littleEndian = endianness === "LE";
-
-		const validators = buildNumberValidators("UInt32Codec", options);
-		this._validateEncode = validators.validateEncode;
-		this._validateDecode = validators.validateDecode;
 	}
 
 	isValid(value: unknown): value is number {
-		if (typeof value !== "number" || !Number.isInteger(value) || value < 0 || value >= 4294967296) return false;
+		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 4294967296;
+	}
 
-		if (this.options?.minimum !== undefined && value < this.options.minimum) return false;
-		if (this.options?.maximum !== undefined && value > this.options.maximum) return false;
-
-		return true;
+	override get matcher(): CodecMatcher {
+		return NUMBER_MATCHER;
 	}
 
 	byteLength(): 4 {
@@ -261,17 +192,15 @@ export class UInt32Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		if (this._validateEncode !== null) this._validateEncode(value);
+		const offset = writer.reserve(4);
 
-		writer.writeUint32(value, this._littleEndian);
+		writer.currentView.setUint32(offset, value, this._littleEndian);
 	}
 
 	_decode(reader: Reader): number {
-		const value = reader.readUint32(this._littleEndian);
+		const offset = reader.skipBytes(4);
 
-		if (this._validateDecode !== null) this._validateDecode(value, reader.position);
-
-		return value;
+		return reader.view.getUint32(offset, this._littleEndian);
 	}
 }
 
@@ -279,26 +208,19 @@ export class UInt40Codec extends AbstractCodec<number> {
 	static readonly BYTE_LENGTH = 5;
 
 	private readonly _littleEndian: boolean;
-	private readonly _validateEncode: ((value: number) => void) | null;
-	private readonly _validateDecode: ((value: number, position: number) => void) | null;
 
-	constructor(endianness: Endianness = "BE", private readonly options?: UIntCodecOptions) {
+	constructor(endianness: Endianness = "BE") {
 		super();
 
 		this._littleEndian = endianness === "LE";
-
-		const validators = buildNumberValidators("UInt40Codec", options);
-		this._validateEncode = validators.validateEncode;
-		this._validateDecode = validators.validateDecode;
 	}
 
 	isValid(value: unknown): value is number {
-		if (typeof value !== "number" || !Number.isInteger(value) || value < 0 || value >= 1099511627776) return false;
+		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 1099511627776;
+	}
 
-		if (this.options?.minimum !== undefined && value < this.options.minimum) return false;
-		if (this.options?.maximum !== undefined && value > this.options.maximum) return false;
-
-		return true;
+	override get matcher(): CodecMatcher {
+		return NUMBER_MATCHER;
 	}
 
 	byteLength(): 5 {
@@ -306,17 +228,37 @@ export class UInt40Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		if (this._validateEncode !== null) this._validateEncode(value);
+		const offset = writer.reserve(5);
+		const view = writer.currentView;
 
-		writer.writeUint40(value, this._littleEndian);
+		const high = Math.floor(value / 0x100000000);
+		const low = value % 0x100000000;
+
+		if (this._littleEndian) {
+			view.setUint32(offset, low, true);
+			view.setUint8(offset + 4, high);
+		} else {
+			view.setUint8(offset, high);
+			view.setUint32(offset + 1, low, false);
+		}
 	}
 
 	_decode(reader: Reader): number {
-		const value = reader.readUint40(this._littleEndian);
+		const offset = reader.skipBytes(5);
+		const view = reader.view;
 
-		if (this._validateDecode !== null) this._validateDecode(value, reader.position);
+		let high: number;
+		let low: number;
 
-		return value;
+		if (this._littleEndian) {
+			low = view.getUint32(offset, true);
+			high = view.getUint8(offset + 4);
+		} else {
+			high = view.getUint8(offset);
+			low = view.getUint32(offset + 1, false);
+		}
+
+		return high * 0x100000000 + low;
 	}
 }
 
@@ -324,26 +266,19 @@ export class UInt48Codec extends AbstractCodec<number> {
 	static readonly BYTE_LENGTH = 6;
 
 	private readonly _littleEndian: boolean;
-	private readonly _validateEncode: ((value: number) => void) | null;
-	private readonly _validateDecode: ((value: number, position: number) => void) | null;
 
-	constructor(endianness: Endianness = "BE", private readonly options?: UIntCodecOptions) {
+	constructor(endianness: Endianness = "BE") {
 		super();
 
 		this._littleEndian = endianness === "LE";
-
-		const validators = buildNumberValidators("UInt48Codec", options);
-		this._validateEncode = validators.validateEncode;
-		this._validateDecode = validators.validateDecode;
 	}
 
 	isValid(value: unknown): value is number {
-		if (typeof value !== "number" || !Number.isInteger(value) || value < 0 || value >= 281474976710656) return false;
+		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 281474976710656;
+	}
 
-		if (this.options?.minimum !== undefined && value < this.options.minimum) return false;
-		if (this.options?.maximum !== undefined && value > this.options.maximum) return false;
-
-		return true;
+	override get matcher(): CodecMatcher {
+		return NUMBER_MATCHER;
 	}
 
 	byteLength(): 6 {
@@ -351,16 +286,36 @@ export class UInt48Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		if (this._validateEncode !== null) this._validateEncode(value);
+		const offset = writer.reserve(6);
+		const view = writer.currentView;
 
-		writer.writeUint48(value, this._littleEndian);
+		const high = Math.floor(value / 0x100000000);
+		const low = value % 0x100000000;
+
+		if (this._littleEndian) {
+			view.setUint32(offset, low, true);
+			view.setUint16(offset + 4, high, true);
+		} else {
+			view.setUint16(offset, high, false);
+			view.setUint32(offset + 2, low, false);
+		}
 	}
 
 	_decode(reader: Reader): number {
-		const value = reader.readUint48(this._littleEndian);
+		const offset = reader.skipBytes(6);
+		const view = reader.view;
 
-		if (this._validateDecode !== null) this._validateDecode(value, reader.position);
+		let high: number;
+		let low: number;
 
-		return value;
+		if (this._littleEndian) {
+			low = view.getUint32(offset, true);
+			high = view.getUint16(offset + 4, true);
+		} else {
+			high = view.getUint16(offset, false);
+			low = view.getUint32(offset + 2, false);
+		}
+
+		return high * 0x100000000 + low;
 	}
 }

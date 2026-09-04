@@ -1,5 +1,6 @@
-import { Reader } from "../../utilities/Reader";
-import { Writer } from "../../utilities/Writer";
+import { BYTES_MATCHER, type CodecMatcher } from "../../utilities/matcher";
+import type { Reader } from "../../utilities/Reader";
+import type { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 import { VarInt60Codec } from "../VarInt/VarInt60";
 
@@ -10,6 +11,10 @@ export class BytesVariableCodec extends AbstractCodec<Uint8Array> {
 
 	isValid(value: unknown): value is Uint8Array {
 		return value instanceof Uint8Array;
+	}
+
+	override get matcher(): CodecMatcher {
+		return BYTES_MATCHER;
 	}
 
 	byteLength(value: Uint8Array): number {

@@ -1,6 +1,6 @@
 import { createBigUIntCodec } from ".";
 import { BytesReadableStream, BytesWritableStream } from "../../utilities/BytesStream.ignore";
-import { endiannessValues } from "../UInt";
+import { endiannessValues, type Endianness } from "../UInt";
 
 describe("iterates float endianness and bits combinations", () => {
 	for (const endianness of endiannessValues) {
@@ -88,4 +88,42 @@ describe("iterates float endianness and bits combinations", () => {
 			});
 		});
 	}
+});
+
+describe("bigUInt exact-byte wire format guards", () => {
+	const wire = (logical: Array<number>, endianness: Endianness): Uint8Array => Uint8Array.from(endianness === "LE" ? [...logical].reverse() : logical);
+
+	const distinctLogical = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08];
+	const value = 0x0102030405060708n;
+
+	for (const endianness of endiannessValues) {
+		const codec = createBigUIntCodec(endianness);
+
+		it(`encodes bigUInt${endianness} to exact bytes`, () => {
+			const expected = wire(distinctLogical, endianness);
+
+			expect(codec.encode(value)).toEqual(expected);
+			expect(codec.decode(expected)).toBe(value);
+		});
+	}
+});
+
+describe("bigUInt isValid enforces the intrinsic 0 <= value < 2^64 range", () => {
+	const codec = createBigUIntCodec("BE");
+
+	it("rejects negative bigints", () => {
+		expect(codec.isValid(-1n)).toBe(false);
+	});
+
+	it("rejects values at or above 2^64", () => {
+		expect(codec.isValid(2n ** 64n)).toBe(false);
+	});
+
+	it("accepts the maximum representable value 2^64 - 1", () => {
+		expect(codec.isValid(2n ** 64n - 1n)).toBe(true);
+	});
+
+	it("accepts zero", () => {
+		expect(codec.isValid(0n)).toBe(true);
+	});
 });

@@ -1,3 +1,4 @@
+import { FALLBACK_MATCHER, type CodecMatcher } from "../../utilities/matcher";
 import { Reader } from "../../utilities/Reader";
 import { Writer } from "../../utilities/Writer";
 import { DecodeTransformStream } from "./DecodeTransform";
@@ -17,6 +18,16 @@ export abstract class AbstractCodec<Value = unknown> {
 	 *
 	 */
 	abstract isValid(value: unknown): value is Value;
+
+	/**
+	 * Declares the broad-type match info a union uses to select this branch without a full isValid call.
+	 *
+	 * @return	{CodecMatcher}
+	 *
+	 */
+	get matcher(): CodecMatcher {
+		return FALLBACK_MATCHER;
+	}
 
 	/**
 	 * Returns the expected byteLength of the buffer if this value was encoded.
@@ -50,7 +61,7 @@ export abstract class AbstractCodec<Value = unknown> {
 	 * @return	{Uint8Array} Buffer encoding of value.
 	 *
 	 */
-	encode(value: Value, target?: Uint8Array, offset: number = 0): Uint8Array {
+	encode(value: Value, target?: Uint8Array, offset = 0): Uint8Array {
 		if (target) {
 			const buffer = offset ? new Uint8Array(target.buffer, target.byteOffset + offset) : target;
 			const writer = new Writer(buffer);
@@ -60,7 +71,6 @@ export abstract class AbstractCodec<Value = unknown> {
 			return writer.toBuffer();
 		}
 
-		// Reentrancy (a Transform/Any callback calling encode mid-encode) would corrupt the shared writer, so fall back to a fresh one.
 		if (sharedWriterInUse) {
 			const writer = new Writer();
 
@@ -74,7 +84,6 @@ export abstract class AbstractCodec<Value = unknown> {
 		try {
 			this._encode(value, sharedWriter);
 
-			// Copy out so the reused shared buffer never escapes to the caller (else the next encode clobbers this result).
 			return sharedWriter.toBuffer().slice();
 		} finally {
 			sharedWriter.reset();
@@ -103,7 +112,7 @@ export abstract class AbstractCodec<Value = unknown> {
 	 * @return	{Value} Value decoded from the buffer
 	 *
 	 */
-	decode(source: Uint8Array, offset: number = 0): Value {
+	decode(source: Uint8Array, offset = 0): Value {
 		const reader = new Reader(source, offset);
 
 		return this._decode(reader);

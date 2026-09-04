@@ -1,5 +1,6 @@
-import { Reader } from "../../utilities/Reader";
-import { Writer } from "../../utilities/Writer";
+import { OBJECT_MATCHER, type CodecMatcher } from "../../utilities/matcher";
+import type { Reader } from "../../utilities/Reader";
+import type { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 
 const BIT_MAP = [0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01];
@@ -32,19 +33,23 @@ export class BitFieldCodec<Key extends string> extends AbstractCodec<Record<Key,
 		return true;
 	}
 
+	override get matcher(): CodecMatcher {
+		return OBJECT_MATCHER;
+	}
+
 	byteLength(): number {
 		return this._byteLength;
 	}
 
 	_encode(value: Record<Key, boolean>, writer: Writer): void {
-		for (let i = 0; i < this._byteLength; i++) {
+		for (let byteIndex = 0; byteIndex < this._byteLength; byteIndex++) {
 			let byte = 0;
 
-			const offset = i * 8;
+			const offset = byteIndex * 8;
 			const bits = Math.min(this.keys.length - offset, 8);
 
-			for (let j = 0; j < bits; j++) {
-				if (value[this.keys[offset + j]] === true) byte |= BIT_MAP[j];
+			for (let bitIndex = 0; bitIndex < bits; bitIndex++) {
+				if (value[this.keys[offset + bitIndex]] === true) byte |= BIT_MAP[bitIndex];
 			}
 
 			writer.writeByte(byte);
@@ -54,14 +59,14 @@ export class BitFieldCodec<Key extends string> extends AbstractCodec<Record<Key,
 	_decode(reader: Reader): Record<Key, boolean> {
 		const value: Partial<Record<Key, boolean>> = {};
 
-		for (let i = 0; i < this._byteLength; i++) {
+		for (let byteIndex = 0; byteIndex < this._byteLength; byteIndex++) {
 			const byte = reader.readByte();
 
-			const offset = i * 8;
+			const offset = byteIndex * 8;
 			const bits = Math.min(this.keys.length - offset, 8);
 
-			for (let j = 0; j < bits; j++) {
-				value[this.keys[offset + j]] = (byte & BIT_MAP[j]) > 0;
+			for (let bitIndex = 0; bitIndex < bits; bitIndex++) {
+				value[this.keys[offset + bitIndex]] = (byte & BIT_MAP[bitIndex]) > 0;
 			}
 		}
 

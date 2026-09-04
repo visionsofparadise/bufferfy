@@ -1,5 +1,6 @@
-import { Reader } from "../../utilities/Reader";
-import { Writer } from "../../utilities/Writer";
+import { BYTES_MATCHER, type CodecMatcher } from "../../utilities/matcher";
+import type { Reader } from "../../utilities/Reader";
+import type { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 
 export class BytesFixedCodec extends AbstractCodec<Uint8Array> {
@@ -13,6 +14,10 @@ export class BytesFixedCodec extends AbstractCodec<Uint8Array> {
 
 	isValid(value: unknown): value is Uint8Array {
 		return value instanceof Uint8Array && value.byteLength === this._byteLength;
+	}
+
+	override get matcher(): CodecMatcher {
+		return BYTES_MATCHER;
 	}
 
 	byteLength(): number {

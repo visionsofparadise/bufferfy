@@ -1,5 +1,5 @@
-import { Reader } from "../../utilities/Reader";
-import { Writer } from "../../utilities/Writer";
+import type { Reader } from "../../utilities/Reader";
+import type { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 import { BytesVariableCodec } from "../Bytes/Variable";
 import { VarInt60Codec } from "../VarInt/VarInt60";
@@ -35,9 +35,9 @@ export class AnyCodec<Value = any> extends AbstractCodec<Value> {
 	constructor(options?: AnyCodecOptions<Value>) {
 		super();
 
-		this._encodeValue = options?.encode || ((value: Value) => new TextEncoder().encode(JSON.stringify(value)));
-		this._decodeValue = options?.decode || ((buffer: Uint8Array) => JSON.parse(new TextDecoder().decode(buffer)));
-		this.lengthCodec = options?.lengthCodec || new VarInt60Codec();
+		this._encodeValue = options?.encode ?? ((value: Value) => new TextEncoder().encode(JSON.stringify(value)));
+		this._decodeValue = options?.decode ?? ((buffer: Uint8Array) => JSON.parse(new TextDecoder().decode(buffer)));
+		this.lengthCodec = options?.lengthCodec ?? new VarInt60Codec();
 		this._bytesCodec = new BytesVariableCodec(this.lengthCodec);
 	}
 
@@ -54,7 +54,7 @@ export class AnyCodec<Value = any> extends AbstractCodec<Value> {
 	_encode(value: Value, writer: Writer): void {
 		const valueBuffer = this._encodeValue(value);
 
-		return this._bytesCodec._encode(valueBuffer, writer);
+		this._bytesCodec._encode(valueBuffer, writer);
 	}
 
 	_decode(reader: Reader): Value {

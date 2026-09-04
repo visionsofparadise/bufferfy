@@ -1,4 +1,4 @@
-import { AbstractCodec } from "../Abstract";
+import type { AbstractCodec } from "../Abstract";
 import { VarInt60Codec } from "../VarInt/VarInt60";
 import { ArrayFixedCodec } from "./Fixed";
 import { ArrayVariableCodec } from "./Variable";

@@ -1,6 +1,7 @@
 import deepEqual from "fast-deep-equal";
-import { Reader } from "../../utilities/Reader";
-import { Writer } from "../../utilities/Writer";
+import { domainOf, type CodecMatcher } from "../../utilities/matcher";
+import type { Reader } from "../../utilities/Reader";
+import type { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 
 /**
@@ -22,8 +23,22 @@ export const createConstantCodec = <const Value>(value: Value) => {
 };
 
 export class ConstantCodec<const Value> extends AbstractCodec<Value> {
+	private readonly _matcher: CodecMatcher;
+
 	constructor(public readonly value: Value) {
 		super();
+
+		this._matcher = this._buildMatcher();
+	}
+
+	protected _buildMatcher(): CodecMatcher {
+		const tag = domainOf(this.value);
+
+		return { test: (value) => value === this.value, exact: true, testTag: tag, acceptTag: tag };
+	}
+
+	override get matcher(): CodecMatcher {
+		return this._matcher;
 	}
 
 	isValid(value: unknown): value is Value {
@@ -34,9 +49,7 @@ export class ConstantCodec<const Value> extends AbstractCodec<Value> {
 		return 0;
 	}
 
-	_encode(_value: Value, _writer: Writer): void {
-		// No bytes encoded for constants
-	}
+	_encode(_value: Value, _writer: Writer): void {}
 
 	_decode(_reader: Reader): Value {
 		return this.value;
@@ -44,11 +57,11 @@ export class ConstantCodec<const Value> extends AbstractCodec<Value> {
 }
 
 export class DeepConstantCodec<Value> extends ConstantCodec<Value> {
-	constructor(public readonly value: Value) {
-		super(value);
+	protected override _buildMatcher(): CodecMatcher {
+		return { test: () => true, exact: false, testTag: "any", acceptTag: domainOf(this.value) };
 	}
 
-	isValid(value: unknown): value is Value {
+	override isValid(value: unknown): value is Value {
 		return deepEqual(value, this.value);
 	}
 }

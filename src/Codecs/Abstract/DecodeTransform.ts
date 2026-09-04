@@ -1,5 +1,5 @@
 import { concat } from "uint8array-tools";
-import { AbstractCodec } from ".";
+import type { AbstractCodec } from ".";
 import { BufferfyByteLengthError, BufferfyError } from "../../utilities/Error";
 
 const WARN_BUFFER_SIZE = 10 * 1024 * 1024; // 10MB
@@ -10,10 +10,9 @@ export class DecodeTransformStream<Value = unknown> extends TransformStream<Uint
 
 	constructor(codec: AbstractCodec<Value>) {
 		super({
-			transform: async (chunk, controller) => {
+			transform: (chunk, controller) => {
 				this._valueBytes = concat([this._valueBytes, chunk]);
 
-				// Warn if buffer is getting large (potential DOS or incorrect codec usage)
 				if (!hasWarned && this._valueBytes.byteLength > WARN_BUFFER_SIZE) {
 					console.warn(
 						`DecodeTransformStream buffer exceeded ${WARN_BUFFER_SIZE} bytes (${this._valueBytes.byteLength} bytes accumulated). ` +
@@ -32,6 +31,7 @@ export class DecodeTransformStream<Value = unknown> extends TransformStream<Uint
 
 						if (byteLength === 0) {
 							controller.error(new BufferfyError("Codec returned zero byteLength, cannot make progress"));
+
 							return;
 						}
 

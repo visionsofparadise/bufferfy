@@ -43,7 +43,7 @@ export class BufferfyValidationError extends BufferfyError {
  * Thrown when no codec in a union matches the value.
  */
 export class BufferfyUnionError extends BufferfyError {
-	constructor(value: unknown, attemptedCodecs: string[]) {
+	constructor(value: unknown, attemptedCodecs: Array<string>) {
 		super(
 			`Value does not match any codec in union: tried [${attemptedCodecs.join(", ")}]`,
 			"UnionCodec",

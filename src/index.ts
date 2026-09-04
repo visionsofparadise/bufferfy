@@ -35,3 +35,4 @@ export { VarInt60Codec } from "./Codecs/VarInt/VarInt60";
 export { Codec } from "./Codec";
 
 export { BufferfyError, BufferfyByteLengthError, BufferfyValidationError, BufferfyUnionError, BufferfyRangeError } from "./utilities/Error";
+export { type CodecMatcher, type DomainTag } from "./utilities/matcher";

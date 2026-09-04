@@ -29,6 +29,7 @@ export const createBenchmark = (name: string, value: any, codec: AbstractCodec) 
 		describe("decode", () => {
 			bench("bufferfy", () => {
 				const reader = new Reader(bufferfyEncoded);
+
 				codec._decode(reader);
 			});
 

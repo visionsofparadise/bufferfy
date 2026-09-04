@@ -1,5 +1,5 @@
-import { Reader } from "../../utilities/Reader";
-import { Writer } from "../../utilities/Writer";
+import type { Reader } from "../../utilities/Reader";
+import type { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 
 export interface TransformCodecOptions<Source, Target> {
@@ -34,7 +34,7 @@ export class TransformCodec<Source, Target> extends AbstractCodec<Source> {
 	constructor(public readonly targetCodec: AbstractCodec<Target>, options: TransformCodecOptions<Source, Target>) {
 		super();
 
-		this._isSourceValid = options.isValid || ((value: unknown) => targetCodec.isValid(options.encode(value as any)));
+		this._isSourceValid = options.isValid ?? ((value: unknown) => targetCodec.isValid(options.encode(value as any)));
 		this._encodeSource = options.encode;
 		this._decodeTarget = options.decode;
 	}
@@ -44,7 +44,7 @@ export class TransformCodec<Source, Target> extends AbstractCodec<Source> {
 			const isValid = this._isSourceValid(value);
 
 			return isValid;
-		} catch (error) {
+		} catch {
 			return false;
 		}
 	}
@@ -54,7 +54,7 @@ export class TransformCodec<Source, Target> extends AbstractCodec<Source> {
 	}
 
 	_encode(value: Source, writer: Writer): void {
-		return this.targetCodec._encode(this._encodeSource(value), writer);
+		this.targetCodec._encode(this._encodeSource(value), writer);
 	}
 
 	_decode(reader: Reader): Source {

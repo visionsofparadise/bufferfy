@@ -1,4 +1,4 @@
-import { AbstractCodec } from "../Abstract";
+import type { AbstractCodec } from "../Abstract";
 import { VarInt60Codec } from "../VarInt/VarInt60";
 import { RecordFixedCodec } from "./Fixed";
 import { RecordVariableCodec } from "./Variable";
@@ -11,6 +11,8 @@ export type RecordCodec<Key extends string, Value> = RecordFixedCodec<Key, Value
  * Serializes to ```[LENGTH][...[[KEY][VALUE]]]```
  *
  * Length is present only for variable length records.
+ *
+ * Encodes every enumerable key, including inherited ones (`for...in` semantics), not just the object's own keys.
  *
  * @param	{AbstractCodec<string>} keyCodec - Codec for keys.
  * @param	{AbstractCodec} valueCodec - Codec for values.
