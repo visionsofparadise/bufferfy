@@ -1,7 +1,7 @@
-import type { AbstractCodec } from "../Abstract";
 import { VarInt60Codec } from "../VarInt/VarInt60";
 import { NumberFixedCodec } from "./Fixed";
 import { NumberVariableCodec } from "./Variable";
+import type { AbstractCodec } from "../Abstract";
 
 export type NumberCodec = NumberFixedCodec | NumberVariableCodec;
 
@@ -29,7 +29,9 @@ export function createNumberCodec(lengthCodec?: AbstractCodec<number>): NumberVa
  */
 export function createNumberCodec(length: number): NumberFixedCodec;
 
-export function createNumberCodec(constantOrLengthOrCodec: number | AbstractCodec<number> = new VarInt60Codec()): NumberCodec {
+export function createNumberCodec(
+	constantOrLengthOrCodec: number | AbstractCodec<number> = new VarInt60Codec(),
+): NumberCodec {
 	if (typeof constantOrLengthOrCodec === "number") return new NumberFixedCodec(constantOrLengthOrCodec);
 
 	return new NumberVariableCodec(constantOrLengthOrCodec);

@@ -16,7 +16,13 @@ createBenchmark("Union", value, codec);
 
 // Object-branch union: a non-exact object matcher followed by Null. Exercises the encode-selection path the
 // exact string/undefined union above cannot (the spike union-workload shape).
-const objectCodec = new UnionCodec([new ObjectCodec({ a: new UInt8Codec(), b: new StringVariableCodec("utf8", new VarInt15Codec()) }), new ConstantCodec(null)], new UInt8Codec());
+const objectCodec = new UnionCodec(
+	[
+		new ObjectCodec({ a: new UInt8Codec(), b: new StringVariableCodec("utf8", new VarInt15Codec()) }),
+		new ConstantCodec(null),
+	],
+	new UInt8Codec(),
+);
 const objectValue: CodecType<typeof objectCodec> = { a: 42, b: "item42" };
 
 createBenchmark("UnionObject", objectValue, objectCodec);

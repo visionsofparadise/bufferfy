@@ -1,7 +1,11 @@
 import { ObjectCodec } from "..";
 import type { AbstractCodec } from "../../Abstract";
 
-export type UnionToIntersection<Union> = (Union extends unknown ? (distributedUnion: Union) => void : never) extends (mergedIntersection: infer Intersection) => void ? Intersection & Union : never;
+export type UnionToIntersection<Union> = (Union extends unknown ? (distributedUnion: Union) => void : never) extends (
+	mergedIntersection: infer Intersection,
+) => void
+	? Intersection & Union
+	: never;
 
 /**
  * Creates a new object codec from the merging of provided codecs.
@@ -11,10 +15,14 @@ export type UnionToIntersection<Union> = (Union extends unknown ? (distributedUn
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Object/Merge/index.ts|Source}
  */
-export const mergeObjectCodecs = <const ObjectCodecs extends Array<ObjectCodec<any>>>(objectCodecs: ObjectCodecs): ObjectCodec<UnionToIntersection<ObjectCodecs[number]["properties"]>> => {
+export const mergeObjectCodecs = <const ObjectCodecs extends Array<ObjectCodec<any>>>(
+	objectCodecs: ObjectCodecs,
+): ObjectCodec<UnionToIntersection<ObjectCodecs[number]["properties"]>> => {
 	const properties: Partial<Record<keyof ObjectCodecs[number]["properties"], AbstractCodec>> = {};
 
-	for (const objectCodec of objectCodecs) for (const [key, codec] of objectCodec.entries) properties[key as keyof ObjectCodecs[number]["properties"]] = codec;
+	for (const objectCodec of objectCodecs)
+		for (const [key, codec] of objectCodec.entries)
+			properties[key as keyof ObjectCodecs[number]["properties"]] = codec;
 
 	return new ObjectCodec(properties);
 };

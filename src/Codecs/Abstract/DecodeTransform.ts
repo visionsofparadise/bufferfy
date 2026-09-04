@@ -1,6 +1,6 @@
 import { concat } from "uint8array-tools";
-import type { AbstractCodec } from ".";
 import { BufferfyByteLengthError, BufferfyError } from "../../utilities/Error";
+import type { AbstractCodec } from ".";
 
 const WARN_BUFFER_SIZE = 10 * 1024 * 1024; // 10MB
 let hasWarned = false;

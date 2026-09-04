@@ -1,12 +1,12 @@
 import { base32, base58, base64, base64url } from "@scure/base";
-import type { StringEncoding } from ".";
 import { decodeHex, encodeHex } from "../../utilities/hex";
 import { STRING_MATCHER, type CodecMatcher } from "../../utilities/matcher";
-import type { Reader } from "../../utilities/Reader";
 import { decodeUtf8, encodeUtf8Into, SHORT_STRING_THRESHOLD, utf8ByteLength } from "../../utilities/utf8";
-import type { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 import { BytesFixedCodec } from "../Bytes/Fixed";
+import type { StringEncoding } from ".";
+import type { Reader } from "../../utilities/Reader";
+import type { Writer } from "../../utilities/Writer";
 
 const textEncoder = new TextEncoder();
 

@@ -163,7 +163,8 @@ describe("iterates int endianness and bits combinations", () => {
 });
 
 describe("int exact-byte wire format guards", () => {
-	const wire = (logical: Array<number>, endianness: Endianness): Uint8Array => Uint8Array.from(endianness === "LE" ? [...logical].reverse() : logical);
+	const wire = (logical: Array<number>, endianness: Endianness): Uint8Array =>
+		Uint8Array.from(endianness === "LE" ? [...logical].reverse() : logical);
 
 	for (const endianness of endiannessValues) {
 		for (const bits of uIntBitValues) {

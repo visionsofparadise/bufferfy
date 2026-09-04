@@ -158,7 +158,10 @@ describe("union encode-selection sufficiency", () => {
 	// (a) Overlapping object branches (object → object) stay insufficient: a value valid only for the second object
 	// branch must fall through the first, so deep validation is retained.
 	it("selects the second object branch for a value invalid for the first", () => {
-		const codec = new UnionCodec([new ObjectCodec({ a: new UInt8Codec() }), new ObjectCodec({ b: new StringVariableCodec("utf8", new UInt8Codec()) })]);
+		const codec = new UnionCodec([
+			new ObjectCodec({ a: new UInt8Codec() }),
+			new ObjectCodec({ b: new StringVariableCodec("utf8", new UInt8Codec()) }),
+		]);
 		const value = { b: "hi" };
 
 		expect(codec.encode(value)[0]).toBe(1);
@@ -209,7 +212,13 @@ describe("union encode-selection sufficiency", () => {
 	// (f) Symmetric object overlap: array → Record stays insufficient because Record accepts arrays
 	// (`Record(String, String).isValid(["x"])` is true). An array valid for the Record must fall through the Array branch.
 	it("selects a trailing Record branch for an array the Array branch rejects", () => {
-		const codec = new UnionCodec([new ArrayVariableCodec(new UInt8Codec()), new RecordVariableCodec(new StringVariableCodec("utf8", new UInt8Codec()), new StringVariableCodec("utf8", new UInt8Codec()))]);
+		const codec = new UnionCodec([
+			new ArrayVariableCodec(new UInt8Codec()),
+			new RecordVariableCodec(
+				new StringVariableCodec("utf8", new UInt8Codec()),
+				new StringVariableCodec("utf8", new UInt8Codec()),
+			),
+		]);
 		// `["x"]` is valid only for the Record branch (string element); invalid for the UInt8 array branch. The cast passes that intentionally-invalid-for-array edge value.
 		const value = ["x"] as any;
 

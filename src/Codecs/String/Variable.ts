@@ -1,13 +1,13 @@
 import { base32, base58, base64, base64url } from "@scure/base";
-import type { StringEncoding } from ".";
 import { decodeHex, encodeHex, hexByteLength } from "../../utilities/hex";
 import { STRING_MATCHER, type CodecMatcher } from "../../utilities/matcher";
-import type { Reader } from "../../utilities/Reader";
 import { decodeUtf8, encodeUtf8Into, utf8ByteLength } from "../../utilities/utf8";
-import type { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 import { BytesVariableCodec } from "../Bytes/Variable";
 import { VarInt60Codec } from "../VarInt/VarInt60";
+import type { StringEncoding } from ".";
+import type { Reader } from "../../utilities/Reader";
+import type { Writer } from "../../utilities/Writer";
 
 export class StringVariableCodec extends AbstractCodec<string> {
 	private _bufferCodec: BytesVariableCodec;
@@ -17,7 +17,7 @@ export class StringVariableCodec extends AbstractCodec<string> {
 
 	constructor(
 		public readonly encoding: StringEncoding = "utf8",
-		public readonly lengthCodec: AbstractCodec<number> = new VarInt60Codec()
+		public readonly lengthCodec: AbstractCodec<number> = new VarInt60Codec(),
 	) {
 		super();
 

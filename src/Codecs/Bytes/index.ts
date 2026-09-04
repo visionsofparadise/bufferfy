@@ -1,8 +1,8 @@
-import type { AbstractCodec } from "../Abstract";
 import { VarInt60Codec } from "../VarInt/VarInt60";
 import { BytesConstantCodec } from "./Constant";
 import { BytesFixedCodec } from "./Fixed";
 import { BytesVariableCodec } from "./Variable";
+import type { AbstractCodec } from "../Abstract";
 
 export type BytesCodec = BytesFixedCodec | BytesVariableCodec;
 
@@ -44,8 +44,11 @@ export function createBytesCodec(length: number): BytesFixedCodec;
  */
 export function createBytesCodec(bytes: Uint8Array): BytesConstantCodec;
 
-export function createBytesCodec(constantOrLengthOrCodec: Uint8Array | number | AbstractCodec<number> = new VarInt60Codec()): BytesCodec {
+export function createBytesCodec(
+	constantOrLengthOrCodec: Uint8Array | number | AbstractCodec<number> = new VarInt60Codec(),
+): BytesCodec {
 	if (constantOrLengthOrCodec instanceof Uint8Array) return new BytesConstantCodec(constantOrLengthOrCodec);
+
 	if (typeof constantOrLengthOrCodec === "number") return new BytesFixedCodec(constantOrLengthOrCodec);
 
 	return new BytesVariableCodec(constantOrLengthOrCodec);

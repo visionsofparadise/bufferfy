@@ -1,7 +1,7 @@
 import { ARRAY_MATCHER, type CodecMatcher } from "../../utilities/matcher";
+import { AbstractCodec } from "../Abstract";
 import type { Reader } from "../../utilities/Reader";
 import type { Writer } from "../../utilities/Writer";
-import { AbstractCodec } from "../Abstract";
 
 /**
  * Creates a codec for a tuple of values.
@@ -17,8 +17,8 @@ export const createTupleCodec = <Tuple extends [...Array<any>]>(
 	codecs: [
 		...{
 			[Index in keyof Tuple]: AbstractCodec<Tuple[Index]>;
-		}
-	]
+		},
+	],
 ) => new TupleCodec(codecs);
 
 export class TupleCodec<Tuple extends [...Array<any>]> extends AbstractCodec<Tuple> {
@@ -26,8 +26,8 @@ export class TupleCodec<Tuple extends [...Array<any>]> extends AbstractCodec<Tup
 		public readonly codecs: [
 			...{
 				[Index in keyof Tuple]: AbstractCodec<Tuple[Index]>;
-			}
-		]
+			},
+		],
 	) {
 		super();
 	}
@@ -35,7 +35,8 @@ export class TupleCodec<Tuple extends [...Array<any>]> extends AbstractCodec<Tup
 	isValid(value: unknown): value is Tuple {
 		if (!Array.isArray(value) || value.length !== this.codecs.length) return false;
 
-		for (let index = 0; index < this.codecs.length; index++) if (!this.codecs[index].isValid(value[index])) return false;
+		for (let index = 0; index < this.codecs.length; index++)
+			if (!this.codecs[index].isValid(value[index])) return false;
 
 		return true;
 	}
@@ -47,7 +48,8 @@ export class TupleCodec<Tuple extends [...Array<any>]> extends AbstractCodec<Tup
 	byteLength(value: Tuple): number {
 		let byteLength = 0;
 
-		for (let index = 0; index < this.codecs.length; index++) byteLength += this.codecs[index].byteLength(value[index]);
+		for (let index = 0; index < this.codecs.length; index++)
+			byteLength += this.codecs[index].byteLength(value[index]);
 
 		return byteLength;
 	}

@@ -44,12 +44,10 @@ export class BufferfyValidationError extends BufferfyError {
  */
 export class BufferfyUnionError extends BufferfyError {
 	constructor(value: unknown, attemptedCodecs: Array<string>) {
-		super(
-			`Value does not match any codec in union: tried [${attemptedCodecs.join(", ")}]`,
-			"UnionCodec",
-			undefined,
-			{ value, attempted: attemptedCodecs },
-		);
+		super(`Value does not match any codec in union: tried [${attemptedCodecs.join(", ")}]`, "UnionCodec", undefined, {
+			value,
+			attempted: attemptedCodecs,
+		});
 		this.name = "BufferfyUnionError";
 	}
 }

@@ -1,10 +1,14 @@
 import { OBJECT_MATCHER, type CodecMatcher } from "../../utilities/matcher";
+import { AbstractCodec } from "../Abstract";
 import type { Reader } from "../../utilities/Reader";
 import type { Writer } from "../../utilities/Writer";
-import { AbstractCodec } from "../Abstract";
 
 export class RecordFixedCodec<Key extends string, Value> extends AbstractCodec<Record<Key, Value>> {
-	constructor(public readonly length: number, public readonly keyCodec: AbstractCodec<Key>, public readonly valueCodec: AbstractCodec<Value>) {
+	constructor(
+		public readonly length: number,
+		public readonly keyCodec: AbstractCodec<Key>,
+		public readonly valueCodec: AbstractCodec<Value>,
+	) {
 		super();
 	}
 
@@ -15,6 +19,7 @@ export class RecordFixedCodec<Key extends string, Value> extends AbstractCodec<R
 
 		for (const key in value) {
 			count++;
+
 			const property = (value as Record<string, unknown>)[key];
 
 			if (!this.keyCodec.isValid(key) || !this.valueCodec.isValid(property)) return false;

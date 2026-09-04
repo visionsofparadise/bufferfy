@@ -36,7 +36,10 @@ export function decodeHex(value: string): Uint8Array {
 		const highNibble = high < 128 ? CHAR_TO_NIBBLE[high] : -1;
 		const lowNibble = low < 128 ? CHAR_TO_NIBBLE[low] : -1;
 
-		if (highNibble === -1 || lowNibble === -1) throw new Error(`hex string expected, got non-hex character at index ${highNibble === -1 ? index * 2 : index * 2 + 1}`);
+		if (highNibble === -1 || lowNibble === -1)
+			throw new Error(
+				`hex string expected, got non-hex character at index ${highNibble === -1 ? index * 2 : index * 2 + 1}`,
+			);
 
 		bytes[index] = (highNibble << 4) | lowNibble;
 	}

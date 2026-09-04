@@ -1,7 +1,7 @@
 import { NUMBER_MATCHER, type CodecMatcher } from "../../utilities/matcher";
+import { AbstractCodec } from "../Abstract";
 import type { Reader } from "../../utilities/Reader";
 import type { Writer } from "../../utilities/Writer";
-import { AbstractCodec } from "../Abstract";
 
 const POW256 = [1, 256, 65536, 16777216, 4294967296, 1099511627776, 281474976710656]; // 256^0 .. 256^6, covers the 7-byte max shift of 2^48
 
@@ -10,7 +10,13 @@ export class VarInt60Codec extends AbstractCodec<number> {
 	static THRESHOLDS = [32, 8192, 2097152, 536870912, 137438953472, 35184372088832];
 
 	isValid(value: unknown): value is number {
-		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < VarInt60Codec.MAX_VALUE && value <= Number.MAX_SAFE_INTEGER;
+		return (
+			typeof value === "number" &&
+			Number.isInteger(value) &&
+			value >= 0 &&
+			value < VarInt60Codec.MAX_VALUE &&
+			value <= Number.MAX_SAFE_INTEGER
+		);
 	}
 
 	override get matcher(): CodecMatcher {

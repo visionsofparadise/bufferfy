@@ -11,6 +11,7 @@ A serialization and deserialization library that space-efficiently packs data in
 ## 3.0.0 Update
 
 This module is now browser compatible, due to this the following changes have been made:
+
 - When handling bytes, Uint8Arrays are now used instead of node buffers.
 - Node style streams have been replaced by WebApi streams.
 
@@ -117,10 +118,10 @@ Order specific → general. Put `Codec.Any()` last (matches everything).
 
 ```ts
 // Correct
-Codec.Union([Codec.Constant("active"), Codec.String(), Codec.Any()])
+Codec.Union([Codec.Constant("active"), Codec.String(), Codec.Any()]);
 
 // Wrong - Any() shadows everything
-Codec.Union([Codec.Any(), Codec.String()])
+Codec.Union([Codec.Any(), Codec.String()]);
 ```
 
 ### Encoding does not validate
@@ -133,8 +134,8 @@ For a **valid** union value the selected branch and the resulting bytes are iden
 const codec = Codec.Union([Codec.Object({ a: Codec.UInt(8) }), Codec.Null]);
 
 codec.encode({ a: 5 }); // valid   -> bytes unchanged
-codec.encode({});       // invalid -> passes the object type check, encodes [0, 0], does not throw
-codec.isValid({});      // false
+codec.encode({}); // invalid -> passes the object type check, encodes [0, 0], does not throw
+codec.isValid({}); // false
 
 // Guard first when the value may not conform:
 if (codec.isValid(value)) codec.encode(value);
@@ -157,6 +158,7 @@ JSON.size                       282
 ```
 
 #### Common Types
+
 ```
 bufferfy.size                   1050
 msgpack.size                    1706

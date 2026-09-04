@@ -1,7 +1,7 @@
-import type { AbstractCodec } from "../Abstract";
 import { VarInt60Codec } from "../VarInt/VarInt60";
 import { StringFixedCodec } from "./Fixed";
 import { StringVariableCodec } from "./Variable";
+import type { AbstractCodec } from "../Abstract";
 
 export type StringEncoding = "hex" | "base32" | "base58" | "base64" | "base64url" | "utf8";
 
@@ -37,7 +37,10 @@ export function createStringCodec(encoding?: StringEncoding, lengthCodec?: Abstr
  */
 export function createStringCodec(encoding?: StringEncoding, byteLength?: number): StringFixedCodec;
 
-export function createStringCodec(encoding: StringEncoding = "utf8", byteLengthOrCodec: number | AbstractCodec<number> = new VarInt60Codec()): StringCodec {
+export function createStringCodec(
+	encoding: StringEncoding = "utf8",
+	byteLengthOrCodec: number | AbstractCodec<number> = new VarInt60Codec(),
+): StringCodec {
 	if (typeof byteLengthOrCodec === "number") {
 		return new StringFixedCodec(byteLengthOrCodec, encoding);
 	}

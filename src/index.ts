@@ -25,7 +25,16 @@ export { StringFixedCodec } from "./Codecs/String/Fixed";
 export { StringVariableCodec } from "./Codecs/String/Variable";
 export { TransformCodec } from "./Codecs/Transform";
 export { TupleCodec } from "./Codecs/Tuple";
-export { UInt16Codec, UInt24Codec, UInt32Codec, UInt40Codec, UInt48Codec, UInt8Codec, type Endianness, type UIntCodec } from "./Codecs/UInt";
+export {
+	UInt16Codec,
+	UInt24Codec,
+	UInt32Codec,
+	UInt40Codec,
+	UInt48Codec,
+	UInt8Codec,
+	type Endianness,
+	type UIntCodec,
+} from "./Codecs/UInt";
 export { OptionalCodec, UnionCodec } from "./Codecs/Union";
 export { type VarIntCodec } from "./Codecs/VarInt";
 export { VarInt15Codec } from "./Codecs/VarInt/VarInt15";
@@ -34,5 +43,11 @@ export { VarInt60Codec } from "./Codecs/VarInt/VarInt60";
 
 export { Codec } from "./Codec";
 
-export { BufferfyError, BufferfyByteLengthError, BufferfyValidationError, BufferfyUnionError, BufferfyRangeError } from "./utilities/Error";
+export {
+	BufferfyError,
+	BufferfyByteLengthError,
+	BufferfyValidationError,
+	BufferfyUnionError,
+	BufferfyRangeError,
+} from "./utilities/Error";
 export { type CodecMatcher, type DomainTag } from "./utilities/matcher";

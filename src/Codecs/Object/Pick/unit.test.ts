@@ -14,7 +14,7 @@ describe("correctly performs picked object codec methods", () => {
 			number: new VarInt60Codec(),
 			boolean: new BooleanCodec(),
 		}),
-		["string", "number"]
+		["string", "number"],
 	);
 	const value: CodecType<typeof codec> = {
 		string: randomBytes(16).toString("hex"),

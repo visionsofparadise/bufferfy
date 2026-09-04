@@ -1,79 +1,90 @@
 {
-  "name": "bufferfy",
-  "version": "4.0.5",
-  "description": "Fast and efficient buffer serialization.",
-  "keywords": [
-    "protobuf",
-    "binary",
-    "buffer",
-    "serialize",
-    "deserialize",
-    "serialization",
-    "deserialization",
-    "message",
-    "message-pack",
-    "struct",
-    "encode",
-    "encoder",
-    "encoding",
-    "decode",
-    "decoder",
-    "bytes",
-    "restructure",
-    "stream"
-  ],
-  "author": "Matt Cavender",
-  "license": "ISC",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/visionsofparadise/bufferfy.git"
-  },
-  "bugs": {
-    "url": "https://github.com/visionsofparadise/bufferfy/issues"
-  },
-  "homepage": "https://github.com/visionsofparadise/bufferfy",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist/**"
-  ],
-  "sideEffects": false,
-  "scripts": {
-    "check": "concurrently \"eslint . --fix --cache --format ./agent-eslint.js\" \"tsc --noEmit --pretty false 2>&1 | node ./agent-tsc.js\"",
-    "check:verbose": "concurrently \"eslint . --cache\" \"tsc --noEmit\"",
-    "lint": "eslint . --fix --cache --format ./agent-eslint.js",
-    "lint:verbose": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "unit": "vitest run unit",
-    "benchmark": "vitest bench",
-    "build": "tsup src/index.ts --format esm,cjs --dts --treeshake"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.0.0",
-    "@stylistic/eslint-plugin": "^5.10.0",
-    "@types/node": "^20.12.5",
-    "@vitest/ui": "^4.0.3",
-    "concurrently": "^9.0.0",
-    "eslint": "^9.0.0",
-    "eslint-plugin-barrel-files": "^2.1.0",
-    "eslint-plugin-check-file": "^2.8.0",
-    "eslint-plugin-import-x": "^4.0.0",
-    "globals": "^15.0.0",
-    "msgpackr": "^1.11.0",
-    "tsup": "^7.2.0",
-    "typescript": "^5.7.0",
-    "typescript-eslint": "^8.0.0",
-    "vitest": "^4.0.3"
-  },
-  "dependencies": {
-    "@scure/base": "^1.2.1",
-    "fast-deep-equal": "^3.1.3",
-    "uint8array-tools": "^0.0.9"
-  },
-  "allowScripts": {
-    "esbuild@0.18.20": true,
-    "msgpackr-extract@3.0.4": true,
-    "unrs-resolver@1.12.2": true
-  }
+	"name": "bufferfy",
+	"version": "4.0.5",
+	"description": "Fast and efficient buffer serialization.",
+	"keywords": [
+		"protobuf",
+		"binary",
+		"buffer",
+		"serialize",
+		"deserialize",
+		"serialization",
+		"deserialization",
+		"message",
+		"message-pack",
+		"struct",
+		"encode",
+		"encoder",
+		"encoding",
+		"decode",
+		"decoder",
+		"bytes",
+		"restructure",
+		"stream"
+	],
+	"author": "Matt Cavender",
+	"license": "ISC",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/visionsofparadise/bufferfy.git"
+	},
+	"bugs": {
+		"url": "https://github.com/visionsofparadise/bufferfy/issues"
+	},
+	"homepage": "https://github.com/visionsofparadise/bufferfy",
+	"main": "./dist/index.js",
+	"module": "./dist/index.mjs",
+	"types": "./dist/index.d.ts",
+	"files": [
+		"dist/**"
+	],
+	"sideEffects": false,
+	"scripts": {
+		"prepare": "node -e \"import('node:child_process').then(({execSync})=>{try{execSync('git rev-parse --is-inside-work-tree',{stdio:'ignore'});execSync('git config core.hooksPath .githooks')}catch{}})\" && node tools.mjs install",
+		"fix": "concurrently -m 1 --group \"prettier --write .\" \"eslint . --fix --cache\" \"markdownlint-cli2 --fix \\\"**/*.md\\\"\" \"textlint --fix \\\"**/*.md\\\"\"",
+		"check": "concurrently --group \"prettier --check .\" \"eslint . --no-cache -f unix\" \"tsc --noEmit --pretty false\" \"markdownlint-cli2 \\\"**/*.md\\\"\" \"textlint -f compact \\\"**/*.md\\\"\" \"knip --no-progress\" \"jscpd .\" \"node tools.mjs run actionlint\"",
+		"unit": "vitest run unit",
+		"benchmark": "vitest bench",
+		"build": "tsup src/index.ts --format esm,cjs --dts --treeshake"
+	},
+	"devDependencies": {
+		"@commitlint/cli": "^21.2.2",
+		"@commitlint/config-conventional": "^21.2.2",
+		"@eslint/compat": "^2.1.1",
+		"@eslint/js": "^9.39.5",
+		"@stylistic/eslint-plugin": "^5.10.0",
+		"@types/node": "^20.12.5",
+		"@vitest/ui": "^4.0.3",
+		"concurrently": "^9.2.4",
+		"eslint": "^9.39.5",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-formatter-unix": "^9.0.1",
+		"eslint-import-resolver-typescript": "^4.4.5",
+		"eslint-plugin-barrel-files": "^2.1.1",
+		"eslint-plugin-comment-rules": "^0.1.7",
+		"eslint-plugin-import-x": "^4.17.1",
+		"globals": "^15.15.0",
+		"jscpd": "^5.1.2",
+		"knip": "^6.34.0",
+		"markdownlint-cli2": "^0.23.2",
+		"msgpackr": "^1.11.0",
+		"prettier": "^3.9.6",
+		"textlint": "^15.8.0",
+		"textlint-filter-rule-comments": "^1.3.0",
+		"textlint-rule-no-dead-link": "^6.2.3",
+		"tsup": "^7.2.0",
+		"typescript": "^5.9.3",
+		"typescript-eslint": "^8.69.0",
+		"vitest": "^4.1.11"
+	},
+	"dependencies": {
+		"@scure/base": "^1.2.1",
+		"fast-deep-equal": "^3.1.3",
+		"uint8array-tools": "^0.0.9"
+	},
+	"allowScripts": {
+		"esbuild@0.18.20": true,
+		"msgpackr-extract@3.0.4": true,
+		"unrs-resolver@1.12.2": true
+	}
 }

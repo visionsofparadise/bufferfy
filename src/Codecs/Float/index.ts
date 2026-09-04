@@ -1,7 +1,7 @@
 import { NUMBER_MATCHER, type CodecMatcher } from "../../utilities/matcher";
+import { AbstractCodec } from "../Abstract";
 import type { Reader } from "../../utilities/Reader";
 import type { Writer } from "../../utilities/Writer";
-import { AbstractCodec } from "../Abstract";
 import type { Endianness } from "../UInt";
 
 export const floatBitValues = [32, 64] as const;

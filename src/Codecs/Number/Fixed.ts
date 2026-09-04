@@ -1,8 +1,8 @@
 import { BIGINT_MATCHER, type CodecMatcher } from "../../utilities/matcher";
-import type { Reader } from "../../utilities/Reader";
-import type { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 import { StringFixedCodec } from "../String/Fixed";
+import type { Reader } from "../../utilities/Reader";
+import type { Writer } from "../../utilities/Writer";
 
 export class NumberFixedCodec extends AbstractCodec<bigint> {
 	protected _byteLength: number;

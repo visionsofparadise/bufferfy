@@ -4,3 +4,6 @@ dist
 v1
 CLAUDE.md
 .claude
+.eslintcache
+tsconfig.tsbuildinfo
+.tools/

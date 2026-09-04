@@ -91,7 +91,8 @@ describe("iterates float endianness and bits combinations", () => {
 });
 
 describe("bigUInt exact-byte wire format guards", () => {
-	const wire = (logical: Array<number>, endianness: Endianness): Uint8Array => Uint8Array.from(endianness === "LE" ? [...logical].reverse() : logical);
+	const wire = (logical: Array<number>, endianness: Endianness): Uint8Array =>
+		Uint8Array.from(endianness === "LE" ? [...logical].reverse() : logical);
 
 	const distinctLogical = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08];
 	const value = 0x0102030405060708n;

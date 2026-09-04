@@ -148,11 +148,7 @@ describe("decode callback receives correct buffer bytes", () => {
 		const encoded = codec.encode(0x12345678);
 		const paddingAfter = new Uint8Array([0xaa, 0xaa]);
 
-		const combinedBuffer = new Uint8Array([
-			...paddingBefore,
-			...encoded,
-			...paddingAfter,
-		]);
+		const combinedBuffer = new Uint8Array([...paddingBefore, ...encoded, ...paddingAfter]);
 
 		const result = codec.decode(combinedBuffer, 2);
 

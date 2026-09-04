@@ -12,7 +12,7 @@ import type { AbstractCodec } from "../../Abstract";
  */
 export const pickObjectCodec = <Properties extends Record<string, AbstractCodec>, Key extends keyof Properties>(
 	objectCodec: ObjectCodec<Properties>,
-	keys: Array<Key>
+	keys: Array<Key>,
 ): ObjectCodec<Pick<Properties, Key>> => {
 	const keySet = new Set<Key>(keys);
 

@@ -1,7 +1,7 @@
 import { BYTES_MATCHER, type CodecMatcher } from "../../utilities/matcher";
+import { AbstractCodec } from "../Abstract";
 import type { Reader } from "../../utilities/Reader";
 import type { Writer } from "../../utilities/Writer";
-import { AbstractCodec } from "../Abstract";
 
 export class BytesFixedCodec extends AbstractCodec<Uint8Array> {
 	protected _byteLength: number;

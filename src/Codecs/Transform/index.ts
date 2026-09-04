@@ -1,6 +1,6 @@
+import { AbstractCodec } from "../Abstract";
 import type { Reader } from "../../utilities/Reader";
 import type { Writer } from "../../utilities/Writer";
-import { AbstractCodec } from "../Abstract";
 
 export interface TransformCodecOptions<Source, Target> {
 	isValid?: (source: unknown) => boolean;
@@ -24,14 +24,20 @@ export interface TransformCodecOptions<Source, Target> {
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Transform/index.ts|Source}
  */
-export const createTransformCodec = <Source, Target>(targetCodec: AbstractCodec<Target>, options: TransformCodecOptions<Source, Target>) => new TransformCodec(targetCodec, options);
+export const createTransformCodec = <Source, Target>(
+	targetCodec: AbstractCodec<Target>,
+	options: TransformCodecOptions<Source, Target>,
+) => new TransformCodec(targetCodec, options);
 
 export class TransformCodec<Source, Target> extends AbstractCodec<Source> {
 	private readonly _isSourceValid: (value: unknown) => boolean;
 	private readonly _encodeSource: (source: Source) => Target;
 	private readonly _decodeTarget: (target: Target, buffer: Uint8Array) => Source;
 
-	constructor(public readonly targetCodec: AbstractCodec<Target>, options: TransformCodecOptions<Source, Target>) {
+	constructor(
+		public readonly targetCodec: AbstractCodec<Target>,
+		options: TransformCodecOptions<Source, Target>,
+	) {
 		super();
 
 		this._isSourceValid = options.isValid ?? ((value: unknown) => targetCodec.isValid(options.encode(value as any)));

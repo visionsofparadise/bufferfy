@@ -15,7 +15,7 @@ describe("correctly performs recursive codec methods", () => {
 		(self) =>
 			new ObjectCodec({
 				self: new UnionCodec([self, new ConstantCodec(null)]),
-			})
+			}),
 	);
 	const byteLength = 3;
 

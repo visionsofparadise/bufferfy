@@ -2,6 +2,7 @@ const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
 export const SHORT_STRING_THRESHOLD = 48;
+
 const DECODE_THRESHOLD = 48;
 
 export function utf8ByteLength(value: string): number {

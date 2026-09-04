@@ -1,10 +1,10 @@
 import { BufferfyError, BufferfyRangeError } from "../../utilities/Error";
 import { TAG_OVERLAP, type CodecMatcher } from "../../utilities/matcher";
-import type { Reader } from "../../utilities/Reader";
-import type { Writer } from "../../utilities/Writer";
 import { AbstractCodec, type CodecType } from "../Abstract";
 import { ConstantCodec } from "../Constant";
 import { VarInt60Codec } from "../VarInt/VarInt60";
+import type { Reader } from "../../utilities/Reader";
+import type { Writer } from "../../utilities/Writer";
 
 /**
  * Creates a codec for one of many types of value. Useful for optional/nullable values and discriminated unions.
@@ -40,9 +40,14 @@ import { VarInt60Codec } from "../VarInt/VarInt60";
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Union/index.ts|Source}
  */
-export const createUnionCodec = <const Codecs extends Array<AbstractCodec<any>>>(codecs: Codecs, indexCodec: AbstractCodec<number> = new VarInt60Codec()) => new UnionCodec(codecs, indexCodec);
+export const createUnionCodec = <const Codecs extends Array<AbstractCodec<any>>>(
+	codecs: Codecs,
+	indexCodec: AbstractCodec<number> = new VarInt60Codec(),
+) => new UnionCodec(codecs, indexCodec);
 
-export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends AbstractCodec<CodecType<Codecs[number]>> {
+export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends AbstractCodec<
+	CodecType<Codecs[number]>
+> {
 	codecs: Codecs;
 
 	private readonly _matchers: Array<CodecMatcher>;
@@ -123,7 +128,8 @@ export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends 
 		for (let index = 0; index < this.codecs.length; index++) {
 			const matcher = this._matchers[index];
 
-			if (matcher.test(value) && (matcher.exact || this._sufficient[index] || this.codecs[index].isValid(value))) return this.indexCodec.byteLength(index) + this.codecs[index].byteLength(value);
+			if (matcher.test(value) && (matcher.exact || this._sufficient[index] || this.codecs[index].isValid(value)))
+				return this.indexCodec.byteLength(index) + this.codecs[index].byteLength(value);
 		}
 
 		throw new BufferfyError("Value does not match any codec");
@@ -158,7 +164,13 @@ export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends 
 
 		// Bounds check the decoded index
 		if (index < 0 || index >= this.codecs.length) {
-			throw new BufferfyRangeError(`Union codec index ${index} out of bounds (0-${this.codecs.length - 1})`, "UnionCodec", index, this.codecs.length - 1, reader.position);
+			throw new BufferfyRangeError(
+				`Union codec index ${index} out of bounds (0-${this.codecs.length - 1})`,
+				"UnionCodec",
+				index,
+				this.codecs.length - 1,
+				reader.position,
+			);
 		}
 
 		return this.codecs[index]._decode(reader);
@@ -192,7 +204,8 @@ export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends 
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Union/index.ts|Source}
  */
-export const createOptionalCodec = <Value>(valueCodec: AbstractCodec<Value>): OptionalCodec<Value> => new OptionalCodec(valueCodec);
+export const createOptionalCodec = <Value>(valueCodec: AbstractCodec<Value>): OptionalCodec<Value> =>
+	new OptionalCodec(valueCodec);
 
 export class OptionalCodec<Value> extends UnionCodec<[AbstractCodec<Value>, ConstantCodec<undefined>]> {
 	constructor(public readonly valueCodec: AbstractCodec<Value>) {

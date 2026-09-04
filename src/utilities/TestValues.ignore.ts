@@ -10,7 +10,10 @@ export const SpreadCodec = Codec.Object({
 	enumerated: Codec.Enum(["test1", "test2"], Codec.UInt(8)),
 	null: Codec.Null,
 	record: Codec.Record(Codec.String("utf8", 5), Codec.String("utf8", 4), Codec.UInt(32)),
-	transform: Codec.Transform(Codec.String("utf8", 2), { encode: (value: number) => value.toString(10), decode: (value) => parseInt(value) }),
+	transform: Codec.Transform(Codec.String("utf8", 2), {
+		encode: (value: number) => value.toString(10),
+		decode: (value) => parseInt(value),
+	}),
 	tuple: Codec.Tuple([Codec.UInt(8), Codec.Null]),
 	undefined: Codec.Undefined,
 });
@@ -62,8 +65,8 @@ export const CommonCodec = Codec.Object({
 				}),
 				Codec.Null,
 			],
-			Codec.UInt(8)
-		)
+			Codec.UInt(8),
+		),
 	),
 	isLocked: Codec.Boolean,
 	status: Codec.Enum(["pending", "created", "error"], Codec.UInt(8)),

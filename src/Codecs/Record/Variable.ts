@@ -1,8 +1,8 @@
 import { OBJECT_MATCHER, type CodecMatcher } from "../../utilities/matcher";
-import type { Reader } from "../../utilities/Reader";
-import type { Writer } from "../../utilities/Writer";
 import { AbstractCodec } from "../Abstract";
 import { VarInt60Codec } from "../VarInt/VarInt60";
+import type { Reader } from "../../utilities/Reader";
+import type { Writer } from "../../utilities/Writer";
 
 export class RecordVariableCodec<Key extends string, Value> extends AbstractCodec<Record<Key, Value>> {
 	constructor(

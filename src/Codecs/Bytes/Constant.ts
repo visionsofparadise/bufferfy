@@ -1,7 +1,7 @@
 import { compare } from "uint8array-tools";
+import { BytesFixedCodec } from "./Fixed";
 import type { Reader } from "../../utilities/Reader";
 import type { Writer } from "../../utilities/Writer";
-import { BytesFixedCodec } from "./Fixed";
 
 export class BytesConstantCodec extends BytesFixedCodec {
 	constructor(public readonly bytes: Uint8Array) {

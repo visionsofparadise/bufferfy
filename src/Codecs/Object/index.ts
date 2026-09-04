@@ -1,8 +1,8 @@
 import { OBJECT_MATCHER, type CodecMatcher } from "../../utilities/matcher";
-import type { Reader } from "../../utilities/Reader";
-import type { Writer } from "../../utilities/Writer";
 import { AbstractCodec, type CodecType } from "../Abstract";
 import { OptionalCodec } from "../Union";
+import type { Reader } from "../../utilities/Reader";
+import type { Writer } from "../../utilities/Writer";
 
 /**
  * Creates a codec for a fixed object.
@@ -16,7 +16,9 @@ import { OptionalCodec } from "../Union";
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Object/index.ts|Source}
  */
-export const createObjectCodec = <Properties extends Record<string, AbstractCodec>>(properties: Properties): ObjectCodec<Properties> => new ObjectCodec<Properties>(properties);
+export const createObjectCodec = <Properties extends Record<string, AbstractCodec>>(
+	properties: Properties,
+): ObjectCodec<Properties> => new ObjectCodec<Properties>(properties);
 
 type OutputObject<T extends Record<string, AbstractCodec>> = {
 	[K in keyof T as T[K] extends OptionalCodec<any> ? never : K]: CodecType<T[K]>;
@@ -24,7 +26,9 @@ type OutputObject<T extends Record<string, AbstractCodec>> = {
 	[K in keyof T as T[K] extends OptionalCodec<any> ? K : never]?: T[K] extends OptionalCodec<infer V> ? V : never;
 };
 
-export class ObjectCodec<Properties extends Record<string, AbstractCodec>> extends AbstractCodec<OutputObject<Properties>> {
+export class ObjectCodec<Properties extends Record<string, AbstractCodec>> extends AbstractCodec<
+	OutputObject<Properties>
+> {
 	entries: Array<[keyof Properties, AbstractCodec]>;
 
 	private readonly _plan: Array<{ key: keyof Properties; codec: AbstractCodec; isOptional: boolean }>;

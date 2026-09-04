@@ -1,7 +1,7 @@
 import { NUMBER_MATCHER, type CodecMatcher } from "../../utilities/matcher";
+import { AbstractCodec } from "../Abstract";
 import type { Reader } from "../../utilities/Reader";
 import type { Writer } from "../../utilities/Writer";
-import { AbstractCodec } from "../Abstract";
 import type { Endianness, UIntBits } from "../UInt";
 
 export type IntCodec = Int8Codec | Int16Codec | Int24Codec | Int32Codec | Int40Codec | Int48Codec;
@@ -44,7 +44,12 @@ export class Int8Codec extends AbstractCodec<number> {
 	static readonly MAX_VALUE = 127;
 
 	isValid(value: unknown): value is number {
-		return typeof value === "number" && Number.isInteger(value) && value >= Int8Codec.MIN_VALUE && value <= Int8Codec.MAX_VALUE;
+		return (
+			typeof value === "number" &&
+			Number.isInteger(value) &&
+			value >= Int8Codec.MIN_VALUE &&
+			value <= Int8Codec.MAX_VALUE
+		);
 	}
 
 	override get matcher(): CodecMatcher {
@@ -79,7 +84,12 @@ export class Int16Codec extends AbstractCodec<number> {
 	}
 
 	isValid(value: unknown): value is number {
-		return typeof value === "number" && Number.isInteger(value) && value >= Int16Codec.MIN_VALUE && value <= Int16Codec.MAX_VALUE;
+		return (
+			typeof value === "number" &&
+			Number.isInteger(value) &&
+			value >= Int16Codec.MIN_VALUE &&
+			value <= Int16Codec.MAX_VALUE
+		);
 	}
 
 	override get matcher(): CodecMatcher {
@@ -118,7 +128,12 @@ export class Int24Codec extends AbstractCodec<number> {
 	}
 
 	isValid(value: unknown): value is number {
-		return typeof value === "number" && Number.isInteger(value) && value >= Int24Codec.MIN_VALUE && value <= Int24Codec.MAX_VALUE;
+		return (
+			typeof value === "number" &&
+			Number.isInteger(value) &&
+			value >= Int24Codec.MIN_VALUE &&
+			value <= Int24Codec.MAX_VALUE
+		);
 	}
 
 	override get matcher(): CodecMatcher {
@@ -180,7 +195,12 @@ export class Int32Codec extends AbstractCodec<number> {
 	}
 
 	isValid(value: unknown): value is number {
-		return typeof value === "number" && Number.isInteger(value) && value >= Int32Codec.MIN_VALUE && value <= Int32Codec.MAX_VALUE;
+		return (
+			typeof value === "number" &&
+			Number.isInteger(value) &&
+			value >= Int32Codec.MIN_VALUE &&
+			value <= Int32Codec.MAX_VALUE
+		);
 	}
 
 	override get matcher(): CodecMatcher {
@@ -219,7 +239,12 @@ export class Int40Codec extends AbstractCodec<number> {
 	}
 
 	isValid(value: unknown): value is number {
-		return typeof value === "number" && Number.isInteger(value) && value >= Int40Codec.MIN_VALUE && value <= Int40Codec.MAX_VALUE;
+		return (
+			typeof value === "number" &&
+			Number.isInteger(value) &&
+			value >= Int40Codec.MIN_VALUE &&
+			value <= Int40Codec.MAX_VALUE
+		);
 	}
 
 	override get matcher(): CodecMatcher {
@@ -281,7 +306,12 @@ export class Int48Codec extends AbstractCodec<number> {
 	}
 
 	isValid(value: unknown): value is number {
-		return typeof value === "number" && Number.isInteger(value) && value >= Int48Codec.MIN_VALUE && value <= Int48Codec.MAX_VALUE;
+		return (
+			typeof value === "number" &&
+			Number.isInteger(value) &&
+			value >= Int48Codec.MIN_VALUE &&
+			value <= Int48Codec.MAX_VALUE
+		);
 	}
 
 	override get matcher(): CodecMatcher {

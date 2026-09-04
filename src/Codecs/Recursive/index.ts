@@ -1,6 +1,6 @@
+import { AbstractCodec } from "../Abstract";
 import type { Reader } from "../../utilities/Reader";
 import type { Writer } from "../../utilities/Writer";
-import { AbstractCodec } from "../Abstract";
 
 /**
  * Creates a recursive codec.
@@ -14,7 +14,8 @@ import { AbstractCodec } from "../Abstract";
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Recursive/index.ts|Source}
  */
-export const createRecursiveCodec = <const Value>(recursion: (self: DeferredCodec<Value>) => AbstractCodec<Value>) => new RecursiveCodec(recursion);
+export const createRecursiveCodec = <const Value>(recursion: (self: DeferredCodec<Value>) => AbstractCodec<Value>) =>
+	new RecursiveCodec(recursion);
 
 export class RecursiveCodec<const Value> extends AbstractCodec<Value> {
 	public readonly codec: AbstractCodec<Value>;

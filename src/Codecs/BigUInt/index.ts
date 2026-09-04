@@ -1,7 +1,7 @@
 import { BIGINT_MATCHER, type CodecMatcher } from "../../utilities/matcher";
+import { AbstractCodec } from "../Abstract";
 import type { Reader } from "../../utilities/Reader";
 import type { Writer } from "../../utilities/Writer";
-import { AbstractCodec } from "../Abstract";
 import type { Endianness } from "../UInt";
 
 const MAX_BIGUINT64 = 2n ** 64n;

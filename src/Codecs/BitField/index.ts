@@ -1,7 +1,7 @@
 import { OBJECT_MATCHER, type CodecMatcher } from "../../utilities/matcher";
+import { AbstractCodec } from "../Abstract";
 import type { Reader } from "../../utilities/Reader";
 import type { Writer } from "../../utilities/Writer";
-import { AbstractCodec } from "../Abstract";
 
 const BIT_MAP = [0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01];
 
@@ -18,10 +18,14 @@ const BIT_MAP = [0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01];
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/BitField/index.ts|Source}
  */
-export const createBitFieldCodec = <Key extends string>(keys: Array<Key>, byteLength?: number) => new BitFieldCodec(keys, byteLength);
+export const createBitFieldCodec = <Key extends string>(keys: Array<Key>, byteLength?: number) =>
+	new BitFieldCodec(keys, byteLength);
 
 export class BitFieldCodec<Key extends string> extends AbstractCodec<Record<Key, boolean>> {
-	constructor(public readonly keys: Array<Key>, private readonly _byteLength: number = Math.ceil(keys.length / 8)) {
+	constructor(
+		public readonly keys: Array<Key>,
+		private readonly _byteLength: number = Math.ceil(keys.length / 8),
+	) {
 		super();
 	}
 

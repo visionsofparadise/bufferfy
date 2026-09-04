@@ -1,7 +1,7 @@
-import type { AbstractCodec } from "../Abstract";
 import { VarInt60Codec } from "../VarInt/VarInt60";
 import { ArrayFixedCodec } from "./Fixed";
 import { ArrayVariableCodec } from "./Variable";
+import type { AbstractCodec } from "../Abstract";
 
 export type ArrayCodec<Item> = ArrayFixedCodec<Item> | ArrayVariableCodec<Item>;
 
@@ -18,7 +18,10 @@ export type ArrayCodec<Item> = ArrayFixedCodec<Item> | ArrayVariableCodec<Item>;
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Array/index.ts|Source}
  */
-export function createArrayCodec<Item>(itemCodec: AbstractCodec<Item>, lengthCodec?: AbstractCodec<number>): ArrayVariableCodec<Item>;
+export function createArrayCodec<Item>(
+	itemCodec: AbstractCodec<Item>,
+	lengthCodec?: AbstractCodec<number>,
+): ArrayVariableCodec<Item>;
 
 /**
  * Creates a codec for a fixed length array.
@@ -35,7 +38,10 @@ export function createArrayCodec<Item>(itemCodec: AbstractCodec<Item>, lengthCod
  */
 export function createArrayCodec<Item>(itemCodec: AbstractCodec<Item>, length?: number): ArrayFixedCodec<Item>;
 
-export function createArrayCodec<Item>(itemCodec: AbstractCodec<Item>, lengthOrCodec: number | AbstractCodec<number> = new VarInt60Codec()): ArrayCodec<Item> {
+export function createArrayCodec<Item>(
+	itemCodec: AbstractCodec<Item>,
+	lengthOrCodec: number | AbstractCodec<number> = new VarInt60Codec(),
+): ArrayCodec<Item> {
 	if (typeof lengthOrCodec === "number") return new ArrayFixedCodec(lengthOrCodec, itemCodec);
 
 	return new ArrayVariableCodec(itemCodec, lengthOrCodec);

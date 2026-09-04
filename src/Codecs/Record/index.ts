@@ -1,7 +1,7 @@
-import type { AbstractCodec } from "../Abstract";
 import { VarInt60Codec } from "../VarInt/VarInt60";
 import { RecordFixedCodec } from "./Fixed";
 import { RecordVariableCodec } from "./Variable";
+import type { AbstractCodec } from "../Abstract";
 
 export type RecordCodec<Key extends string, Value> = RecordFixedCodec<Key, Value> | RecordVariableCodec<Key, Value>;
 
@@ -21,7 +21,11 @@ export type RecordCodec<Key extends string, Value> = RecordFixedCodec<Key, Value
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Record/index.ts|Source}
  */
-export function createRecordCodec<Key extends string, Value>(keyCodec: AbstractCodec<Key>, valueCodec: AbstractCodec<Value>, lengthCodec?: AbstractCodec<number>): RecordVariableCodec<Key, Value>;
+export function createRecordCodec<Key extends string, Value>(
+	keyCodec: AbstractCodec<Key>,
+	valueCodec: AbstractCodec<Value>,
+	lengthCodec?: AbstractCodec<number>,
+): RecordVariableCodec<Key, Value>;
 
 /**
  * Creates a codec for a fixed size record or map of keys and values.
@@ -37,12 +41,16 @@ export function createRecordCodec<Key extends string, Value>(keyCodec: AbstractC
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Record/index.ts|Source}
  */
-export function createRecordCodec<Key extends string, Value>(keyCodec: AbstractCodec<Key>, valueCodec: AbstractCodec<Value>, length: number): RecordFixedCodec<Key, Value>;
+export function createRecordCodec<Key extends string, Value>(
+	keyCodec: AbstractCodec<Key>,
+	valueCodec: AbstractCodec<Value>,
+	length: number,
+): RecordFixedCodec<Key, Value>;
 
 export function createRecordCodec<Key extends string, Value>(
 	keyCodec: AbstractCodec<Key>,
 	valueCodec: AbstractCodec<Value>,
-	lengthOrCodec: number | AbstractCodec<number> = new VarInt60Codec()
+	lengthOrCodec: number | AbstractCodec<number> = new VarInt60Codec(),
 ): RecordCodec<Key, Value> {
 	if (typeof lengthOrCodec === "number") return new RecordFixedCodec(lengthOrCodec, keyCodec, valueCodec);
 

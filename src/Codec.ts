@@ -1,4 +1,3 @@
-import type { AbstractCodec, CodecType } from "./Codecs/Abstract";
 import { createAnyCodec } from "./Codecs/Any";
 import { createArrayCodec } from "./Codecs/Array";
 import { createBigUIntCodec } from "./Codecs/BigUInt";
@@ -21,6 +20,7 @@ import { createTupleCodec } from "./Codecs/Tuple";
 import { createUIntCodec } from "./Codecs/UInt";
 import { createOptionalCodec, createUnionCodec } from "./Codecs/Union";
 import { createVarIntCodec } from "./Codecs/VarInt";
+import type { AbstractCodec, CodecType } from "./Codecs/Abstract";
 
 export namespace Codec {
 	export type Type<Codec extends AbstractCodec<any>> = CodecType<Codec>;
@@ -37,7 +37,7 @@ export const Codec = {
 	Enum: <const Value>(enumValues: Array<Value>, indexCodec: AbstractCodec<number>) =>
 		createUnionCodec(
 			enumValues.map((value) => createConstantCodec(value)),
-			indexCodec
+			indexCodec,
 		),
 	False: createConstantCodec(false),
 	Float: createFloatCodec,
