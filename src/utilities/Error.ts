@@ -1,7 +1,3 @@
-/**
- * Base error class for all bufferfy errors.
- * Contains optional context about where and why the error occurred.
- */
 export class BufferfyError extends Error {
 	constructor(
 		message: string,
@@ -14,9 +10,6 @@ export class BufferfyError extends Error {
 	}
 }
 
-/**
- * Thrown when buffer doesn't have enough bytes remaining for decode operation.
- */
 export class BufferfyByteLengthError extends BufferfyError {
 	constructor(required?: number, available?: number, offset?: number) {
 		const message =
@@ -29,9 +22,6 @@ export class BufferfyByteLengthError extends BufferfyError {
 	}
 }
 
-/**
- * Thrown when a value doesn't pass codec validation.
- */
 export class BufferfyValidationError extends BufferfyError {
 	constructor(codecName: string, value: unknown) {
 		super(`Value does not match codec ${codecName}`, codecName, undefined, { value });
@@ -39,9 +29,6 @@ export class BufferfyValidationError extends BufferfyError {
 	}
 }
 
-/**
- * Thrown when no codec in a union matches the value.
- */
 export class BufferfyUnionError extends BufferfyError {
 	constructor(value: unknown, attemptedCodecs: Array<string>) {
 		super(`Value does not match any codec in union: tried [${attemptedCodecs.join(", ")}]`, "UnionCodec", undefined, {
@@ -52,9 +39,6 @@ export class BufferfyUnionError extends BufferfyError {
 	}
 }
 
-/**
- * Thrown when a value or index is out of allowed range.
- */
 export class BufferfyRangeError extends BufferfyError {
 	constructor(message: string, codecName: string, value: unknown, limit?: number, offset?: number) {
 		super(message, codecName, offset, { value, limit });

@@ -162,7 +162,6 @@ export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends 
 	_decode(reader: Reader): CodecType<Codecs[number]> {
 		const index = this.indexCodec._decode(reader);
 
-		// Bounds check the decoded index
 		if (index < 0 || index >= this.codecs.length) {
 			throw new BufferfyRangeError(
 				`Union codec index ${index} out of bounds (0-${this.codecs.length - 1})`,

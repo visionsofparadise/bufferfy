@@ -3,7 +3,7 @@ import { AbstractCodec } from "../Abstract";
 import type { Reader } from "../../utilities/Reader";
 import type { Writer } from "../../utilities/Writer";
 
-const POW256 = [1, 256, 65536, 16777216, 4294967296, 1099511627776, 281474976710656]; // 256^0 .. 256^6, covers the 7-byte max shift of 2^48
+const POW256 = [1, 256, 65536, 16777216, 4294967296, 1099511627776, 281474976710656];
 
 export class VarInt60Codec extends AbstractCodec<number> {
 	static MAX_VALUE = 281474976710656;

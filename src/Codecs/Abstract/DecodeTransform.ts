@@ -2,7 +2,7 @@ import { concat } from "uint8array-tools";
 import { BufferfyByteLengthError, BufferfyError } from "../../utilities/Error";
 import type { AbstractCodec } from ".";
 
-const WARN_BUFFER_SIZE = 10 * 1024 * 1024; // 10MB
+const WARN_BUFFER_SIZE = 10 * 1024 * 1024;
 let hasWarned = false;
 
 export class DecodeTransformStream<Value = unknown> extends TransformStream<Uint8Array, Value> {

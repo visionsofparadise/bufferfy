@@ -24,11 +24,9 @@ export function utf8ByteLength(value: string): number {
 				byteLength += 4;
 				index++;
 			} else {
-				// Lone high surrogate encodes as U+FFFD (3 bytes), matching TextEncoder.
 				byteLength += 3;
 			}
 		} else if (code >= 0xdc00 && code <= 0xdfff) {
-			// Lone low surrogate encodes as U+FFFD (3 bytes), matching TextEncoder.
 			byteLength += 3;
 		} else {
 			byteLength += 3;
@@ -67,13 +65,11 @@ export function encodeUtf8Into(value: string, buffer: Uint8Array, offset: number
 				buffer[position++] = 0x80 | ((code >> 6) & 0x3f);
 				buffer[position++] = 0x80 | (code & 0x3f);
 			} else {
-				// Lone high surrogate → U+FFFD, matching TextEncoder.
 				buffer[position++] = 0xef;
 				buffer[position++] = 0xbf;
 				buffer[position++] = 0xbd;
 			}
 		} else if (code >= 0xdc00 && code <= 0xdfff) {
-			// Lone low surrogate → U+FFFD, matching TextEncoder.
 			buffer[position++] = 0xef;
 			buffer[position++] = 0xbf;
 			buffer[position++] = 0xbd;
@@ -94,7 +90,6 @@ export function decodeUtf8(buffer: Uint8Array, start: number, end: number): stri
 
 	for (let index = start; index < end; index++) {
 		if (buffer[index] >= 0x80) {
-			// Non-ASCII byte: defer the whole span to TextDecoder so multibyte and invalid sequences match its replacement behavior exactly.
 			return textDecoder.decode(buffer.subarray(start, end));
 		}
 	}
