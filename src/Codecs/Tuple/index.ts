@@ -13,7 +13,7 @@ import type { Writer } from "../../utilities/Writer";
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Tuple/index.ts|Source}
  */
-export const createTupleCodec = <Tuple extends [...Array<any>]>(
+export const createTupleCodec = <Tuple extends [...Array<unknown>]>(
 	codecs: [
 		...{
 			[Index in keyof Tuple]: AbstractCodec<Tuple[Index]>;
@@ -21,7 +21,7 @@ export const createTupleCodec = <Tuple extends [...Array<any>]>(
 	],
 ) => new TupleCodec(codecs);
 
-export class TupleCodec<Tuple extends [...Array<any>]> extends AbstractCodec<Tuple> {
+export class TupleCodec<Tuple extends [...Array<unknown>]> extends AbstractCodec<Tuple> {
 	constructor(
 		public readonly codecs: [
 			...{
@@ -59,7 +59,7 @@ export class TupleCodec<Tuple extends [...Array<any>]> extends AbstractCodec<Tup
 	}
 
 	_decode(reader: Reader): Tuple {
-		const value = new Array<AbstractCodec<Tuple[number]>>(this.codecs.length);
+		const value = new Array<Tuple[number]>(this.codecs.length);
 
 		for (let index = 0; index < this.codecs.length; index++) value[index] = this.codecs[index]._decode(reader);
 

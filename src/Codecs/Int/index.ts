@@ -1,4 +1,5 @@
 import { NUMBER_MATCHER, type CodecMatcher } from "../../utilities/matcher";
+import { readUInt24, readUInt40, readUInt48, writeUInt24, writeUInt40, writeUInt48 } from "../../utilities/splitWidth";
 import { AbstractCodec } from "../Abstract";
 import type { Reader } from "../../utilities/Reader";
 import type { Writer } from "../../utilities/Writer";
@@ -145,38 +146,11 @@ export class Int24Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		const offset = writer.reserve(3);
-		const view = writer.currentView;
-
-		const unsigned = value + Int24Codec.OFFSET;
-		const high = unsigned >>> 8;
-		const low = unsigned & 0xff;
-
-		if (this._littleEndian) {
-			view.setUint8(offset, low);
-			view.setUint16(offset + 1, high, true);
-		} else {
-			view.setUint16(offset, high, false);
-			view.setUint8(offset + 2, low);
-		}
+		writeUInt24(value + Int24Codec.OFFSET, writer, this._littleEndian);
 	}
 
 	_decode(reader: Reader): number {
-		const offset = reader.skipBytes(3);
-		const view = reader.view;
-
-		let high: number;
-		let low: number;
-
-		if (this._littleEndian) {
-			low = view.getUint8(offset);
-			high = view.getUint16(offset + 1, true);
-		} else {
-			high = view.getUint16(offset, false);
-			low = view.getUint8(offset + 2);
-		}
-
-		return ((high << 8) | low) - Int24Codec.OFFSET;
+		return readUInt24(reader, this._littleEndian) - Int24Codec.OFFSET;
 	}
 }
 
@@ -256,38 +230,11 @@ export class Int40Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		const offset = writer.reserve(5);
-		const view = writer.currentView;
-
-		const unsigned = value + Int40Codec.OFFSET;
-		const high = Math.floor(unsigned / 0x100000000);
-		const low = unsigned % 0x100000000;
-
-		if (this._littleEndian) {
-			view.setUint32(offset, low, true);
-			view.setUint8(offset + 4, high);
-		} else {
-			view.setUint8(offset, high);
-			view.setUint32(offset + 1, low, false);
-		}
+		writeUInt40(value + Int40Codec.OFFSET, writer, this._littleEndian);
 	}
 
 	_decode(reader: Reader): number {
-		const offset = reader.skipBytes(5);
-		const view = reader.view;
-
-		let high: number;
-		let low: number;
-
-		if (this._littleEndian) {
-			low = view.getUint32(offset, true);
-			high = view.getUint8(offset + 4);
-		} else {
-			high = view.getUint8(offset);
-			low = view.getUint32(offset + 1, false);
-		}
-
-		return high * 0x100000000 + low - Int40Codec.OFFSET;
+		return readUInt40(reader, this._littleEndian) - Int40Codec.OFFSET;
 	}
 }
 
@@ -323,37 +270,10 @@ export class Int48Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		const offset = writer.reserve(6);
-		const view = writer.currentView;
-
-		const unsigned = value + Int48Codec.OFFSET;
-		const high = Math.floor(unsigned / 0x100000000);
-		const low = unsigned % 0x100000000;
-
-		if (this._littleEndian) {
-			view.setUint32(offset, low, true);
-			view.setUint16(offset + 4, high, true);
-		} else {
-			view.setUint16(offset, high, false);
-			view.setUint32(offset + 2, low, false);
-		}
+		writeUInt48(value + Int48Codec.OFFSET, writer, this._littleEndian);
 	}
 
 	_decode(reader: Reader): number {
-		const offset = reader.skipBytes(6);
-		const view = reader.view;
-
-		let high: number;
-		let low: number;
-
-		if (this._littleEndian) {
-			low = view.getUint32(offset, true);
-			high = view.getUint16(offset + 4, true);
-		} else {
-			high = view.getUint16(offset, false);
-			low = view.getUint32(offset + 2, false);
-		}
-
-		return high * 0x100000000 + low - Int48Codec.OFFSET;
+		return readUInt48(reader, this._littleEndian) - Int48Codec.OFFSET;
 	}
 }

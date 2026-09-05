@@ -23,7 +23,7 @@ import { createVarIntCodec } from "./Codecs/VarInt";
 import type { AbstractCodec, CodecType } from "./Codecs/Abstract";
 
 export namespace Codec {
-	export type Type<Codec extends AbstractCodec<any>> = CodecType<Codec>;
+	export type Type<Codec extends AbstractCodec> = CodecType<Codec>;
 }
 
 export const Codec = {
@@ -34,6 +34,7 @@ export const Codec = {
 	Boolean: createBooleanCodec(),
 	Bytes: createBytesCodec,
 	Constant: createConstantCodec,
+	// eslint-disable-next-line @typescript-eslint/naming-convention
 	Enum: <const Value>(enumValues: Array<Value>, indexCodec: AbstractCodec<number>) =>
 		createUnionCodec(
 			enumValues.map((value) => createConstantCodec(value)),
@@ -44,6 +45,7 @@ export const Codec = {
 	Int: createIntCodec,
 	Merge: mergeObjectCodecs,
 	Null: createConstantCodec(null),
+	// eslint-disable-next-line @typescript-eslint/naming-convention
 	Nullable: <Value>(codec: AbstractCodec<Value>) => createUnionCodec([codec, createConstantCodec(null)]),
 	Number: createNumberCodec,
 	Object: createObjectCodec,

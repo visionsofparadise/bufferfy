@@ -1,5 +1,6 @@
 import { NUMBER_MATCHER, type CodecMatcher } from "../../utilities/matcher";
 import { AbstractCodec } from "../Abstract";
+import { varIntByteLengthOf } from "./varIntByteLengthOf";
 import type { Reader } from "../../utilities/Reader";
 import type { Writer } from "../../utilities/Writer";
 
@@ -24,23 +25,11 @@ export class VarInt60Codec extends AbstractCodec<number> {
 	}
 
 	byteLength(value: number): 1 | 2 | 3 | 4 | 5 | 6 | 7 {
-		for (let thresholdIndex = 0; thresholdIndex < VarInt60Codec.THRESHOLDS.length; thresholdIndex++) {
-			if (value < VarInt60Codec.THRESHOLDS[thresholdIndex]) return (thresholdIndex + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7;
-		}
-
-		return 7;
+		return varIntByteLengthOf(value, VarInt60Codec.THRESHOLDS, 7) as 1 | 2 | 3 | 4 | 5 | 6 | 7;
 	}
 
 	_encode(value: number, writer: Writer): void {
-		let byteLength = 7;
-
-		for (let thresholdIndex = 0; thresholdIndex < VarInt60Codec.THRESHOLDS.length; thresholdIndex++) {
-			if (value < VarInt60Codec.THRESHOLDS[thresholdIndex]) {
-				byteLength = thresholdIndex + 1;
-
-				break;
-			}
-		}
+		const byteLength = varIntByteLengthOf(value, VarInt60Codec.THRESHOLDS, 7);
 
 		const offset = writer.reserve(byteLength);
 		const bytes = writer.currentBytes;

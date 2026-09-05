@@ -2,9 +2,7 @@ import { VarInt15Codec } from "./VarInt15";
 import { VarInt30Codec } from "./VarInt30";
 import { VarInt60Codec } from "./VarInt60";
 
-export const varIntBitValues = [15, 30, 60] as const;
-
-export type VarIntBits = (typeof varIntBitValues)[number];
+export type VarIntBits = 15 | 30 | 60;
 
 export type VarIntCodec = VarInt15Codec | VarInt30Codec | VarInt60Codec;
 

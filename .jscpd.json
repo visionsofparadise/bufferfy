@@ -13,6 +13,8 @@
 		"**/*.test.tsx",
 		"**/*.bench.ts",
 		"**/*.ignore.ts",
+		"src/Codecs/VarInt/VarInt30.ts",
+		"src/Codecs/VarInt/VarInt60.ts",
 		"**/__fixtures__/**",
 		"**/types/*.d.ts",
 		"**/package.json",

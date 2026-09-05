@@ -15,6 +15,7 @@ export type UnionToIntersection<Union> = (Union extends unknown ? (distributedUn
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Object/Merge/index.ts|Source}
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const mergeObjectCodecs = <const ObjectCodecs extends Array<ObjectCodec<any>>>(
 	objectCodecs: ObjectCodecs,
 ): ObjectCodec<UnionToIntersection<ObjectCodecs[number]["properties"]>> => {

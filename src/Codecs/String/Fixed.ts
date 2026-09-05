@@ -1,16 +1,15 @@
 import { base32, base58, base64, base64url } from "@scure/base";
 import { decodeHex, encodeHex } from "../../utilities/hex";
-import { STRING_MATCHER, type CodecMatcher } from "../../utilities/matcher";
 import { decodeUtf8, encodeUtf8Into, SHORT_STRING_THRESHOLD, utf8ByteLength } from "../../utilities/utf8";
-import { AbstractCodec } from "../Abstract";
 import { BytesFixedCodec } from "../Bytes/Fixed";
+import { AbstractStringCodec } from "./Abstract";
 import type { StringEncoding } from ".";
 import type { Reader } from "../../utilities/Reader";
 import type { Writer } from "../../utilities/Writer";
 
 const textEncoder = new TextEncoder();
 
-export class StringFixedCodec extends AbstractCodec<string> {
+export class StringFixedCodec extends AbstractStringCodec {
 	private _byteLength: number;
 	private _bufferCodec: BytesFixedCodec;
 	private _encoder: (value: string, writer: Writer) => void;
@@ -109,14 +108,6 @@ export class StringFixedCodec extends AbstractCodec<string> {
 		};
 
 		this._decoder = (reader) => decoder(this._bufferCodec._decode(reader));
-	}
-
-	isValid(value: unknown): value is string {
-		return typeof value === "string";
-	}
-
-	override get matcher(): CodecMatcher {
-		return STRING_MATCHER;
 	}
 
 	byteLength(): number {

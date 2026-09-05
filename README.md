@@ -17,7 +17,7 @@ This module is now browser compatible, due to this the following changes have be
 
 ## Install
 
-```
+```sh
 npm i bufferfy
 ```
 
@@ -64,23 +64,23 @@ stream.pipe(decoder);
 
 All codecs provide a standard set of methods.
 
-#### `buffer = AnyCodec.encode(data, target?, offset?)`
+### `buffer = AnyCodec.encode(data, target?, offset?)`
 
 Returns the data serialized into a buffer. A buffer and offset can be provided, otherwise a new buffer will be created.
 
-#### `data = AnyCodec.decode(source, offset?)`
+### `data = AnyCodec.decode(source, offset?)`
 
 Returns the unserialized data from a buffer. Decoding begins at `offset` (default `0`).
 
-#### `number = AnyCodec.byteLength(data)`
+### `number = AnyCodec.byteLength(data)`
 
 Returns the byte length of the data if it were serialized.
 
-#### `boolean = AnyCodec.isValid(data)`
+### `boolean = AnyCodec.isValid(data)`
 
 Returns true if the codec is able to serialize and unserialize provided data.
 
-#### `Type = CodecType<typeof codec>`
+### `Type = CodecType<typeof codec>`
 
 Returns the value type of the provided codec.
 
@@ -143,7 +143,7 @@ if (codec.isValid(value)) codec.encode(value);
 
 ## Benchmarks
 
-Values used for benchmarks can be found [here](https://github.com/visionsofparadise/bufferfy/blob/main/src/utilities/TestValues.ignore.ts). Speed measured with `vitest bench` on 2026-07-11, median of three runs; run-to-run variance applies.
+Values used for benchmarks can be found [in `TestValues.ignore.ts`](https://github.com/visionsofparadise/bufferfy/blob/main/src/utilities/TestValues.ignore.ts). Speed measured with `vitest bench` on 2026-07-11, median of three runs; run-to-run variance applies.
 
 ### Size (bytes, smaller is better)
 
@@ -151,7 +151,7 @@ The wire format is deterministic, so bufferfy's sizes are fixed.
 
 #### Spread of Types
 
-```
+```text
 bufferfy.size                   50
 msgpack.size                    193
 JSON.size                       282
@@ -159,7 +159,7 @@ JSON.size                       282
 
 #### Common Types
 
-```
+```text
 bufferfy.size                   1050
 msgpack.size                    1706
 JSON.size                       1775
@@ -171,7 +171,7 @@ On structured messages, the workload it is built for, bufferfy leads decode and 
 
 #### Spread of Types
 
-```
+```text
               bufferfy     msgpack        JSON
 encode         395,751     387,482     173,038
 decode         343,837     266,447     300,674

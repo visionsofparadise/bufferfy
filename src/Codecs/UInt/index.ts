@@ -1,4 +1,5 @@
 import { NUMBER_MATCHER, type CodecMatcher } from "../../utilities/matcher";
+import { readUInt24, readUInt40, readUInt48, writeUInt24, writeUInt40, writeUInt48 } from "../../utilities/splitWidth";
 import { AbstractCodec } from "../Abstract";
 import type { Reader } from "../../utilities/Reader";
 import type { Writer } from "../../utilities/Writer";
@@ -50,6 +51,27 @@ export const createUIntCodec = (bits: UIntBits = 48, endianness: Endianness = "B
 	}
 };
 
+abstract class EndianUIntCodec extends AbstractCodec<number> {
+	protected readonly _littleEndian: boolean;
+
+	constructor(
+		private readonly _exclusiveMaximum: number,
+		endianness: Endianness,
+	) {
+		super();
+
+		this._littleEndian = endianness === "LE";
+	}
+
+	isValid(value: unknown): value is number {
+		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < this._exclusiveMaximum;
+	}
+
+	override get matcher(): CodecMatcher {
+		return NUMBER_MATCHER;
+	}
+}
+
 export class UInt8Codec extends AbstractCodec<number> {
 	static readonly BYTE_LENGTH = 1;
 
@@ -74,23 +96,11 @@ export class UInt8Codec extends AbstractCodec<number> {
 	}
 }
 
-export class UInt16Codec extends AbstractCodec<number> {
+export class UInt16Codec extends EndianUIntCodec {
 	static readonly BYTE_LENGTH = 2;
 
-	private readonly _littleEndian: boolean;
-
 	constructor(endianness: Endianness = "BE") {
-		super();
-
-		this._littleEndian = endianness === "LE";
-	}
-
-	isValid(value: unknown): value is number {
-		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 65536;
-	}
-
-	override get matcher(): CodecMatcher {
-		return NUMBER_MATCHER;
+		super(65536, endianness);
 	}
 
 	byteLength(): 2 {
@@ -110,23 +120,11 @@ export class UInt16Codec extends AbstractCodec<number> {
 	}
 }
 
-export class UInt24Codec extends AbstractCodec<number> {
+export class UInt24Codec extends EndianUIntCodec {
 	static readonly BYTE_LENGTH = 3;
 
-	private readonly _littleEndian: boolean;
-
 	constructor(endianness: Endianness = "BE") {
-		super();
-
-		this._littleEndian = endianness === "LE";
-	}
-
-	isValid(value: unknown): value is number {
-		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 16777216;
-	}
-
-	override get matcher(): CodecMatcher {
-		return NUMBER_MATCHER;
+		super(16777216, endianness);
 	}
 
 	byteLength(): 3 {
@@ -134,57 +132,19 @@ export class UInt24Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		const offset = writer.reserve(3);
-		const view = writer.currentView;
-
-		const high = value >>> 8;
-		const low = value & 0xff;
-
-		if (this._littleEndian) {
-			view.setUint8(offset, low);
-			view.setUint16(offset + 1, high, true);
-		} else {
-			view.setUint16(offset, high, false);
-			view.setUint8(offset + 2, low);
-		}
+		writeUInt24(value, writer, this._littleEndian);
 	}
 
 	_decode(reader: Reader): number {
-		const offset = reader.skipBytes(3);
-		const view = reader.view;
-
-		let high: number;
-		let low: number;
-
-		if (this._littleEndian) {
-			low = view.getUint8(offset);
-			high = view.getUint16(offset + 1, true);
-		} else {
-			high = view.getUint16(offset, false);
-			low = view.getUint8(offset + 2);
-		}
-
-		return (high << 8) | low;
+		return readUInt24(reader, this._littleEndian);
 	}
 }
 
-export class UInt32Codec extends AbstractCodec<number> {
+export class UInt32Codec extends EndianUIntCodec {
 	static readonly BYTE_LENGTH = 4;
 
-	private readonly _littleEndian: boolean;
-
 	constructor(endianness: Endianness = "BE") {
-		super();
-
-		this._littleEndian = endianness === "LE";
-	}
-
-	isValid(value: unknown): value is number {
-		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 4294967296;
-	}
-
-	override get matcher(): CodecMatcher {
-		return NUMBER_MATCHER;
+		super(4294967296, endianness);
 	}
 
 	byteLength(): 4 {
@@ -204,23 +164,11 @@ export class UInt32Codec extends AbstractCodec<number> {
 	}
 }
 
-export class UInt40Codec extends AbstractCodec<number> {
+export class UInt40Codec extends EndianUIntCodec {
 	static readonly BYTE_LENGTH = 5;
 
-	private readonly _littleEndian: boolean;
-
 	constructor(endianness: Endianness = "BE") {
-		super();
-
-		this._littleEndian = endianness === "LE";
-	}
-
-	isValid(value: unknown): value is number {
-		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 1099511627776;
-	}
-
-	override get matcher(): CodecMatcher {
-		return NUMBER_MATCHER;
+		super(1099511627776, endianness);
 	}
 
 	byteLength(): 5 {
@@ -228,57 +176,19 @@ export class UInt40Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		const offset = writer.reserve(5);
-		const view = writer.currentView;
-
-		const high = Math.floor(value / 0x100000000);
-		const low = value % 0x100000000;
-
-		if (this._littleEndian) {
-			view.setUint32(offset, low, true);
-			view.setUint8(offset + 4, high);
-		} else {
-			view.setUint8(offset, high);
-			view.setUint32(offset + 1, low, false);
-		}
+		writeUInt40(value, writer, this._littleEndian);
 	}
 
 	_decode(reader: Reader): number {
-		const offset = reader.skipBytes(5);
-		const view = reader.view;
-
-		let high: number;
-		let low: number;
-
-		if (this._littleEndian) {
-			low = view.getUint32(offset, true);
-			high = view.getUint8(offset + 4);
-		} else {
-			high = view.getUint8(offset);
-			low = view.getUint32(offset + 1, false);
-		}
-
-		return high * 0x100000000 + low;
+		return readUInt40(reader, this._littleEndian);
 	}
 }
 
-export class UInt48Codec extends AbstractCodec<number> {
+export class UInt48Codec extends EndianUIntCodec {
 	static readonly BYTE_LENGTH = 6;
 
-	private readonly _littleEndian: boolean;
-
 	constructor(endianness: Endianness = "BE") {
-		super();
-
-		this._littleEndian = endianness === "LE";
-	}
-
-	isValid(value: unknown): value is number {
-		return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < 281474976710656;
-	}
-
-	override get matcher(): CodecMatcher {
-		return NUMBER_MATCHER;
+		super(281474976710656, endianness);
 	}
 
 	byteLength(): 6 {
@@ -286,36 +196,10 @@ export class UInt48Codec extends AbstractCodec<number> {
 	}
 
 	_encode(value: number, writer: Writer): void {
-		const offset = writer.reserve(6);
-		const view = writer.currentView;
-
-		const high = Math.floor(value / 0x100000000);
-		const low = value % 0x100000000;
-
-		if (this._littleEndian) {
-			view.setUint32(offset, low, true);
-			view.setUint16(offset + 4, high, true);
-		} else {
-			view.setUint16(offset, high, false);
-			view.setUint32(offset + 2, low, false);
-		}
+		writeUInt48(value, writer, this._littleEndian);
 	}
 
 	_decode(reader: Reader): number {
-		const offset = reader.skipBytes(6);
-		const view = reader.view;
-
-		let high: number;
-		let low: number;
-
-		if (this._littleEndian) {
-			low = view.getUint32(offset, true);
-			high = view.getUint16(offset + 4, true);
-		} else {
-			high = view.getUint16(offset, false);
-			low = view.getUint32(offset + 2, false);
-		}
-
-		return high * 0x100000000 + low;
+		return readUInt48(reader, this._littleEndian);
 	}
 }

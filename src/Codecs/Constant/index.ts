@@ -49,6 +49,7 @@ export class ConstantCodec<const Value> extends AbstractCodec<Value> {
 		return 0;
 	}
 
+	// eslint-disable-next-line @typescript-eslint/no-empty-function
 	_encode(_value: Value, _writer: Writer): void {}
 
 	_decode(_reader: Reader): Value {

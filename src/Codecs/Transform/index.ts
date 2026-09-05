@@ -40,7 +40,8 @@ export class TransformCodec<Source, Target> extends AbstractCodec<Source> {
 	) {
 		super();
 
-		this._isSourceValid = options.isValid ?? ((value: unknown) => targetCodec.isValid(options.encode(value as any)));
+		this._isSourceValid =
+			options.isValid ?? ((value: unknown) => targetCodec.isValid(options.encode(value as Source)));
 		this._encodeSource = options.encode;
 		this._decodeTarget = options.decode;
 	}

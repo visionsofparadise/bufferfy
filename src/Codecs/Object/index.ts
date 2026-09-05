@@ -21,9 +21,9 @@ export const createObjectCodec = <Properties extends Record<string, AbstractCode
 ): ObjectCodec<Properties> => new ObjectCodec<Properties>(properties);
 
 type OutputObject<T extends Record<string, AbstractCodec>> = {
-	[K in keyof T as T[K] extends OptionalCodec<any> ? never : K]: CodecType<T[K]>;
+	[K in keyof T as T[K] extends OptionalCodec<unknown> ? never : K]: CodecType<T[K]>;
 } & {
-	[K in keyof T as T[K] extends OptionalCodec<any> ? K : never]?: T[K] extends OptionalCodec<infer V> ? V : never;
+	[K in keyof T as T[K] extends OptionalCodec<unknown> ? K : never]?: T[K] extends OptionalCodec<infer V> ? V : never;
 };
 
 export class ObjectCodec<Properties extends Record<string, AbstractCodec>> extends AbstractCodec<
@@ -44,12 +44,14 @@ export class ObjectCodec<Properties extends Record<string, AbstractCodec>> exten
 	isValid(value: unknown): value is OutputObject<Properties> {
 		if (typeof value !== "object" || value === null) return false;
 
+		const propertyValues = value as Record<keyof Properties, unknown>;
+
 		for (let index = 0; index < this._plan.length; index++) {
 			const { key, codec, isOptional } = this._plan[index];
 
 			if (isOptional && !(key in value)) continue;
 
-			if (!codec.isValid((value as any)[key])) return false;
+			if (!codec.isValid(propertyValues[key])) return false;
 		}
 
 		return true;
@@ -65,7 +67,7 @@ export class ObjectCodec<Properties extends Record<string, AbstractCodec>> exten
 		for (let index = 0; index < this._plan.length; index++) {
 			const { key, codec } = this._plan[index];
 
-			byteLength += codec.byteLength((value as any)[key]);
+			byteLength += codec.byteLength(value[key as keyof OutputObject<Properties>]);
 		}
 
 		return byteLength;
@@ -75,12 +77,12 @@ export class ObjectCodec<Properties extends Record<string, AbstractCodec>> exten
 		for (let index = 0; index < this._plan.length; index++) {
 			const { key, codec } = this._plan[index];
 
-			codec._encode((value as any)[key], writer);
+			codec._encode(value[key as keyof OutputObject<Properties>], writer);
 		}
 	}
 
 	_decode(reader: Reader): OutputObject<Properties> {
-		const value = {} as any;
+		const propertyValues = {} as Record<keyof Properties, unknown>;
 
 		for (let index = 0; index < this._plan.length; index++) {
 			const { key, codec, isOptional } = this._plan[index];
@@ -88,10 +90,10 @@ export class ObjectCodec<Properties extends Record<string, AbstractCodec>> exten
 			const decoded = codec._decode(reader);
 
 			if (!(isOptional && decoded === undefined)) {
-				value[key] = decoded;
+				propertyValues[key] = decoded;
 			}
 		}
 
-		return value as OutputObject<Properties>;
+		return propertyValues as unknown as OutputObject<Properties>;
 	}
 }

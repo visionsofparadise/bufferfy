@@ -1,6 +1,7 @@
 import { ARRAY_MATCHER, type CodecMatcher } from "../../utilities/matcher";
 import { AbstractCodec } from "../Abstract";
 import { VarInt60Codec } from "../VarInt/VarInt60";
+import { areItemsValid, decodeItems, encodeItems, itemsByteLength } from "./items";
 import type { Reader } from "../../utilities/Reader";
 import type { Writer } from "../../utilities/Writer";
 
@@ -15,9 +16,7 @@ export class ArrayVariableCodec<Item> extends AbstractCodec<Array<Item>> {
 	isValid(value: unknown): value is Array<Item> {
 		if (!Array.isArray(value)) return false;
 
-		for (let index = 0; index < value.length; index++) if (!this.itemCodec.isValid(value[index])) return false;
-
-		return true;
+		return areItemsValid(value as Array<unknown>, this.itemCodec);
 	}
 
 	override get matcher(): CodecMatcher {
@@ -25,26 +24,16 @@ export class ArrayVariableCodec<Item> extends AbstractCodec<Array<Item>> {
 	}
 
 	byteLength(value: Array<Item>): number {
-		let byteLength = this.lengthCodec.byteLength(value.length);
-
-		for (let index = 0; index < value.length; index++) byteLength += this.itemCodec.byteLength(value[index]);
-
-		return byteLength;
+		return this.lengthCodec.byteLength(value.length) + itemsByteLength(value, this.itemCodec);
 	}
 
 	_encode(value: Array<Item>, writer: Writer): void {
 		this.lengthCodec._encode(value.length, writer);
 
-		for (let index = 0; index < value.length; index++) this.itemCodec._encode(value[index], writer);
+		encodeItems(value, this.itemCodec, writer);
 	}
 
 	_decode(reader: Reader): Array<Item> {
-		const length = this.lengthCodec._decode(reader);
-
-		const value: Array<Item> = Array(length);
-
-		for (let index = 0; index < length; index++) value[index] = this.itemCodec._decode(reader);
-
-		return value;
+		return decodeItems(this.lengthCodec._decode(reader), this.itemCodec, reader);
 	}
 }

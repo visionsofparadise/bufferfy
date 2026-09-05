@@ -40,14 +40,12 @@ import type { Writer } from "../../utilities/Writer";
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Union/index.ts|Source}
  */
-export const createUnionCodec = <const Codecs extends Array<AbstractCodec<any>>>(
+export const createUnionCodec = <const Codecs extends Array<AbstractCodec>>(
 	codecs: Codecs,
 	indexCodec: AbstractCodec<number> = new VarInt60Codec(),
 ) => new UnionCodec(codecs, indexCodec);
 
-export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends AbstractCodec<
-	CodecType<Codecs[number]>
-> {
+export class UnionCodec<const Codecs extends Array<AbstractCodec>> extends AbstractCodec<CodecType<Codecs[number]>> {
 	codecs: Codecs;
 
 	private readonly _matchers: Array<CodecMatcher>;
@@ -100,7 +98,7 @@ export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends 
 	 */
 	flatten(): UnionCodec<Codecs> {
 		const flattened = this.codecs.flatMap((codec): Codecs | Codecs[number] => {
-			if (codec instanceof UnionCodec) return codec.codecs;
+			if (codec instanceof UnionCodec) return codec.codecs as Codecs;
 
 			return codec;
 		});
@@ -118,45 +116,30 @@ export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends 
 		return false;
 	}
 
-	byteLength(value: CodecType<Codecs[number]>): number {
-		if (this._undefinedFastPath) {
-			const index = value === undefined ? 1 : 0;
-
-			return this.indexCodec.byteLength(index) + this.codecs[index].byteLength(value);
-		}
+	private _codecIndexOf(value: CodecType<Codecs[number]>): number {
+		if (this._undefinedFastPath) return value === undefined ? 1 : 0;
 
 		for (let index = 0; index < this.codecs.length; index++) {
 			const matcher = this._matchers[index];
 
 			if (matcher.test(value) && (matcher.exact || this._sufficient[index] || this.codecs[index].isValid(value)))
-				return this.indexCodec.byteLength(index) + this.codecs[index].byteLength(value);
+				return index;
 		}
 
 		throw new BufferfyError("Value does not match any codec");
 	}
 
+	byteLength(value: CodecType<Codecs[number]>): number {
+		const index = this._codecIndexOf(value);
+
+		return this.indexCodec.byteLength(index) + this.codecs[index].byteLength(value);
+	}
+
 	_encode(value: CodecType<Codecs[number]>, writer: Writer): void {
-		if (this._undefinedFastPath) {
-			const index = value === undefined ? 1 : 0;
+		const index = this._codecIndexOf(value);
 
-			this.indexCodec._encode(index, writer);
-			this.codecs[index]._encode(value, writer);
-
-			return;
-		}
-
-		for (let index = 0; index < this.codecs.length; index++) {
-			const matcher = this._matchers[index];
-
-			if (matcher.test(value) && (matcher.exact || this._sufficient[index] || this.codecs[index].isValid(value))) {
-				this.indexCodec._encode(index, writer);
-				this.codecs[index]._encode(value, writer);
-
-				return;
-			}
-		}
-
-		throw new BufferfyError("Value does not match any codec");
+		this.indexCodec._encode(index, writer);
+		this.codecs[index]._encode(value, writer);
 	}
 
 	_decode(reader: Reader): CodecType<Codecs[number]> {
@@ -172,7 +155,7 @@ export class UnionCodec<const Codecs extends Array<AbstractCodec<any>>> extends 
 			);
 		}
 
-		return this.codecs[index]._decode(reader);
+		return this.codecs[index]._decode(reader) as CodecType<Codecs[number]>;
 	}
 }
 

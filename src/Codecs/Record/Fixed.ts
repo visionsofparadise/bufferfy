@@ -1,5 +1,6 @@
 import { OBJECT_MATCHER, type CodecMatcher } from "../../utilities/matcher";
 import { AbstractCodec } from "../Abstract";
+import { decodeEntries } from "./entries";
 import type { Reader } from "../../utilities/Reader";
 import type { Writer } from "../../utilities/Writer";
 
@@ -48,20 +49,12 @@ export class RecordFixedCodec<Key extends string, Value> extends AbstractCodec<R
 
 	_encode(value: Record<Key, Value>, writer: Writer): void {
 		for (const key in value) {
-			const property = value[key];
-
 			this.keyCodec._encode(key, writer);
-			this.valueCodec._encode(property, writer);
+			this.valueCodec._encode(value[key], writer);
 		}
 	}
 
 	_decode(reader: Reader): Record<Key, Value> {
-		const value: Partial<Record<Key, Value>> = {};
-
-		let index = this.length;
-
-		while (index--) value[this.keyCodec._decode(reader)] = this.valueCodec._decode(reader);
-
-		return value as Record<Key, Value>;
+		return decodeEntries(this.length, this.keyCodec, this.valueCodec, reader);
 	}
 }

@@ -4,7 +4,7 @@ import { Writer } from "../../utilities/Writer";
 import { DecodeTransformStream } from "./DecodeTransform";
 import { EncodeTransformStream } from "./EncodeTransform";
 
-export type CodecType<T extends AbstractCodec<any>> = T extends AbstractCodec<infer S> ? S : never;
+export type CodecType<T extends AbstractCodec> = T extends AbstractCodec<infer S> ? S : never;
 
 const sharedWriter = new Writer();
 let sharedWriterInUse = false;
@@ -91,6 +91,7 @@ export abstract class AbstractCodec<Value = unknown> {
 		}
 	}
 
+	// eslint-disable-next-line @typescript-eslint/naming-convention
 	Encoder(): TransformStream<Value, Uint8Array> {
 		return new EncodeTransformStream(this);
 	}
@@ -118,6 +119,7 @@ export abstract class AbstractCodec<Value = unknown> {
 		return this._decode(reader);
 	}
 
+	// eslint-disable-next-line @typescript-eslint/naming-convention
 	Decoder(): TransformStream<Uint8Array, Value> {
 		return new DecodeTransformStream(this);
 	}

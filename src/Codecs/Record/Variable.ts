@@ -1,6 +1,7 @@
 import { OBJECT_MATCHER, type CodecMatcher } from "../../utilities/matcher";
 import { AbstractCodec } from "../Abstract";
 import { VarInt60Codec } from "../VarInt/VarInt60";
+import { decodeEntries } from "./entries";
 import type { Reader } from "../../utilities/Reader";
 import type { Writer } from "../../utilities/Writer";
 
@@ -55,24 +56,13 @@ export class RecordVariableCodec<Key extends string, Value> extends AbstractCode
 
 		for (let index = 0; index < keys.length; index++) {
 			const key = keys[index];
-			const property = value[key];
 
 			this.keyCodec._encode(key, writer);
-			this.valueCodec._encode(property, writer);
+			this.valueCodec._encode(value[key], writer);
 		}
 	}
 
 	_decode(reader: Reader): Record<Key, Value> {
-		const value: Partial<Record<Key, Value>> = {};
-
-		let index = this.lengthCodec._decode(reader);
-
-		while (index--) {
-			const key = this.keyCodec._decode(reader);
-
-			value[key] = this.valueCodec._decode(reader);
-		}
-
-		return value as Record<Key, Value>;
+		return decodeEntries(this.lengthCodec._decode(reader), this.keyCodec, this.valueCodec, reader);
 	}
 }

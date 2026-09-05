@@ -1,15 +1,15 @@
 import { base32, base58, base64, base64url } from "@scure/base";
 import { decodeHex, encodeHex, hexByteLength } from "../../utilities/hex";
-import { STRING_MATCHER, type CodecMatcher } from "../../utilities/matcher";
 import { decodeUtf8, encodeUtf8Into, utf8ByteLength } from "../../utilities/utf8";
-import { AbstractCodec } from "../Abstract";
 import { BytesVariableCodec } from "../Bytes/Variable";
 import { VarInt60Codec } from "../VarInt/VarInt60";
+import { AbstractStringCodec } from "./Abstract";
 import type { StringEncoding } from ".";
 import type { Reader } from "../../utilities/Reader";
 import type { Writer } from "../../utilities/Writer";
+import type { AbstractCodec } from "../Abstract";
 
-export class StringVariableCodec extends AbstractCodec<string> {
+export class StringVariableCodec extends AbstractStringCodec {
 	private _bufferCodec: BytesVariableCodec;
 	private _encoder: (value: string, writer: Writer) => void;
 	private _decoder: (reader: Reader) => string;
@@ -92,14 +92,6 @@ export class StringVariableCodec extends AbstractCodec<string> {
 
 		this._encoder = (value, writer) => this._bufferCodec._encode(encoder(value), writer);
 		this._decoder = (reader) => decoder(this._bufferCodec._decode(reader));
-	}
-
-	isValid(value: unknown): value is string {
-		return typeof value === "string";
-	}
-
-	override get matcher(): CodecMatcher {
-		return STRING_MATCHER;
 	}
 
 	byteLength(value: string): number {
