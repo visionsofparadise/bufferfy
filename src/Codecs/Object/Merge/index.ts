@@ -18,11 +18,10 @@ export type UnionToIntersection<Union> = (Union extends unknown ? (distributedUn
 export const mergeObjectCodecs = <const ObjectCodecs extends Array<ObjectCodec<any>>>(
 	objectCodecs: ObjectCodecs,
 ): ObjectCodec<UnionToIntersection<ObjectCodecs[number]["properties"]>> => {
-	const properties: Partial<Record<keyof ObjectCodecs[number]["properties"], AbstractCodec>> = {};
+	const properties: Record<string, AbstractCodec> = {};
 
 	for (const objectCodec of objectCodecs)
-		for (const [key, codec] of objectCodec.entries)
-			properties[key as keyof ObjectCodecs[number]["properties"]] = codec;
+		for (const [key, codec] of objectCodec.entries) properties[key as string] = codec;
 
-	return new ObjectCodec(properties);
+	return new ObjectCodec(properties as unknown as UnionToIntersection<ObjectCodecs[number]["properties"]>);
 };
