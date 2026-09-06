@@ -4,7 +4,8 @@ import { VarInt60Codec } from "../VarInt/VarInt60";
 import type { Reader } from "../../utilities/Reader";
 import type { Writer } from "../../utilities/Writer";
 
-export interface AnyCodecOptions<Value = unknown> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface AnyCodecOptions<Value = any> {
 	encode?: (value: Value) => Uint8Array;
 	decode?: (buffer: Uint8Array) => Value;
 	lengthCodec?: AbstractCodec<number>;
@@ -23,9 +24,11 @@ export interface AnyCodecOptions<Value = unknown> {
  *
  * {@link https://github.com/visionsofparadise/bufferfy/blob/main/src/Codecs/Any/index.ts|Source}
  */
-export const createAnyCodec = <Value = unknown>(options?: AnyCodecOptions<Value>) => new AnyCodec(options);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const createAnyCodec = <Value = any>(options?: AnyCodecOptions<Value>) => new AnyCodec(options);
 
-export class AnyCodec<Value = unknown> extends AbstractCodec<Value> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export class AnyCodec<Value = any> extends AbstractCodec<Value> {
 	private readonly _encodeValue: (value: Value) => Uint8Array;
 	private readonly _decodeValue: (buffer: Uint8Array) => Value;
 
@@ -42,7 +45,8 @@ export class AnyCodec<Value = unknown> extends AbstractCodec<Value> {
 		this._bytesCodec = new BytesVariableCodec(this.lengthCodec);
 	}
 
-	isValid(_value: unknown): _value is Value {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	isValid(_value: unknown): _value is any {
 		return true;
 	}
 
